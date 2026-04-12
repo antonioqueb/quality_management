@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_quality_corrective_action_list" model="ir.ui.view">
-        <field name="name">quality.corrective.action.list</field>
+    <record id="view_quality_corrective_action_tree" model="ir.ui.view">
+        <field name="name">quality.corrective.action.tree</field>
         <field name="model">quality.corrective.action</field>
         <field name="arch" type="xml">
             <list decoration-success="state == 'cerrada'"
@@ -107,7 +107,7 @@
                 <filter string="Abiertas" name="open"
                         domain="[('state', 'in', ('abierta', 'en_proceso'))]"/>
                 <filter string="Con Acciones Vencidas" name="overdue"
-                        domain="[('action_overdue_count', '>', 0)]"/>
+                        domain="[('action_line_ids.state', '=', 'vencida')]"/>
                 <filter string="Cerradas" name="closed"
                         domain="[('state', '=', 'cerrada')]"/>
                 <group expand="0" string="Agrupar por">
