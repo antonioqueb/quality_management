@@ -10,7 +10,7 @@
                 <field name="inspection_id"/>
                 <field name="partner_id"/>
                 <field name="product_id"/>
-                <field name="inspection_type"/>
+                <field name="process_type_id"/>
                 <field name="date_generated"/>
                 <field name="certified_by"/>
                 <field name="state" widget="badge"
@@ -30,7 +30,7 @@
                             type="object" class="btn-primary"
                             invisible="state != 'borrador'"/>
                     <button name="action_print_certificate" string="Imprimir PDF"
-                            type="object" class="btn-secondary"
+                            type="object" class="btn-secondary" icon="fa-print"
                             invisible="state == 'borrador'"/>
                     <button name="action_send_email" string="Enviar por Correo"
                             type="object" class="btn-secondary"
@@ -50,7 +50,7 @@
                             <field name="inspection_id"/>
                             <field name="partner_id"/>
                             <field name="product_id"/>
-                            <field name="inspection_type"/>
+                            <field name="process_type_id"/>
                         </group>
                         <group>
                             <field name="folio"/>
@@ -63,30 +63,19 @@
                         <page string="Valores Certificados">
                             <group>
                                 <group>
-                                    <field name="certified_largo"
-                                           invisible="certified_largo == 0"/>
-                                    <field name="certified_ancho"
-                                           invisible="certified_ancho == 0"/>
-                                    <field name="certified_espesor"
-                                           invisible="certified_espesor == 0"/>
-                                    <field name="certified_hexagono"
-                                           invisible="certified_hexagono == 0"/>
-                                    <field name="certified_resistencia"
-                                           invisible="certified_resistencia == 0"/>
+                                    <field name="certified_largo" invisible="certified_largo == 0"/>
+                                    <field name="certified_ancho" invisible="certified_ancho == 0"/>
+                                    <field name="certified_espesor" invisible="certified_espesor == 0"/>
+                                    <field name="certified_hexagono" invisible="certified_hexagono == 0"/>
+                                    <field name="certified_resistencia" invisible="certified_resistencia == 0"/>
                                 </group>
                                 <group>
-                                    <field name="certified_apariencia"
-                                           invisible="not certified_apariencia"/>
-                                    <field name="certified_humedad"
-                                           invisible="certified_humedad == 0"/>
-                                    <field name="certified_pegado"
-                                           invisible="not certified_pegado"/>
-                                    <field name="certified_retiramiento"
-                                           invisible="certified_retiramiento == 0"/>
-                                    <field name="certified_calibracion"
-                                           invisible="certified_calibracion == 0"/>
-                                    <field name="certified_engomado"
-                                           invisible="not certified_engomado"/>
+                                    <field name="certified_apariencia" invisible="not certified_apariencia"/>
+                                    <field name="certified_humedad" invisible="certified_humedad == 0"/>
+                                    <field name="certified_pegado" invisible="not certified_pegado"/>
+                                    <field name="certified_retiramiento" invisible="certified_retiramiento == 0"/>
+                                    <field name="certified_calibracion" invisible="certified_calibracion == 0"/>
+                                    <field name="certified_engomado" invisible="not certified_engomado"/>
                                 </group>
                             </group>
                         </page>
@@ -99,6 +88,15 @@
                                     <field name="result"/>
                                 </list>
                             </field>
+                        </page>
+                        <page string="PDF Generado" invisible="not report_pdf">
+                            <group>
+                                <field name="report_pdf" filename="report_pdf_name"/>
+                                <field name="report_pdf_name" invisible="1"/>
+                            </group>
+                            <div class="o_quality_pdf_preview">
+                                <field name="report_pdf" widget="pdf_viewer" readonly="1"/>
+                            </div>
                         </page>
                     </notebook>
                 </sheet>

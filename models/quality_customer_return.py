@@ -26,20 +26,17 @@ class QualityCustomerReturn(models.Model):
         ('empaque', 'Empaque'),
         ('otro', 'Otro'),
     ], string='Tipo de Defecto', required=True, tracking=True)
-    defect_pieces = fields.Integer(
-        'Piezas con Defecto', required=True
-    )
-    return_reason = fields.Text(
-        'Motivo de la Devolución', required=True
-    )
-    production_date = fields.Date(
-        'Fecha de Producción', required=True
-    )
+    defect_pieces = fields.Integer('Piezas con Defecto', required=True)
+    return_reason = fields.Text('Motivo de la Devolución', required=True)
+    production_date = fields.Date('Fecha de Producción', required=True)
     evidence_ids = fields.Many2many(
         'ir.attachment', 'quality_return_evidence_rel',
         'return_id', 'attachment_id',
         string='Evidencia Fotográfica', required=True
     )
+    # PDF de evidencia con preview
+    evidence_pdf = fields.Binary('Reporte de Evidencia (PDF)', attachment=True)
+    evidence_pdf_name = fields.Char('Nombre del Reporte')
     pallets_returned = fields.Boolean('Se Regresan Tarimas')
     pallet_return_date = fields.Date('Fecha Retorno de Tarimas')
     claim_format_id = fields.Many2one(
@@ -98,9 +95,7 @@ class QualityCustomerReturn(models.Model):
         return super().create(vals_list)
 
     def action_submit_sales(self):
-        """Ventas evalúa la devolución."""
         for rec in self:
-            # Validar si está fuera de periodo (>= 30 días)
             if not rec.is_within_period:
                 rec.state = 'no_procede'
                 rec.message_post(
@@ -118,10 +113,8 @@ class QualityCustomerReturn(models.Model):
             )
 
     def action_submit_quality(self):
-        """Enviar a evaluación de Calidad."""
         for rec in self:
             rec.state = 'evaluacion_calidad'
-            # Actividad para Calidad
             quality_users = self.env.ref(
                 'quality_management.group_quality_manager'
             ).users
@@ -136,7 +129,6 @@ class QualityCustomerReturn(models.Model):
                 body=_('Devolución enviada a evaluación de Calidad.'),
                 subtype_xmlid='mail.mt_comment',
             )
-            # Si se retornaron tarimas, notificar a producción
             if rec.pallets_returned:
                 rec.message_post(
                     body=_(
@@ -147,7 +139,6 @@ class QualityCustomerReturn(models.Model):
                 )
 
     def action_generate_8d(self):
-        """Generar acción correctiva 8D."""
         for rec in self:
             ca = self.env['quality.corrective.action'].create({
                 'origin_type': 'devolucion',
@@ -187,3 +178,8 @@ class QualityCustomerReturn(models.Model):
                 body=_('Devolución marcada como NO PROCEDE.'),
                 subtype_xmlid='mail.mt_comment',
             )
+
+    def action_print_customer_return(self):
+        return self.env.ref(
+            'quality_management.action_report_customer_return'
+        ).report_action(self)

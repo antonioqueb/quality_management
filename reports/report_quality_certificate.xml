@@ -32,7 +32,7 @@
                                 </tr>
                                 <tr>
                                     <td class="fw-bold">Tipo de Proceso:</td>
-                                    <td><span t-field="doc.inspection_type"/></td>
+                                    <td><span t-field="doc.process_type_id.name"/></td>
                                 </tr>
                                 <tr t-if="doc.folio">
                                     <td class="fw-bold">Folio de Producción:</td>
@@ -121,7 +121,6 @@
                             </tbody>
                         </table>
 
-                        <!-- Atributos adicionales de líneas -->
                         <t t-if="doc.attribute_ids">
                             <h5 style="margin-top: 15px;">Atributos Adicionales</h5>
                             <table class="table table-bordered table-sm">

@@ -1,0 +1,16 @@
+/* quality_management - PDF Viewer embebido */
+.o_quality_pdf_viewer iframe {
+    width: 100%;
+    min-height: 600px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.o_quality_pdf_preview {
+    margin-bottom: 16px;
+}
+
+.o_quality_pdf_preview .o_attachment_preview {
+    max-height: 700px;
+    overflow: auto;
+}

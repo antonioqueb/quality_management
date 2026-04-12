@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields
 
 
 class QualityAttributeTemplate(models.Model):
@@ -8,13 +8,18 @@ class QualityAttributeTemplate(models.Model):
 
     name = fields.Char('Nombre del Atributo', required=True)
     sequence = fields.Integer('Secuencia', default=10)
+    process_type_id = fields.Many2one(
+        'quality.process.type', 'Tipo de Proceso',
+        ondelete='set null'
+    )
+    # Legacy - se mantiene para filtros rápidos
     inspection_type = fields.Selection([
         ('laminadora_remanejo', 'Laminadora y Remanejo'),
         ('octagono', 'Octágono'),
         ('guillotina_pegado', 'Guillotina y Pegado'),
         ('muestra', 'Muestra'),
         ('general', 'General'),
-    ], string='Tipo de Proceso', required=True)
+    ], string='Tipo (Legacy)')
     attribute_type = fields.Selection([
         ('float', 'Numérico'),
         ('selection', 'Selección'),

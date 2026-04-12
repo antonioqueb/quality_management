@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_process_type_list" model="ir.ui.view">
+        <field name="name">quality.process.type.list</field>
+        <field name="model">quality.process.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="show_largo"/>
+                <field name="show_ancho"/>
+                <field name="show_espesor"/>
+                <field name="show_hexagono"/>
+                <field name="show_resistencia"/>
+                <field name="show_apariencia"/>
+                <field name="show_humedad"/>
+                <field name="show_pegado"/>
+                <field name="show_retiramiento"/>
+                <field name="show_calibracion"/>
+                <field name="show_engomado"/>
+                <field name="show_ranurado"/>
+                <field name="show_troquelado"/>
+                <field name="show_papel"/>
+                <field name="show_adhesivo"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_quality_process_type_form" model="ir.ui.view">
+        <field name="name">quality.process.type.form</field>
+        <field name="model">quality.process.type</field>
+        <field name="arch" type="xml">
+            <form string="Tipo de Proceso">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Nombre del proceso..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="description"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Campos Visibles en Inspección">
+                            <group string="Medidas Dimensionales">
+                                <group>
+                                    <field name="show_largo"/>
+                                    <field name="show_ancho"/>
+                                    <field name="show_espesor"/>
+                                </group>
+                                <group>
+                                    <field name="show_hexagono"/>
+                                    <field name="show_resistencia"/>
+                                    <field name="show_apariencia"/>
+                                </group>
+                            </group>
+                            <group string="Propiedades">
+                                <group>
+                                    <field name="show_humedad"/>
+                                    <field name="show_pegado"/>
+                                    <field name="show_retiramiento"/>
+                                    <field name="show_calibracion"/>
+                                </group>
+                                <group>
+                                    <field name="show_engomado"/>
+                                    <field name="show_ranurado"/>
+                                    <field name="show_troquelado"/>
+                                </group>
+                            </group>
+                            <group string="Datos de Producción">
+                                <group>
+                                    <field name="show_papel"/>
+                                    <field name="show_adhesivo"/>
+                                </group>
+                                <group>
+                                    <field name="show_tipo_hexagono"/>
+                                    <field name="show_corte_guillotina"/>
+                                    <field name="show_numero_corrida"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Plantillas de Atributos">
+                            <field name="attribute_template_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="attribute_type"/>
+                                    <field name="selection_options" invisible="attribute_type != 'selection'"/>
+                                    <field name="min_value" invisible="attribute_type != 'float'"/>
+                                    <field name="max_value" invisible="attribute_type != 'float'"/>
+                                    <field name="unit"/>
+                                    <field name="is_required"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_quality_process_type" model="ir.actions.act_window">
+        <field name="name">Tipos de Proceso</field>
+        <field name="res_model">quality.process.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear un nuevo tipo de proceso de calidad
+            </p>
+            <p>Configure qué campos se muestran en la inspección para cada proceso.</p>
+        </field>
+    </record>
+</odoo>

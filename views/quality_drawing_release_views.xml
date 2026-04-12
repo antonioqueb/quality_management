@@ -38,6 +38,8 @@
                             type="object" class="btn-danger"
                             invisible="state != 'en_revision'"
                             groups="quality_management.group_quality_inspector"/>
+                    <button name="action_print_drawing_release" string="Imprimir"
+                            type="object" class="btn-secondary" icon="fa-print"/>
                     <button name="action_reset_draft" string="Regresar a Borrador"
                             type="object"
                             invisible="state not in ('rechazado',)"
@@ -62,11 +64,20 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Documentos">
+                        <page string="Plano PDF">
+                            <group>
+                                <field name="drawing_pdf" filename="drawing_pdf_name"/>
+                                <field name="drawing_pdf_name" invisible="1"/>
+                            </group>
+                            <div invisible="not drawing_pdf" class="o_quality_pdf_preview">
+                                <field name="drawing_pdf" widget="pdf_viewer" readonly="1"/>
+                            </div>
+                        </page>
+                        <page string="Documentos Adjuntos">
                             <field name="drawing_attachment_ids" widget="many2many_binary"/>
                         </page>
                         <page string="Rechazo" invisible="state != 'rechazado'">
-                            <field name="rejection_reason" placeholder="Motivo de rechazo o información faltante..."/>
+                            <field name="rejection_reason" placeholder="Motivo de rechazo..."/>
                         </page>
                     </notebook>
                 </sheet>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_customer_return" model="ir.actions.report">
+        <field name="name">Reporte de Devolución</field>
+        <field name="model">quality.customer.return</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">quality_management.report_customer_return_document</field>
+        <field name="report_file">quality_management.report_customer_return_document</field>
+        <field name="binding_model_id" ref="model_quality_customer_return"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_customer_return_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center" style="margin-bottom: 20px;">
+                            <h2>REPORTE DE DEVOLUCIÓN DE CLIENTE</h2>
+                            <h4 t-field="doc.name"/>
+                        </div>
+
+                        <!-- Estado visual -->
+                        <div class="text-center" style="margin-bottom: 15px;">
+                            <t t-if="doc.state == 'cerrada'">
+                                <span style="background-color: #28a745; color: white; padding: 5px 20px; border-radius: 4px; font-size: 14px; font-weight: bold;">CERRADA</span>
+                            </t>
+                            <t t-if="doc.state == 'no_procede'">
+                                <span style="background-color: #dc3545; color: white; padding: 5px 20px; border-radius: 4px; font-size: 14px; font-weight: bold;">NO PROCEDE</span>
+                            </t>
+                            <t t-if="doc.state == 'en_8d'">
+                                <span style="background-color: #ffc107; color: #333; padding: 5px 20px; border-radius: 4px; font-size: 14px; font-weight: bold;">EN PROCESO 8D</span>
+                            </t>
+                            <t t-if="doc.state in ('evaluacion_ventas', 'evaluacion_calidad')">
+                                <span style="background-color: #17a2b8; color: white; padding: 5px 20px; border-radius: 4px; font-size: 14px; font-weight: bold;">EN EVALUACIÓN</span>
+                            </t>
+                        </div>
+
+                        <table class="table table-bordered" style="margin-bottom: 20px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Referencia:</td>
+                                    <td><span t-field="doc.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Cliente:</td>
+                                    <td><span t-field="doc.partner_id.name"/></td>
+                                </tr>
+                                <tr t-if="doc.sale_order_id">
+                                    <td class="fw-bold">Orden de Venta:</td>
+                                    <td><span t-field="doc.sale_order_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Recepción:</td>
+                                    <td><span t-field="doc.date_received"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Producción:</td>
+                                    <td><span t-field="doc.production_date"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Días desde Producción:</td>
+                                    <td>
+                                        <span t-field="doc.days_since_production"/> días
+                                        <t t-if="not doc.is_within_period">
+                                            <span style="color: red; font-weight: bold;"> (FUERA DE PERIODO)</span>
+                                        </t>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Estado:</td>
+                                    <td><span t-field="doc.state"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Detalle del Defecto</h4>
+                        <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Tipo de Defecto:</td>
+                                    <td><span t-field="doc.defect_type"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Piezas con Defecto:</td>
+                                    <td><span t-field="doc.defect_pieces"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Afecta Funcionalidad:</td>
+                                    <td>
+                                        <span t-if="doc.affects_functionality" style="color: red; font-weight: bold;">SÍ</span>
+                                        <span t-if="not doc.affects_functionality">No</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Motivo de la Devolución</h4>
+                        <div style="border: 1px solid #dee2e6; padding: 10px; margin-bottom: 15px; min-height: 60px;">
+                            <span t-field="doc.return_reason"/>
+                        </div>
+
+                        <t t-if="doc.pallets_returned">
+                            <h4>Tarimas</h4>
+                            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" style="width: 30%;">Se Regresan Tarimas:</td>
+                                        <td>Sí</td>
+                                    </tr>
+                                    <tr t-if="doc.pallet_return_date">
+                                        <td class="fw-bold">Fecha Retorno:</td>
+                                        <td><span t-field="doc.pallet_return_date"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="doc.corrective_action_id">
+                            <h4>Acción Correctiva (8D)</h4>
+                            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" style="width: 30%;">Referencia 8D:</td>
+                                        <td><span t-field="doc.corrective_action_id.name"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Estado 8D:</td>
+                                        <td><span t-field="doc.corrective_action_id.state"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <div style="margin-top: 40px;">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p>Ventas</p>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p>Calidad</p>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p>Producción</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

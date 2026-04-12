@@ -20,21 +20,24 @@ class QualityCertificate(models.Model):
         'res.partner', 'Cliente', required=True, tracking=True
     )
     product_id = fields.Many2one(
-        related='inspection_id.product_id',
-        string='Producto', store=True
+        related='inspection_id.product_id', string='Producto', store=True
     )
-    inspection_type = fields.Selection(
-        related='inspection_id.inspection_type',
+    process_type_id = fields.Many2one(
+        related='inspection_id.process_type_id',
         string='Tipo de Proceso', store=True
     )
-    # Atributos seleccionados para el certificado
+    # Legacy
+    inspection_type = fields.Selection(
+        related='inspection_id.inspection_type',
+        string='Tipo (Legacy)', store=True
+    )
     attribute_ids = fields.Many2many(
         'quality.inspection.line',
         'quality_certificate_attribute_rel',
         'certificate_id', 'line_id',
         string='Atributos del Certificado'
     )
-    # Campos de valores certificados (snapshot)
+    # Snapshot de valores
     certified_largo = fields.Float('Largo (mm)')
     certified_ancho = fields.Float('Ancho (mm)')
     certified_espesor = fields.Float('Espesor (mm)')
@@ -46,7 +49,6 @@ class QualityCertificate(models.Model):
     certified_retiramiento = fields.Float('Retiramiento')
     certified_calibracion = fields.Float('Calibración')
     certified_engomado = fields.Char('Engomado')
-    # ──
     date_generated = fields.Date(
         'Fecha de Generación', required=True,
         default=fields.Date.context_today
@@ -68,8 +70,12 @@ class QualityCertificate(models.Model):
         'res.company', 'Compañía',
         default=lambda self: self.env.company
     )
-    folio = fields.Char(related='inspection_id.folio', string='Folio', store=True)
-    lot_id = fields.Many2one(related='inspection_id.lot_id', string='Lote', store=True)
+    folio = fields.Char(
+        related='inspection_id.folio', string='Folio', store=True
+    )
+    lot_id = fields.Many2one(
+        related='inspection_id.lot_id', string='Lote', store=True
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -80,7 +86,6 @@ class QualityCertificate(models.Model):
         return super().create(vals_list)
 
     def action_generate(self):
-        """Generar el certificado PDF."""
         for rec in self:
             rec.state = 'generado'
             rec.message_post(
@@ -89,7 +94,6 @@ class QualityCertificate(models.Model):
             )
 
     def action_send_email(self):
-        """Enviar certificado por correo al cliente."""
         self.ensure_one()
         template = self.env.ref(
             'quality_management.email_template_quality_certificate',

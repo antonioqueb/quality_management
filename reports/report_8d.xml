@@ -63,7 +63,6 @@
                             <span t-field="doc.origin_description"/>
                         </div>
 
-                        <!-- Datos de devolución si aplica -->
                         <t t-if="doc.origin_return_id">
                             <h4>D2 - Datos de la Reclamación</h4>
                             <table class="table table-bordered table-sm" style="margin-bottom: 15px;">

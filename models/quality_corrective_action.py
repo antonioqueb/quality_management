@@ -98,7 +98,6 @@ class QualityCorrectiveAction(models.Model):
                 body=_('Acción correctiva abierta por %s') % self.env.user.name,
                 subtype_xmlid='mail.mt_comment',
             )
-            # Notificar al responsable
             rec.activity_schedule(
                 'mail.mail_activity_data_todo',
                 date_deadline=fields.Date.today() + timedelta(days=1),
@@ -144,9 +143,13 @@ class QualityCorrectiveAction(models.Model):
             rec.state = 'en_proceso'
             rec.date_closed = False
 
+    def action_print_8d(self):
+        return self.env.ref(
+            'quality_management.action_report_8d'
+        ).report_action(self)
+
     @api.model
     def _cron_check_overdue_actions(self):
-        """Cron: detectar acciones vencidas y notificar."""
         today = fields.Date.today()
         overdue_lines = self.env['quality.action.line'].search([
             ('state', 'in', ('pendiente', 'en_proceso')),
@@ -163,7 +166,6 @@ class QualityCorrectiveAction(models.Model):
                 ) % (line.description[:80], line.responsible_id.name, days),
                 subtype_xmlid='mail.mt_comment',
             )
-            # Actividad para el responsable
             line.corrective_id.activity_schedule(
                 'mail.mail_activity_data_todo',
                 date_deadline=today,

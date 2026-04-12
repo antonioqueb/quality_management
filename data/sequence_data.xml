@@ -69,7 +69,6 @@ Fecha: {{ object.date_generated }}</p>
 Departamento de Calidad<br/>
 {{ object.company_id.name }}</p>
 ]]></field>
-
         </record>
     </data>
 </odoo>

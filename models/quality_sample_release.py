@@ -28,8 +28,7 @@ class QualitySampleRelease(models.Model):
         tracking=True
     )
     inspector_id = fields.Many2one(
-        'res.users', 'Inspector de Calidad',
-        tracking=True
+        'res.users', 'Inspector de Calidad', tracking=True
     )
     date_requested = fields.Date(
         'Fecha de Solicitud', required=True,
@@ -47,6 +46,9 @@ class QualitySampleRelease(models.Model):
         'quality.inspection.line', 'sample_release_id',
         string='Atributos Inspeccionados'
     )
+    # PDF de especificación con preview
+    spec_pdf = fields.Binary('Especificación (PDF)', attachment=True)
+    spec_pdf_name = fields.Char('Nombre Especificación')
     notes = fields.Html('Observaciones')
     company_id = fields.Many2one(
         'res.company', 'Compañía',
@@ -62,10 +64,8 @@ class QualitySampleRelease(models.Model):
         return super().create(vals_list)
 
     def action_submit_inspection(self):
-        """Enviar a inspección - genera actividad para Calidad."""
         for rec in self:
             rec.state = 'en_inspeccion'
-            # Crear actividad programada para inspectores de calidad
             quality_users = self.env.ref(
                 'quality_management.group_quality_inspector'
             ).users
@@ -84,9 +84,7 @@ class QualitySampleRelease(models.Model):
             )
 
     def action_accept(self):
-        """Liberar muestra - ACEPTADO."""
         for rec in self:
-            # Validar que todos los atributos cumplen
             if rec.inspection_line_ids:
                 failing = rec.inspection_line_ids.filtered(
                     lambda l: l.result == 'no_cumple'
@@ -107,7 +105,6 @@ class QualitySampleRelease(models.Model):
             )
 
     def action_reject(self):
-        """Rechazar muestra."""
         for rec in self:
             rec.state = 'rechazado'
             rec.date_inspected = fields.Date.today()
@@ -116,11 +113,15 @@ class QualitySampleRelease(models.Model):
                 feedback=_('Muestra rechazada')
             )
             rec.message_post(
-                body=_('❌ Muestra RECHAZADA por %s. Se notifica a Diseño para corrección.') % self.env.user.name,
+                body=_('❌ Muestra RECHAZADA por %s. Se notifica a Diseño.') % self.env.user.name,
                 subtype_xmlid='mail.mt_comment',
             )
 
     def action_reset_draft(self):
-        """Regresar a borrador."""
         for rec in self:
             rec.state = 'borrador'
+
+    def action_print_sample_release(self):
+        return self.env.ref(
+            'quality_management.action_report_sample_release'
+        ).report_action(self)

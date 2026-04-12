@@ -48,6 +48,8 @@
                             type="object"
                             invisible="state not in ('cerrada', 'no_procede')"
                             groups="quality_management.group_quality_manager"/>
+                    <button name="action_print_8d" string="Imprimir 8D"
+                            type="object" class="btn-secondary" icon="fa-print"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="borrador,abierta,en_proceso,cerrada"/>
                 </header>

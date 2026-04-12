@@ -24,7 +24,7 @@
                             <tbody>
                                 <tr>
                                     <td class="fw-bold" style="width: 25%;">Tipo de Proceso:</td>
-                                    <td><span t-field="doc.inspection_type"/></td>
+                                    <td><span t-field="doc.process_type_id.name"/></td>
                                     <td class="fw-bold" style="width: 25%;">Estado:</td>
                                     <td><span t-field="doc.state"/></td>
                                 </tr>
@@ -67,92 +67,129 @@
                             </tbody>
                         </table>
 
-                        <!-- Laminadora -->
-                        <t t-if="doc.inspection_type == 'laminadora_remanejo'">
-                            <h4>Medidas - Laminadora y Remanejo</h4>
+                        <!-- Medidas dinámicas -->
+                        <t t-if="doc.show_largo or doc.show_ancho or doc.show_espesor or doc.show_hexagono or doc.show_resistencia or doc.show_apariencia or doc.show_humedad or doc.show_pegado or doc.show_retiramiento or doc.show_calibracion or doc.show_engomado">
+                            <h4>Medidas - <span t-field="doc.process_type_id.name"/></h4>
                             <table class="table table-bordered table-sm">
                                 <thead><tr class="table-active">
-                                    <th>Largo</th><th>Ancho</th><th>Espesor</th>
-                                    <th>Hexágono</th><th>Resistencia</th>
-                                    <th>Apariencia</th><th>% Humedad</th><th>Pegado</th>
+                                    <th t-if="doc.show_largo">Largo</th>
+                                    <th t-if="doc.show_ancho">Ancho</th>
+                                    <th t-if="doc.show_espesor">Espesor</th>
+                                    <th t-if="doc.show_hexagono">Hexágono</th>
+                                    <th t-if="doc.show_resistencia">Resistencia</th>
+                                    <th t-if="doc.show_apariencia">Apariencia</th>
+                                    <th t-if="doc.show_humedad">% Humedad</th>
+                                    <th t-if="doc.show_pegado">Pegado</th>
+                                    <th t-if="doc.show_retiramiento">Retiramiento</th>
+                                    <th t-if="doc.show_calibracion">Calibración</th>
+                                    <th t-if="doc.show_engomado">Engomado</th>
                                 </tr></thead>
                                 <tbody><tr>
-                                    <td class="text-center"><span t-field="doc.largo"/></td>
-                                    <td class="text-center"><span t-field="doc.ancho"/></td>
-                                    <td class="text-center"><span t-field="doc.espesor"/></td>
-                                    <td class="text-center"><span t-field="doc.hexagono"/></td>
-                                    <td class="text-center"><span t-field="doc.resistencia"/></td>
-                                    <td class="text-center"><span t-field="doc.apariencia"/></td>
-                                    <td class="text-center"><span t-field="doc.humedad_pct"/>%</td>
-                                    <td class="text-center"><span t-field="doc.pegado_result"/></td>
-                                </tr></tbody>
-                            </table>
-                            <t t-if="doc.ranurado_ids">
-                                <h5>Ranurado</h5>
-                                <table class="table table-bordered table-sm">
-                                    <thead><tr class="table-active">
-                                        <th>N°</th><th>Medida (mm)</th><th>Resultado</th>
-                                    </tr></thead>
-                                    <tbody>
-                                        <tr t-foreach="doc.ranurado_ids" t-as="r">
-                                            <td><span t-field="r.sequence"/></td>
-                                            <td class="text-center"><span t-field="r.medida"/></td>
-                                            <td class="text-center"><span t-field="r.resultado"/></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </t>
-                            <t t-if="doc.troquelado_ids">
-                                <h5>Troquelado</h5>
-                                <table class="table table-bordered table-sm">
-                                    <thead><tr class="table-active">
-                                        <th>N°</th><th>Medida (mm)</th><th>Resultado</th>
-                                    </tr></thead>
-                                    <tbody>
-                                        <tr t-foreach="doc.troquelado_ids" t-as="t_line">
-                                            <td><span t-field="t_line.sequence"/></td>
-                                            <td class="text-center"><span t-field="t_line.medida"/></td>
-                                            <td class="text-center"><span t-field="t_line.resultado"/></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </t>
-                        </t>
-
-                        <!-- Octágono -->
-                        <t t-if="doc.inspection_type == 'octagono'">
-                            <h4>Medidas - Octágono</h4>
-                            <table class="table table-bordered table-sm">
-                                <thead><tr class="table-active">
-                                    <th>Ancho</th><th>Espesor</th><th>Hexágono</th>
-                                    <th>Retiramiento</th><th>Pegado</th>
-                                </tr></thead>
-                                <tbody><tr>
-                                    <td class="text-center"><span t-field="doc.oct_ancho"/></td>
-                                    <td class="text-center"><span t-field="doc.oct_espesor"/></td>
-                                    <td class="text-center"><span t-field="doc.oct_hexagono"/></td>
-                                    <td class="text-center"><span t-field="doc.oct_retiramiento"/></td>
-                                    <td class="text-center"><span t-field="doc.oct_pegado"/></td>
+                                    <td t-if="doc.show_largo" class="text-center"><span t-field="doc.largo"/></td>
+                                    <td t-if="doc.show_ancho" class="text-center"><span t-esc="doc.ancho or doc.oct_ancho"/></td>
+                                    <td t-if="doc.show_espesor" class="text-center"><span t-esc="doc.espesor or doc.oct_espesor"/></td>
+                                    <td t-if="doc.show_hexagono" class="text-center"><span t-esc="doc.hexagono or doc.oct_hexagono"/></td>
+                                    <td t-if="doc.show_resistencia" class="text-center"><span t-field="doc.resistencia"/></td>
+                                    <td t-if="doc.show_apariencia" class="text-center"><span t-field="doc.apariencia"/></td>
+                                    <td t-if="doc.show_humedad" class="text-center"><span t-field="doc.humedad_pct"/>%</td>
+                                    <td t-if="doc.show_pegado" class="text-center"><span t-esc="doc.pegado_result or doc.oct_pegado or ''"/></td>
+                                    <td t-if="doc.show_retiramiento" class="text-center"><span t-field="doc.oct_retiramiento"/></td>
+                                    <td t-if="doc.show_calibracion" class="text-center"><span t-field="doc.calibracion"/></td>
+                                    <td t-if="doc.show_engomado" class="text-center"><span t-field="doc.engomado"/></td>
                                 </tr></tbody>
                             </table>
                         </t>
 
-                        <!-- Guillotina -->
-                        <t t-if="doc.inspection_type == 'guillotina_pegado'">
-                            <h4>Medidas - Guillotina y Pegado</h4>
+                        <!-- Datos de producción -->
+                        <t t-if="doc.show_numero_corrida or doc.show_papel or doc.show_adhesivo">
+                            <h4>Datos de Producción</h4>
+                            <table class="table table-bordered table-sm">
+                                <tbody>
+                                    <tr t-if="doc.show_numero_corrida">
+                                        <td class="fw-bold" style="width: 30%;">Número de Corrida:</td>
+                                        <td><span t-field="doc.numero_corrida"/></td>
+                                    </tr>
+                                    <tr t-if="doc.show_tipo_hexagono">
+                                        <td class="fw-bold">Tipo de Hexágono:</td>
+                                        <td><span t-field="doc.tipo_hexagono"/></td>
+                                    </tr>
+                                    <tr t-if="doc.show_papel">
+                                        <td class="fw-bold">Papel (Ancho / Gramaje):</td>
+                                        <td><span t-field="doc.papel_ancho"/> / <span t-field="doc.papel_gramaje"/></td>
+                                    </tr>
+                                    <tr t-if="doc.show_papel and doc.papel_proveedor_id">
+                                        <td class="fw-bold">Proveedor del Papel:</td>
+                                        <td><span t-field="doc.papel_proveedor_id.name"/></td>
+                                    </tr>
+                                    <tr t-if="doc.show_adhesivo">
+                                        <td class="fw-bold">Lotes Adhesivo:</td>
+                                        <td><span t-field="doc.adhesivo_lote1"/> / <span t-field="doc.adhesivo_lote2"/></td>
+                                    </tr>
+                                    <tr t-if="doc.show_corte_guillotina">
+                                        <td class="fw-bold">Corte en Guillotina:</td>
+                                        <td><span t-field="doc.corte_guillotina"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <!-- Ranurado -->
+                        <t t-if="doc.ranurado_ids">
+                            <h5>Ranurado</h5>
                             <table class="table table-bordered table-sm">
                                 <thead><tr class="table-active">
-                                    <th>Corrida</th><th>Papel Ancho</th><th>Gramaje</th>
-                                    <th>Calibración</th><th>Engomado</th><th>Corte</th>
+                                    <th>N°</th><th>Medida (mm)</th><th>Resultado</th>
                                 </tr></thead>
-                                <tbody><tr>
-                                    <td class="text-center"><span t-field="doc.numero_corrida"/></td>
-                                    <td class="text-center"><span t-field="doc.papel_ancho"/></td>
-                                    <td class="text-center"><span t-field="doc.papel_gramaje"/></td>
-                                    <td class="text-center"><span t-field="doc.calibracion"/></td>
-                                    <td class="text-center"><span t-field="doc.engomado"/></td>
-                                    <td class="text-center"><span t-field="doc.corte_guillotina"/></td>
-                                </tr></tbody>
+                                <tbody>
+                                    <tr t-foreach="doc.ranurado_ids" t-as="r">
+                                        <td><span t-field="r.sequence"/></td>
+                                        <td class="text-center"><span t-field="r.medida"/></td>
+                                        <td class="text-center"><span t-field="r.resultado"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <!-- Troquelado -->
+                        <t t-if="doc.troquelado_ids">
+                            <h5>Troquelado</h5>
+                            <table class="table table-bordered table-sm">
+                                <thead><tr class="table-active">
+                                    <th>N°</th><th>Medida (mm)</th><th>Resultado</th>
+                                </tr></thead>
+                                <tbody>
+                                    <tr t-foreach="doc.troquelado_ids" t-as="t_line">
+                                        <td><span t-field="t_line.sequence"/></td>
+                                        <td class="text-center"><span t-field="t_line.medida"/></td>
+                                        <td class="text-center"><span t-field="t_line.resultado"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <!-- Atributos adicionales -->
+                        <t t-if="doc.line_ids">
+                            <h5>Atributos Adicionales</h5>
+                            <table class="table table-bordered table-sm">
+                                <thead><tr class="table-active">
+                                    <th>Atributo</th><th>Valor</th><th>Rango</th><th>Resultado</th>
+                                </tr></thead>
+                                <tbody>
+                                    <tr t-foreach="doc.line_ids" t-as="attr">
+                                        <td><span t-field="attr.name"/></td>
+                                        <td class="text-center">
+                                            <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
+                                            <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
+                                            <span t-if="attr.attribute_type == 'boolean'" t-field="attr.value_boolean"/>
+                                        </td>
+                                        <td class="text-center">
+                                            <t t-if="attr.min_value or attr.max_value">
+                                                <span t-field="attr.min_value"/> - <span t-field="attr.max_value"/> <span t-field="attr.unit"/>
+                                            </t>
+                                        </td>
+                                        <td class="text-center"><span t-field="attr.result"/></td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </t>
 

@@ -7,7 +7,7 @@
             <list editable="bottom">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
-                <field name="inspection_type"/>
+                <field name="process_type_id"/>
                 <field name="attribute_type"/>
                 <field name="selection_options" invisible="attribute_type != 'selection'"/>
                 <field name="min_value" invisible="attribute_type != 'float'"/>
@@ -27,7 +27,7 @@
                     <group>
                         <group>
                             <field name="name"/>
-                            <field name="inspection_type"/>
+                            <field name="process_type_id"/>
                             <field name="attribute_type"/>
                             <field name="is_required"/>
                         </group>

@@ -29,8 +29,7 @@ class QualityCustomerDocument(models.Model):
     ], string='Tipo de Documento', required=True, tracking=True)
     description = fields.Text('Descripción Adicional')
     requires_dimensions = fields.Boolean(
-        'Implica Mediciones Dimensionales', required=True,
-        tracking=True
+        'Implica Mediciones Dimensionales', required=True, tracking=True
     )
     client_format_ids = fields.Many2many(
         'ir.attachment', 'quality_doc_client_format_rel',
@@ -42,6 +41,9 @@ class QualityCustomerDocument(models.Model):
         'document_id', 'attachment_id',
         string='Documentos Generados'
     )
+    # PDF principal para preview embebido
+    main_pdf = fields.Binary('Documento Principal (PDF)', attachment=True)
+    main_pdf_name = fields.Char('Nombre del Documento')
     requested_by = fields.Many2one(
         'res.users', 'Solicitante (Ventas)',
         required=True, default=lambda self: self.env.user,
@@ -112,7 +114,6 @@ class QualityCustomerDocument(models.Model):
                 ['mail.mail_activity_data_todo'],
                 feedback=_('Documento completado')
             )
-            # Notificar a Ventas
             rec.message_post(
                 body=_(
                     '✅ Documento completado por Calidad. '
@@ -128,3 +129,8 @@ class QualityCustomerDocument(models.Model):
                 body=_('Documento enviado al cliente %s') % rec.partner_id.name,
                 subtype_xmlid='mail.mt_comment',
             )
+
+    def action_print_customer_document(self):
+        return self.env.ref(
+            'quality_management.action_report_customer_document'
+        ).report_action(self)

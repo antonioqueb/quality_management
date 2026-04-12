@@ -13,11 +13,37 @@ class QualityInspection(models.Model):
         'Referencia', required=True, readonly=True,
         default='Nuevo', copy=False
     )
+    # ── Tipo de proceso dinámico ──
+    process_type_id = fields.Many2one(
+        'quality.process.type', 'Tipo de Proceso',
+        required=True, tracking=True
+    )
     inspection_type = fields.Selection([
         ('laminadora_remanejo', 'Laminadora y Remanejo'),
         ('octagono', 'Octágono'),
         ('guillotina_pegado', 'Guillotina y Pegado'),
-    ], string='Tipo de Proceso', required=True, tracking=True)
+    ], string='Tipo (Legacy)',
+        compute='_compute_inspection_type', store=True)
+    # ── Visibilidad dinámica ──
+    show_largo = fields.Boolean(related='process_type_id.show_largo')
+    show_ancho = fields.Boolean(related='process_type_id.show_ancho')
+    show_espesor = fields.Boolean(related='process_type_id.show_espesor')
+    show_hexagono = fields.Boolean(related='process_type_id.show_hexagono')
+    show_resistencia = fields.Boolean(related='process_type_id.show_resistencia')
+    show_apariencia = fields.Boolean(related='process_type_id.show_apariencia')
+    show_humedad = fields.Boolean(related='process_type_id.show_humedad')
+    show_pegado = fields.Boolean(related='process_type_id.show_pegado')
+    show_retiramiento = fields.Boolean(related='process_type_id.show_retiramiento')
+    show_calibracion = fields.Boolean(related='process_type_id.show_calibracion')
+    show_engomado = fields.Boolean(related='process_type_id.show_engomado')
+    show_ranurado = fields.Boolean(related='process_type_id.show_ranurado')
+    show_troquelado = fields.Boolean(related='process_type_id.show_troquelado')
+    show_papel = fields.Boolean(related='process_type_id.show_papel')
+    show_adhesivo = fields.Boolean(related='process_type_id.show_adhesivo')
+    show_tipo_hexagono = fields.Boolean(related='process_type_id.show_tipo_hexagono')
+    show_corte_guillotina = fields.Boolean(related='process_type_id.show_corte_guillotina')
+    show_numero_corrida = fields.Boolean(related='process_type_id.show_numero_corrida')
+    # ── Datos generales ──
     production_order_id = fields.Many2one(
         'mrp.production', 'Orden de Producción', tracking=True
     )
@@ -25,12 +51,8 @@ class QualityInspection(models.Model):
     product_id = fields.Many2one(
         'product.product', 'Producto', required=True, tracking=True
     )
-    operator_id = fields.Many2one(
-        'hr.employee', 'Operador', required=True
-    )
-    supervisor_id = fields.Many2one(
-        'hr.employee', 'Supervisor', required=True
-    )
+    operator_id = fields.Many2one('hr.employee', 'Operador', required=True)
+    supervisor_id = fields.Many2one('hr.employee', 'Supervisor', required=True)
     partner_id = fields.Many2one(
         'res.partner', 'Cliente', required=True, tracking=True
     )
@@ -68,7 +90,7 @@ class QualityInspection(models.Model):
         'quality.inspection.line', 'inspection_id',
         string='Atributos Capturados'
     )
-    # ── Laminadora y Remanejo ──
+    # ── Campos de medición ──
     largo = fields.Float('Largo (mm)')
     ancho = fields.Float('Ancho (mm)')
     espesor = fields.Float('Espesor (mm)')
@@ -92,7 +114,6 @@ class QualityInspection(models.Model):
         ('cumple', 'Cumple'),
         ('no_cumple', 'No Cumple'),
     ], string='Resultado de Pegado')
-    # ── Octágono ──
     oct_ancho = fields.Float('Ancho Octágono (mm)')
     oct_espesor = fields.Float('Espesor Octágono (mm)')
     oct_hexagono = fields.Float('Hexágono Octágono')
@@ -101,7 +122,6 @@ class QualityInspection(models.Model):
         ('cumple', 'Cumple'),
         ('no_cumple', 'No Cumple'),
     ], string='Pegado Octágono')
-    # ── Guillotina y Pegado ──
     numero_corrida = fields.Char('Número de Corrida')
     papel_ancho = fields.Float('Ancho del Papel')
     papel_gramaje = fields.Float('Gramaje del Papel')
@@ -122,24 +142,47 @@ class QualityInspection(models.Model):
         ('no_cumple', 'No Cumple'),
     ], string='Engomado')
     corte_guillotina = fields.Boolean('Corte en Guillotina')
+    # ── Evidencia con preview ──
+    evidence_pdf = fields.Binary('Documento de Evidencia (PDF)', attachment=True)
+    evidence_pdf_name = fields.Char('Nombre del Documento')
     # ── General ──
     notes = fields.Html('Observaciones')
     certificate_ids = fields.One2many(
-        'quality.certificate', 'inspection_id',
-        string='Certificados'
+        'quality.certificate', 'inspection_id', string='Certificados'
     )
-    certificate_count = fields.Integer(
-        compute='_compute_certificate_count'
-    )
+    certificate_count = fields.Integer(compute='_compute_certificate_count')
     company_id = fields.Many2one(
         'res.company', 'Compañía',
         default=lambda self: self.env.company
     )
 
+    @api.depends('process_type_id', 'process_type_id.code')
+    def _compute_inspection_type(self):
+        legacy_codes = ('laminadora_remanejo', 'octagono', 'guillotina_pegado')
+        for rec in self:
+            code = rec.process_type_id.code if rec.process_type_id else False
+            rec.inspection_type = code if code in legacy_codes else False
+
     @api.depends('certificate_ids')
     def _compute_certificate_count(self):
         for rec in self:
             rec.certificate_count = len(rec.certificate_ids)
+
+    @api.onchange('process_type_id')
+    def _onchange_process_type_id(self):
+        if self.process_type_id and self.process_type_id.attribute_template_ids:
+            lines = []
+            for tmpl in self.process_type_id.attribute_template_ids:
+                lines.append((0, 0, {
+                    'attribute_template_id': tmpl.id,
+                    'name': tmpl.name,
+                    'attribute_type': tmpl.attribute_type,
+                    'min_value': tmpl.min_value,
+                    'max_value': tmpl.max_value,
+                    'unit': tmpl.unit,
+                    'sequence': tmpl.sequence,
+                }))
+            self.line_ids = lines
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -162,7 +205,6 @@ class QualityInspection(models.Model):
             )
 
     def action_retain(self):
-        """Retener lote/producto en inventario."""
         for rec in self:
             rec.state = 'retenido'
             rec.message_post(
@@ -172,7 +214,6 @@ class QualityInspection(models.Model):
                 ) % (self.env.user.name, rec.lot_id.name or 'N/A'),
                 subtype_xmlid='mail.mt_comment',
             )
-            # Crear actividad para responsable de producción
             if rec.production_order_id and rec.production_order_id.user_id:
                 rec.activity_schedule(
                     'mail.mail_activity_data_todo',
@@ -194,7 +235,6 @@ class QualityInspection(models.Model):
             rec.state = 'borrador'
 
     def action_create_certificate(self):
-        """Abrir wizard para crear certificado."""
         self.ensure_one()
         if self.state != 'aceptado':
             raise UserError(_(
@@ -222,3 +262,8 @@ class QualityInspection(models.Model):
             'domain': [('inspection_id', '=', self.id)],
             'context': {'default_inspection_id': self.id},
         }
+
+    def action_print_inspection(self):
+        return self.env.ref(
+            'quality_management.action_report_inspection_summary'
+        ).report_action(self)

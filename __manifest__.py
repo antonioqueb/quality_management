@@ -1,18 +1,20 @@
 {
     'name': 'Gestión de Calidad - Hexágonos Mexicanos',
-    'version': '18.0.1.0.0',
+    'version': '18.0.2.0.0',
     'category': 'Manufacturing/Quality',
     'summary': 'Módulo integral de gestión de calidad para industria del cartón',
     'description': """
         Gestión de Calidad para Hexágonos Mexicanos
         =============================================
-        - Liberación de Muestras
-        - Liberación de Planos
-        - Inspección de PP y PT (Laminadora, Octágono, Guillotina)
-        - Generación de Certificados
-        - Acciones Correctivas/Preventivas
-        - Devolución de Clientes (8D)
-        - Documentos solicitados por clientes
+        - Tipos de Proceso configurables (no hardcoded)
+        - Liberación de Muestras con reporte PDF
+        - Liberación de Planos con visor PDF embebido
+        - Inspección de PP y PT con atributos dinámicos
+        - Generación de Certificados con reporte PDF
+        - Acciones Correctivas/Preventivas (8D) con reporte
+        - Devolución de Clientes con reporte PDF
+        - Documentos solicitados por clientes con reporte PDF
+        - Visor PDF embebido en formularios
     """,
     'author': 'Alphaqueb Consulting SAS',
     'website': 'https://alphaqueb.com',
@@ -35,10 +37,12 @@
         'security/quality_rules.xml',
         # Data
         'data/sequence_data.xml',
+        'data/process_type_data.xml',
         'data/cron_data.xml',
         # Wizards
         'wizards/certificate_wizard_views.xml',
-        # Views (actions defined here)
+        # Views
+        'views/quality_process_type_views.xml',
         'views/quality_attribute_template_views.xml',
         'views/quality_sample_release_views.xml',
         'views/quality_drawing_release_views.xml',
@@ -48,14 +52,22 @@
         'views/quality_customer_return_views.xml',
         'views/quality_customer_document_views.xml',
         'views/quality_dashboard_views.xml',
-        # Menus (AFTER views so actions exist)
+        # Menus (AFTER views)
         'views/quality_menus.xml',
         # Reports
         'reports/report_quality_certificate.xml',
         'reports/report_8d.xml',
         'reports/report_inspection_summary.xml',
+        'reports/report_sample_release.xml',
+        'reports/report_drawing_release.xml',
+        'reports/report_customer_return.xml',
+        'reports/report_customer_document.xml',
     ],
-    'assets': {},
+    'assets': {
+        'web.assets_backend': [
+            'quality_management/static/src/css/quality_pdf_viewer.css',
+        ],
+    },
     'installable': True,
     'application': True,
     'auto_install': False,

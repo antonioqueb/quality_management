@@ -37,6 +37,8 @@
                     <button name="action_send" string="Marcar como Enviado"
                             type="object"
                             invisible="state != 'completado'"/>
+                    <button name="action_print_customer_document" string="Imprimir"
+                            type="object" class="btn-secondary" icon="fa-print"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="borrador,en_proceso,completado,enviado"/>
                 </header>
@@ -60,6 +62,15 @@
                     </group>
                     <field name="description" placeholder="Descripción adicional del requerimiento..."/>
                     <notebook>
+                        <page string="Documento Principal PDF">
+                            <group>
+                                <field name="main_pdf" filename="main_pdf_name"/>
+                                <field name="main_pdf_name" invisible="1"/>
+                            </group>
+                            <div invisible="not main_pdf" class="o_quality_pdf_preview">
+                                <field name="main_pdf" widget="pdf_viewer" readonly="1"/>
+                            </div>
+                        </page>
                         <page string="Formatos del Cliente">
                             <field name="client_format_ids" widget="many2many_binary"/>
                         </page>

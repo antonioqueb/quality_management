@@ -21,9 +21,11 @@ class QualityDrawingRelease(models.Model):
     drawing_attachment_ids = fields.Many2many(
         'ir.attachment', 'quality_drawing_attachment_rel',
         'drawing_id', 'attachment_id',
-        string='Plano y Cotización/Dibujo',
-        required=True
+        string='Plano y Cotización/Dibujo', required=True
     )
+    # PDF principal para preview embebido
+    drawing_pdf = fields.Binary('Plano Principal (PDF)', attachment=True)
+    drawing_pdf_name = fields.Char('Nombre del Plano')
     requested_by = fields.Many2one(
         'res.users', 'Solicitante (Ventas)',
         required=True, default=lambda self: self.env.user,
@@ -95,7 +97,7 @@ class QualityDrawingRelease(models.Model):
         for rec in self:
             if not rec.rejection_reason:
                 raise models.ValidationError(
-                    _('Debe capturar el motivo de rechazo antes de rechazar.')
+                    _('Debe capturar el motivo de rechazo.')
                 )
             rec.state = 'rechazado'
             rec.activity_feedback(
@@ -112,3 +114,8 @@ class QualityDrawingRelease(models.Model):
         for rec in self:
             rec.state = 'borrador'
             rec.rejection_reason = False
+
+    def action_print_drawing_release(self):
+        return self.env.ref(
+            'quality_management.action_report_drawing_release'
+        ).report_action(self)

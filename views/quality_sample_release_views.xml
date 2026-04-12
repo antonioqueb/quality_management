@@ -38,6 +38,8 @@
                             type="object" class="btn-danger"
                             invisible="state != 'en_inspeccion'"
                             groups="quality_management.group_quality_inspector"/>
+                    <button name="action_print_sample_release" string="Imprimir"
+                            type="object" class="btn-secondary" icon="fa-print"/>
                     <button name="action_reset_draft" string="Regresar a Borrador"
                             type="object"
                             invisible="state not in ('rechazado',)"
@@ -79,6 +81,15 @@
                                            decoration-danger="result == 'no_cumple'"/>
                                 </list>
                             </field>
+                        </page>
+                        <page string="Especificación PDF">
+                            <group>
+                                <field name="spec_pdf" filename="spec_pdf_name"/>
+                                <field name="spec_pdf_name" invisible="1"/>
+                            </group>
+                            <div invisible="not spec_pdf" class="o_quality_pdf_preview">
+                                <field name="spec_pdf" widget="pdf_viewer" readonly="1"/>
+                            </div>
                         </page>
                         <page string="Observaciones">
                             <field name="notes"/>

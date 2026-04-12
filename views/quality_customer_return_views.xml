@@ -48,6 +48,8 @@
                             type="object" class="btn-primary"
                             invisible="state != 'en_8d'"
                             groups="quality_management.group_quality_manager"/>
+                    <button name="action_print_customer_return" string="Imprimir"
+                            type="object" class="btn-secondary" icon="fa-print"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="borrador,evaluacion_ventas,evaluacion_calidad,en_8d,cerrada"/>
                 </header>
@@ -79,8 +81,17 @@
                     <separator string="Motivo de la Devolución"/>
                     <field name="return_reason"/>
                     <notebook>
-                        <page string="Evidencia">
+                        <page string="Evidencia Fotográfica">
                             <field name="evidence_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Evidencia PDF">
+                            <group>
+                                <field name="evidence_pdf" filename="evidence_pdf_name"/>
+                                <field name="evidence_pdf_name" invisible="1"/>
+                            </group>
+                            <div invisible="not evidence_pdf" class="o_quality_pdf_preview">
+                                <field name="evidence_pdf" widget="pdf_viewer" readonly="1"/>
+                            </div>
                         </page>
                         <page string="Tarimas">
                             <group>

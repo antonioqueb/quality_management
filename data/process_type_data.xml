@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Laminadora y Remanejo -->
+        <record id="process_type_laminadora" model="quality.process.type">
+            <field name="name">Laminadora y Remanejo</field>
+            <field name="code">laminadora_remanejo</field>
+            <field name="sequence">10</field>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_humedad" eval="True"/>
+            <field name="show_pegado" eval="True"/>
+            <field name="show_ranurado" eval="True"/>
+            <field name="show_troquelado" eval="True"/>
+            <field name="description">Proceso de laminado y remanejo de cartón. Incluye mediciones dimensionales, ranurado y troquelado.</field>
+        </record>
+
+        <!-- Octágono -->
+        <record id="process_type_octagono" model="quality.process.type">
+            <field name="name">Octágono</field>
+            <field name="code">octagono</field>
+            <field name="sequence">20</field>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_retiramiento" eval="True"/>
+            <field name="show_pegado" eval="True"/>
+            <field name="description">Proceso de formado octagonal. Mediciones de ancho, espesor, hexágono, retiramiento y pegado.</field>
+        </record>
+
+        <!-- Guillotina y Pegado -->
+        <record id="process_type_guillotina" model="quality.process.type">
+            <field name="name">Guillotina y Pegado</field>
+            <field name="code">guillotina_pegado</field>
+            <field name="sequence">30</field>
+            <field name="show_calibracion" eval="True"/>
+            <field name="show_engomado" eval="True"/>
+            <field name="show_papel" eval="True"/>
+            <field name="show_adhesivo" eval="True"/>
+            <field name="show_tipo_hexagono" eval="True"/>
+            <field name="show_corte_guillotina" eval="True"/>
+            <field name="show_numero_corrida" eval="True"/>
+            <field name="description">Proceso de corte en guillotina y pegado. Incluye datos de papel, adhesivo, calibración y engomado.</field>
+        </record>
+
+        <!-- Ejemplos de nuevos procesos que el usuario puede agregar -->
+        <record id="process_type_impresion" model="quality.process.type">
+            <field name="name">Impresión</field>
+            <field name="code">impresion</field>
+            <field name="sequence">40</field>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_humedad" eval="True"/>
+            <field name="description">Proceso de impresión sobre cartón. Inspección visual de apariencia y humedad.</field>
+        </record>
+
+        <record id="process_type_troquelado_plano" model="quality.process.type">
+            <field name="name">Troquelado Plano</field>
+            <field name="code">troquelado_plano</field>
+            <field name="sequence">50</field>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_troquelado" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="description">Proceso de troquelado plano. Mediciones dimensionales y capturas de troquelado.</field>
+        </record>
+
+        <record id="process_type_acabado" model="quality.process.type">
+            <field name="name">Acabado y Empaque</field>
+            <field name="code">acabado_empaque</field>
+            <field name="sequence">60</field>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="description">Inspección final de acabado y empaque antes de envío al cliente.</field>
+        </record>
+    </data>
+</odoo>

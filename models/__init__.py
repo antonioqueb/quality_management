@@ -1,3 +1,4 @@
+from . import quality_process_type
 from . import quality_attribute_template
 from . import quality_sample_release
 from . import quality_drawing_release

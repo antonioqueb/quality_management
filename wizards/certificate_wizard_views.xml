@@ -5,45 +5,31 @@
         <field name="model">quality.certificate.wizard</field>
         <field name="arch" type="xml">
             <form string="Crear Certificado de Calidad">
+                <field name="inspection_type" invisible="1"/>
                 <group>
                     <group>
                         <field name="inspection_id"/>
                         <field name="partner_id"/>
-                        <field name="inspection_type" invisible="1"/>
+                        <field name="process_type_id" readonly="1"/>
                     </group>
                 </group>
                 <separator string="Seleccione los atributos a incluir en el certificado"/>
-                <group invisible="inspection_type != 'laminadora_remanejo'">
+                <group>
                     <group>
                         <field name="include_largo"/>
                         <field name="include_ancho"/>
                         <field name="include_espesor"/>
                         <field name="include_hexagono"/>
-                    </group>
-                    <group>
                         <field name="include_resistencia"/>
                         <field name="include_apariencia"/>
+                    </group>
+                    <group>
                         <field name="include_humedad"/>
                         <field name="include_pegado"/>
-                    </group>
-                </group>
-                <group invisible="inspection_type != 'octagono'">
-                    <group>
-                        <field name="include_ancho"/>
-                        <field name="include_espesor"/>
-                        <field name="include_hexagono"/>
-                    </group>
-                    <group>
                         <field name="include_retiramiento"/>
-                        <field name="include_pegado"/>
-                    </group>
-                </group>
-                <group invisible="inspection_type != 'guillotina_pegado'">
-                    <group>
                         <field name="include_calibracion"/>
-                    </group>
-                    <group>
                         <field name="include_engomado"/>
+                        <field name="include_all_attributes"/>
                     </group>
                 </group>
                 <footer>

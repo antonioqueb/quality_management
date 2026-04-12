@@ -23,7 +23,7 @@
             <field name="name">Administrador de Calidad</field>
             <field name="category_id" ref="module_category_quality"/>
             <field name="implied_ids" eval="[(4, ref('group_quality_manager'))]"/>
-            <field name="comment">Configuración de plantillas y atributos</field>
+            <field name="comment">Configuración de plantillas, tipos de proceso y atributos</field>
         </record>
     </data>
 </odoo>

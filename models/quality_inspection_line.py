@@ -7,12 +7,10 @@ class QualityInspectionLine(models.Model):
     _order = 'sequence, id'
 
     inspection_id = fields.Many2one(
-        'quality.inspection', 'Inspección',
-        ondelete='cascade'
+        'quality.inspection', 'Inspección', ondelete='cascade'
     )
     sample_release_id = fields.Many2one(
-        'quality.sample.release', 'Liberación de Muestra',
-        ondelete='cascade'
+        'quality.sample.release', 'Liberación de Muestra', ondelete='cascade'
     )
     attribute_template_id = fields.Many2one(
         'quality.attribute.template', 'Atributo'
@@ -41,7 +39,6 @@ class QualityInspectionLine(models.Model):
 
     @api.onchange('value_float', 'min_value', 'max_value', 'attribute_type')
     def _onchange_evaluate_result(self):
-        """Evaluar automáticamente si el valor está dentro de rango."""
         for line in self:
             if line.attribute_type == 'float' and (line.min_value or line.max_value):
                 if line.min_value and line.value_float < line.min_value:

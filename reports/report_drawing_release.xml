@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_drawing_release" model="ir.actions.report">
+        <field name="name">Liberación de Plano</field>
+        <field name="model">quality.drawing.release</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">quality_management.report_drawing_release_document</field>
+        <field name="report_file">quality_management.report_drawing_release_document</field>
+        <field name="binding_model_id" ref="model_quality_drawing_release"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_drawing_release_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center" style="margin-bottom: 20px;">
+                            <h2>LIBERACIÓN DE PLANO</h2>
+                            <h4 t-field="doc.name"/>
+                        </div>
+
+                        <t t-if="doc.state == 'aceptado'">
+                            <div class="text-center" style="margin-bottom: 15px;">
+                                <span style="background-color: #28a745; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
+                                    ✅ PLANO LIBERADO
+                                </span>
+                            </div>
+                        </t>
+                        <t t-if="doc.state == 'rechazado'">
+                            <div class="text-center" style="margin-bottom: 15px;">
+                                <span style="background-color: #dc3545; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
+                                    ❌ PLANO RECHAZADO
+                                </span>
+                            </div>
+                        </t>
+
+                        <table class="table table-bordered" style="margin-bottom: 20px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Referencia:</td>
+                                    <td><span t-field="doc.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Cliente:</td>
+                                    <td><span t-field="doc.partner_id.name"/></td>
+                                </tr>
+                                <tr t-if="doc.sale_order_id">
+                                    <td class="fw-bold">Orden de Venta:</td>
+                                    <td><span t-field="doc.sale_order_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Solicitante (Ventas):</td>
+                                    <td><span t-field="doc.requested_by.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Inspector de Calidad:</td>
+                                    <td><span t-field="doc.inspector_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Solicitud:</td>
+                                    <td><span t-field="doc.date_requested"/></td>
+                                </tr>
+                                <tr t-if="doc.date_released">
+                                    <td class="fw-bold">Fecha de Liberación:</td>
+                                    <td><span t-field="doc.date_released"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Estado:</td>
+                                    <td><span t-field="doc.state"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <t t-if="doc.state == 'rechazado' and doc.rejection_reason">
+                            <h4>Motivo de Rechazo</h4>
+                            <div style="border: 2px solid #dc3545; padding: 10px; margin-bottom: 15px; min-height: 40px; background-color: #fff5f5;">
+                                <span t-field="doc.rejection_reason"/>
+                            </div>
+                        </t>
+
+                        <div style="margin-top: 50px;">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p class="fw-bold"><span t-field="doc.requested_by.name"/></p>
+                                    <p>Solicitante (Ventas)</p>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p class="fw-bold"><span t-field="doc.inspector_id.name"/></p>
+                                    <p>Inspector de Calidad</p>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p>Vo. Bo. Gerencia</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

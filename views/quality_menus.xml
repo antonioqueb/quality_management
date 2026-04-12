@@ -1,19 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Menú raíz -->
     <menuitem id="menu_quality_root"
               name="Calidad"
               web_icon="quality_management,static/description/icon.png"
               sequence="45"/>
 
-    <!-- Inspecciones -->
     <menuitem id="menu_quality_inspection"
               name="Inspecciones"
               parent="menu_quality_root"
               action="action_quality_inspection"
               sequence="10"/>
 
-    <!-- Liberaciones -->
     <menuitem id="menu_quality_releases"
               name="Liberaciones"
               parent="menu_quality_root"
@@ -31,7 +28,6 @@
               action="action_quality_drawing_release"
               sequence="20"/>
 
-    <!-- Certificados -->
     <menuitem id="menu_quality_certificate"
               name="Certificados"
               parent="menu_quality_root"
@@ -39,7 +35,6 @@
               sequence="30"
               groups="group_quality_manager"/>
 
-    <!-- Acciones Correctivas -->
     <menuitem id="menu_quality_corrective_action"
               name="Acciones Correctivas"
               parent="menu_quality_root"
@@ -47,14 +42,12 @@
               sequence="40"
               groups="group_quality_manager"/>
 
-    <!-- Devoluciones -->
     <menuitem id="menu_quality_customer_return"
               name="Devoluciones"
               parent="menu_quality_root"
               action="action_quality_customer_return"
               sequence="50"/>
 
-    <!-- Documentos de Cliente -->
     <menuitem id="menu_quality_customer_document"
               name="Documentos de Cliente"
               parent="menu_quality_root"
@@ -67,6 +60,12 @@
               parent="menu_quality_root"
               sequence="100"
               groups="group_quality_admin"/>
+
+    <menuitem id="menu_quality_process_type"
+              name="Tipos de Proceso"
+              parent="menu_quality_config"
+              action="action_quality_process_type"
+              sequence="5"/>
 
     <menuitem id="menu_quality_attribute_template"
               name="Plantillas de Atributos"
