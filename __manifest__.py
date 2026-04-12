@@ -38,8 +38,7 @@
         'data/cron_data.xml',
         # Wizards
         'wizards/certificate_wizard_views.xml',
-        # Views
-        'views/quality_menus.xml',
+        # Views (actions defined here)
         'views/quality_attribute_template_views.xml',
         'views/quality_sample_release_views.xml',
         'views/quality_drawing_release_views.xml',
@@ -49,6 +48,8 @@
         'views/quality_customer_return_views.xml',
         'views/quality_customer_document_views.xml',
         'views/quality_dashboard_views.xml',
+        # Menus (AFTER views so actions exist)
+        'views/quality_menus.xml',
         # Reports
         'reports/report_quality_certificate.xml',
         'reports/report_8d.xml',
