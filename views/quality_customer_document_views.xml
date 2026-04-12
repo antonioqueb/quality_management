@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_quality_customer_document_tree" model="ir.ui.view">
-        <field name="name">quality.customer.document.tree</field>
+    <record id="view_quality_customer_document_list" model="ir.ui.view">
+        <field name="name">quality.customer.document.list</field>
         <field name="model">quality.customer.document</field>
         <field name="arch" type="xml">
-            <tree decoration-success="state == 'enviado'"
+            <list decoration-success="state == 'enviado'"
                   decoration-info="state == 'en_proceso'">
                 <field name="name"/>
                 <field name="partner_id"/>
@@ -17,7 +17,7 @@
                 <field name="state" widget="badge"
                        decoration-success="state == 'enviado'"
                        decoration-info="state in ('en_proceso', 'completado')"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -76,7 +76,7 @@
     <record id="action_quality_customer_document" model="ir.actions.act_window">
         <field name="name">Documentos de Cliente</field>
         <field name="res_model">quality.customer.document</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Registrar solicitud de documento de cliente

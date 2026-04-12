@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_quality_certificate_tree" model="ir.ui.view">
-        <field name="name">quality.certificate.tree</field>
+    <record id="view_quality_certificate_list" model="ir.ui.view">
+        <field name="name">quality.certificate.list</field>
         <field name="model">quality.certificate</field>
         <field name="arch" type="xml">
-            <tree decoration-success="state == 'enviado'"
+            <list decoration-success="state == 'enviado'"
                   decoration-info="state == 'generado'">
                 <field name="name"/>
                 <field name="inspection_id"/>
@@ -16,7 +16,7 @@
                 <field name="state" widget="badge"
                        decoration-success="state == 'enviado'"
                        decoration-info="state == 'generado'"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -92,12 +92,12 @@
                         </page>
                         <page string="Atributos Seleccionados">
                             <field name="attribute_ids">
-                                <tree>
+                                <list>
                                     <field name="name"/>
                                     <field name="value_float"/>
                                     <field name="value_char"/>
                                     <field name="result"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>
@@ -110,7 +110,7 @@
     <record id="action_quality_certificate" model="ir.actions.act_window">
         <field name="name">Certificados de Calidad</field>
         <field name="res_model">quality.certificate</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Los certificados se generan desde inspecciones aceptadas

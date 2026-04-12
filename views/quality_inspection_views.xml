@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_quality_inspection_tree" model="ir.ui.view">
-        <field name="name">quality.inspection.tree</field>
+    <record id="view_quality_inspection_list" model="ir.ui.view">
+        <field name="name">quality.inspection.list</field>
         <field name="model">quality.inspection</field>
         <field name="arch" type="xml">
-            <tree decoration-success="state == 'aceptado'"
+            <list decoration-success="state == 'aceptado'"
                   decoration-danger="state in ('rechazado', 'retenido')"
                   decoration-info="state == 'en_proceso'">
                 <field name="name"/>
@@ -21,7 +21,7 @@
                        decoration-success="state == 'aceptado'"
                        decoration-danger="state in ('rechazado', 'retenido')"
                        decoration-info="state == 'en_proceso'"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -116,25 +116,25 @@
                             </group>
                             <separator string="Capturas de Ranurado (1-10)"/>
                             <field name="ranurado_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="sequence"/>
                                     <field name="medida"/>
                                     <field name="resultado" widget="badge"
                                            decoration-success="resultado == 'cumple'"
                                            decoration-danger="resultado == 'no_cumple'"/>
                                     <field name="notas"/>
-                                </tree>
+                                </list>
                             </field>
                             <separator string="Capturas de Troquelado (1-10)"/>
                             <field name="troquelado_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="sequence"/>
                                     <field name="medida"/>
                                     <field name="resultado" widget="badge"
                                            decoration-success="resultado == 'cumple'"
                                            decoration-danger="resultado == 'no_cumple'"/>
                                     <field name="notas"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <!-- Octágono -->
@@ -181,7 +181,7 @@
                         <!-- Atributos adicionales -->
                         <page string="Atributos Adicionales">
                             <field name="line_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
@@ -195,7 +195,7 @@
                                            decoration-success="result == 'cumple'"
                                            decoration-danger="result == 'no_cumple'"/>
                                     <field name="notes"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Observaciones">
@@ -257,7 +257,7 @@
     <record id="action_quality_inspection" model="ir.actions.act_window">
         <field name="name">Inspecciones</field>
         <field name="res_model">quality.inspection</field>
-        <field name="view_mode">tree,form,pivot</field>
+        <field name="view_mode">list,form,pivot</field>
         <field name="context">{'search_default_today': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">

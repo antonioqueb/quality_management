@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_quality_drawing_release_tree" model="ir.ui.view">
-        <field name="name">quality.drawing.release.tree</field>
+    <record id="view_quality_drawing_release_list" model="ir.ui.view">
+        <field name="name">quality.drawing.release.list</field>
         <field name="model">quality.drawing.release</field>
         <field name="arch" type="xml">
-            <tree decoration-success="state == 'aceptado'"
+            <list decoration-success="state == 'aceptado'"
                   decoration-danger="state == 'rechazado'"
                   decoration-info="state == 'en_revision'">
                 <field name="name"/>
@@ -17,7 +17,7 @@
                        decoration-success="state == 'aceptado'"
                        decoration-danger="state == 'rechazado'"
                        decoration-info="state == 'en_revision'"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -78,7 +78,7 @@
     <record id="action_quality_drawing_release" model="ir.actions.act_window">
         <field name="name">Liberación de Planos</field>
         <field name="res_model">quality.drawing.release</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Crear solicitud de liberación de plano

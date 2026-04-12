@@ -218,7 +218,7 @@ class QualityInspection(models.Model):
             'type': 'ir.actions.act_window',
             'name': _('Certificados'),
             'res_model': 'quality.certificate',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('inspection_id', '=', self.id)],
             'context': {'default_inspection_id': self.id},
         }
