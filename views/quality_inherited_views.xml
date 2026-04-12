@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  res.partner – Smart Buttons de Calidad     -->
+    <!-- ═══════════════════════════════════════════ -->
+    <record id="view_partner_form_quality_buttons" model="ir.ui.view">
+        <field name="name">res.partner.form.quality.buttons</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_quality_certificates" type="object"
+                        class="oe_stat_button" icon="fa-certificate"
+                        invisible="quality_certificate_count == 0">
+                    <field name="quality_certificate_count" widget="statinfo"
+                           string="Certificados"/>
+                </button>
+                <button name="action_view_quality_returns" type="object"
+                        class="oe_stat_button" icon="fa-undo"
+                        invisible="quality_return_count == 0">
+                    <field name="quality_return_count" widget="statinfo"
+                           string="Devoluciones"/>
+                </button>
+                <button name="action_view_quality_documents" type="object"
+                        class="oe_stat_button" icon="fa-file-text-o"
+                        invisible="quality_document_count == 0">
+                    <field name="quality_document_count" widget="statinfo"
+                           string="Docs. Calidad"/>
+                </button>
+                <button name="action_view_quality_inspections" type="object"
+                        class="oe_stat_button" icon="fa-check-square-o"
+                        invisible="quality_inspection_count == 0">
+                    <field name="quality_inspection_count" widget="statinfo"
+                           string="Inspecciones"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  sale.order – Smart Buttons de Calidad      -->
+    <!-- ═══════════════════════════════════════════ -->
+    <record id="view_sale_order_form_quality_buttons" model="ir.ui.view">
+        <field name="name">sale.order.form.quality.buttons</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_quality_drawings" type="object"
+                        class="oe_stat_button" icon="fa-pencil-square-o"
+                        invisible="quality_drawing_count == 0">
+                    <field name="quality_drawing_count" widget="statinfo"
+                           string="Planos"/>
+                </button>
+                <button name="action_view_quality_returns" type="object"
+                        class="oe_stat_button" icon="fa-undo"
+                        invisible="quality_return_count == 0">
+                    <field name="quality_return_count" widget="statinfo"
+                           string="Devoluciones"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  mrp.production – Smart Buttons de Calidad  -->
+    <!-- ═══════════════════════════════════════════ -->
+    <record id="view_mrp_production_form_quality_buttons" model="ir.ui.view">
+        <field name="name">mrp.production.form.quality.buttons</field>
+        <field name="model">mrp.production</field>
+        <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_quality_inspections" type="object"
+                        class="oe_stat_button" icon="fa-check-square-o"
+                        invisible="quality_inspection_count == 0">
+                    <field name="quality_inspection_count" widget="statinfo"
+                           string="Inspecciones"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -16,6 +16,7 @@
         - Documentos solicitados por clientes con reporte PDF
         - Visor PDF embebido en formularios
         - Visor de evidencia inline (imágenes, videos, PDFs)
+        - Integración con Ventas, Contactos y Manufactura (smart buttons)
     """,
     'author': 'Alphaqueb Consulting SAS',
     'website': 'https://alphaqueb.com',
@@ -53,6 +54,8 @@
         'views/quality_customer_return_views.xml',
         'views/quality_customer_document_views.xml',
         'views/quality_dashboard_views.xml',
+        # Inherited views (integration with sale, contacts, mrp)
+        'views/quality_inherited_views.xml',
         # Menus (AFTER views)
         'views/quality_menus.xml',
         # Reports
