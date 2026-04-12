@@ -11,26 +11,22 @@
         <field name="arch" type="xml">
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_quality_certificates" type="object"
-                        class="oe_stat_button" icon="fa-certificate"
-                        invisible="quality_certificate_count == 0">
+                        class="oe_stat_button" icon="fa-certificate">
                     <field name="quality_certificate_count" widget="statinfo"
                            string="Certificados"/>
                 </button>
                 <button name="action_view_quality_returns" type="object"
-                        class="oe_stat_button" icon="fa-undo"
-                        invisible="quality_return_count == 0">
+                        class="oe_stat_button" icon="fa-undo">
                     <field name="quality_return_count" widget="statinfo"
                            string="Devoluciones"/>
                 </button>
                 <button name="action_view_quality_documents" type="object"
-                        class="oe_stat_button" icon="fa-file-text-o"
-                        invisible="quality_document_count == 0">
+                        class="oe_stat_button" icon="fa-file-text-o">
                     <field name="quality_document_count" widget="statinfo"
                            string="Docs. Calidad"/>
                 </button>
                 <button name="action_view_quality_inspections" type="object"
-                        class="oe_stat_button" icon="fa-check-square-o"
-                        invisible="quality_inspection_count == 0">
+                        class="oe_stat_button" icon="fa-check-square-o">
                     <field name="quality_inspection_count" widget="statinfo"
                            string="Inspecciones"/>
                 </button>
@@ -48,14 +44,12 @@
         <field name="arch" type="xml">
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_quality_drawings" type="object"
-                        class="oe_stat_button" icon="fa-pencil-square-o"
-                        invisible="quality_drawing_count == 0">
+                        class="oe_stat_button" icon="fa-pencil-square-o">
                     <field name="quality_drawing_count" widget="statinfo"
                            string="Planos"/>
                 </button>
                 <button name="action_view_quality_returns" type="object"
-                        class="oe_stat_button" icon="fa-undo"
-                        invisible="quality_return_count == 0">
+                        class="oe_stat_button" icon="fa-undo">
                     <field name="quality_return_count" widget="statinfo"
                            string="Devoluciones"/>
                 </button>
@@ -73,8 +67,7 @@
         <field name="arch" type="xml">
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_quality_inspections" type="object"
-                        class="oe_stat_button" icon="fa-check-square-o"
-                        invisible="quality_inspection_count == 0">
+                        class="oe_stat_button" icon="fa-check-square-o">
                     <field name="quality_inspection_count" widget="statinfo"
                            string="Inspecciones"/>
                 </button>
