@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="quality_management.EvidenceViewerWidget">
+        <div class="o_evidence_viewer">
+            <!-- Loading -->
+            <div t-if="state.loading" class="text-muted p-2">
+                <i class="fa fa-spinner fa-spin"/> Cargando evidencias...
+            </div>
+
+            <!-- Empty -->
+            <div t-if="!state.loading and !state.attachments.length" class="text-muted p-2">
+                <i class="fa fa-image"/> Sin evidencias adjuntas
+            </div>
+
+            <!-- Grid -->
+            <div t-if="!state.loading and state.attachments.length" class="o_evidence_grid">
+                <t t-foreach="state.attachments" t-as="att" t-key="att.id">
+                    <!-- IMAGE -->
+                    <div t-if="att.fileType === 'image'" class="o_evidence_item o_evidence_image"
+                         t-on-click="() => this.openLightbox(att)">
+                        <img t-att-src="att.src" t-att-alt="att.name" loading="lazy"/>
+                        <div class="o_evidence_overlay">
+                            <span class="o_evidence_name" t-esc="att.name"/>
+                            <i class="fa fa-search-plus"/>
+                        </div>
+                    </div>
+
+                    <!-- VIDEO -->
+                    <div t-if="att.fileType === 'video'" class="o_evidence_item o_evidence_video">
+                        <video controls="controls" preload="metadata" t-att-src="att.src">
+                            Tu navegador no soporta video.
+                        </video>
+                        <div class="o_evidence_caption">
+                            <i class="fa fa-video-camera"/>
+                            <span t-esc="att.name"/>
+                        </div>
+                    </div>
+
+                    <!-- PDF -->
+                    <div t-if="att.fileType === 'pdf'" class="o_evidence_item o_evidence_pdf"
+                         t-on-click="() => this.openLightbox(att)">
+                        <iframe t-att-src="'/web/content/' + att.id + '?download=false#toolbar=0'"
+                                class="o_evidence_pdf_thumb"/>
+                        <div class="o_evidence_overlay">
+                            <span class="o_evidence_name" t-esc="att.name"/>
+                            <i class="fa fa-file-pdf-o"/>
+                        </div>
+                    </div>
+
+                    <!-- OTHER -->
+                    <div t-if="att.fileType === 'other'" class="o_evidence_item o_evidence_other">
+                        <a t-att-href="att.downloadUrl" target="_blank" class="o_evidence_download_link">
+                            <i class="fa fa-file-o fa-3x"/>
+                            <div class="o_evidence_name" t-esc="att.name"/>
+                        </a>
+                    </div>
+                </t>
+            </div>
+
+            <!-- Lightbox -->
+            <div t-if="state.lightbox" class="o_evidence_lightbox" t-on-click="onLightboxBackdrop">
+                <div class="o_evidence_lightbox_content">
+                    <button class="o_evidence_lightbox_close" t-on-click="closeLightbox">
+                        <i class="fa fa-times"/>
+                    </button>
+                    <div class="o_evidence_lightbox_title" t-esc="state.lightbox.name"/>
+
+                    <img t-if="state.lightbox.fileType === 'image'"
+                         t-att-src="state.lightbox.src"
+                         t-att-alt="state.lightbox.name"
+                         class="o_evidence_lightbox_img"/>
+
+                    <video t-if="state.lightbox.fileType === 'video'"
+                           controls="controls" autoplay="autoplay"
+                           t-att-src="state.lightbox.src"
+                           class="o_evidence_lightbox_video"/>
+
+                    <iframe t-if="state.lightbox.fileType === 'pdf'"
+                            t-att-src="'/web/content/' + state.lightbox.id + '?download=false'"
+                            class="o_evidence_lightbox_pdf"/>
+
+                    <a t-att-href="state.lightbox.downloadUrl" target="_blank"
+                       class="btn btn-sm btn-outline-light mt-2">
+                        <i class="fa fa-download"/> Descargar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -81,8 +81,12 @@
                     <separator string="Motivo de la Devolución"/>
                     <field name="return_reason"/>
                     <notebook>
-                        <page string="Evidencia Fotográfica">
-                            <field name="evidence_ids" widget="many2many_binary"/>
+                        <page string="Evidencia">
+                            <group string="Adjuntar Evidencia (imágenes, videos, PDFs)">
+                                <field name="evidence_ids" widget="many2many_binary" nolabel="1"/>
+                            </group>
+                            <separator string="Vista Previa de Evidencia"/>
+                            <field name="evidence_ids" widget="evidence_viewer" nolabel="1"/>
                         </page>
                         <page string="Evidencia PDF">
                             <group>

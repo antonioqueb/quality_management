@@ -1,6 +1,6 @@
 {
     'name': 'Gestión de Calidad - Hexágonos Mexicanos',
-    'version': '18.0.2.0.0',
+    'version': '18.0.2.1.0',
     'category': 'Manufacturing/Quality',
     'summary': 'Módulo integral de gestión de calidad para industria del cartón',
     'description': """
@@ -15,6 +15,7 @@
         - Devolución de Clientes con reporte PDF
         - Documentos solicitados por clientes con reporte PDF
         - Visor PDF embebido en formularios
+        - Visor de evidencia inline (imágenes, videos, PDFs)
     """,
     'author': 'Alphaqueb Consulting SAS',
     'website': 'https://alphaqueb.com',
@@ -66,6 +67,9 @@
     'assets': {
         'web.assets_backend': [
             'quality_management/static/src/css/quality_pdf_viewer.css',
+            'quality_management/static/src/css/quality_evidence_viewer.css',
+            'quality_management/static/src/js/evidence_viewer_widget.js',
+            'quality_management/static/src/xml/evidence_viewer_widget.xml',
         ],
     },
     'installable': True,
