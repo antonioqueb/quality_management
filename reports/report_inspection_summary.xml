@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_inspection_summary" model="ir.actions.report">
+        <field name="name">Resumen de Inspección</field>
+        <field name="model">quality.inspection</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">quality_management.report_inspection_summary_document</field>
+        <field name="report_file">quality_management.report_inspection_summary_document</field>
+        <field name="binding_model_id" ref="model_quality_inspection"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_inspection_summary_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center" style="margin-bottom: 20px;">
+                            <h2>RESUMEN DE INSPECCIÓN</h2>
+                            <h4 t-field="doc.name"/>
+                        </div>
+
+                        <table class="table table-bordered" style="margin-bottom: 20px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 25%;">Tipo de Proceso:</td>
+                                    <td><span t-field="doc.inspection_type"/></td>
+                                    <td class="fw-bold" style="width: 25%;">Estado:</td>
+                                    <td><span t-field="doc.state"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Producto:</td>
+                                    <td><span t-field="doc.product_id.name"/></td>
+                                    <td class="fw-bold">Código:</td>
+                                    <td><span t-field="doc.code"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Cliente:</td>
+                                    <td><span t-field="doc.partner_id.name"/></td>
+                                    <td class="fw-bold">Folio:</td>
+                                    <td><span t-field="doc.folio"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Operador:</td>
+                                    <td><span t-field="doc.operator_id.name"/></td>
+                                    <td class="fw-bold">Supervisor:</td>
+                                    <td><span t-field="doc.supervisor_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Inspector:</td>
+                                    <td><span t-field="doc.inspector_id.name"/></td>
+                                    <td class="fw-bold">Turno:</td>
+                                    <td><span t-field="doc.shift"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Planta:</td>
+                                    <td><span t-field="doc.plant"/></td>
+                                    <td class="fw-bold">Fecha:</td>
+                                    <td><span t-field="doc.date_inspection" t-options='{"widget": "date"}'/></td>
+                                </tr>
+                                <tr t-if="doc.lot_id">
+                                    <td class="fw-bold">Lote:</td>
+                                    <td><span t-field="doc.lot_id.name"/></td>
+                                    <td class="fw-bold">O. Producción:</td>
+                                    <td><span t-field="doc.production_order_id.name"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Laminadora -->
+                        <t t-if="doc.inspection_type == 'laminadora_remanejo'">
+                            <h4>Medidas - Laminadora y Remanejo</h4>
+                            <table class="table table-bordered table-sm">
+                                <thead><tr class="table-active">
+                                    <th>Largo</th><th>Ancho</th><th>Espesor</th>
+                                    <th>Hexágono</th><th>Resistencia</th>
+                                    <th>Apariencia</th><th>% Humedad</th><th>Pegado</th>
+                                </tr></thead>
+                                <tbody><tr>
+                                    <td class="text-center"><span t-field="doc.largo"/></td>
+                                    <td class="text-center"><span t-field="doc.ancho"/></td>
+                                    <td class="text-center"><span t-field="doc.espesor"/></td>
+                                    <td class="text-center"><span t-field="doc.hexagono"/></td>
+                                    <td class="text-center"><span t-field="doc.resistencia"/></td>
+                                    <td class="text-center"><span t-field="doc.apariencia"/></td>
+                                    <td class="text-center"><span t-field="doc.humedad_pct"/>%</td>
+                                    <td class="text-center"><span t-field="doc.pegado_result"/></td>
+                                </tr></tbody>
+                            </table>
+                            <t t-if="doc.ranurado_ids">
+                                <h5>Ranurado</h5>
+                                <table class="table table-bordered table-sm">
+                                    <thead><tr class="table-active">
+                                        <th>N°</th><th>Medida (mm)</th><th>Resultado</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="doc.ranurado_ids" t-as="r">
+                                            <td><span t-field="r.sequence"/></td>
+                                            <td class="text-center"><span t-field="r.medida"/></td>
+                                            <td class="text-center"><span t-field="r.resultado"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </t>
+                            <t t-if="doc.troquelado_ids">
+                                <h5>Troquelado</h5>
+                                <table class="table table-bordered table-sm">
+                                    <thead><tr class="table-active">
+                                        <th>N°</th><th>Medida (mm)</th><th>Resultado</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="doc.troquelado_ids" t-as="t_line">
+                                            <td><span t-field="t_line.sequence"/></td>
+                                            <td class="text-center"><span t-field="t_line.medida"/></td>
+                                            <td class="text-center"><span t-field="t_line.resultado"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </t>
+                        </t>
+
+                        <!-- Octágono -->
+                        <t t-if="doc.inspection_type == 'octagono'">
+                            <h4>Medidas - Octágono</h4>
+                            <table class="table table-bordered table-sm">
+                                <thead><tr class="table-active">
+                                    <th>Ancho</th><th>Espesor</th><th>Hexágono</th>
+                                    <th>Retiramiento</th><th>Pegado</th>
+                                </tr></thead>
+                                <tbody><tr>
+                                    <td class="text-center"><span t-field="doc.oct_ancho"/></td>
+                                    <td class="text-center"><span t-field="doc.oct_espesor"/></td>
+                                    <td class="text-center"><span t-field="doc.oct_hexagono"/></td>
+                                    <td class="text-center"><span t-field="doc.oct_retiramiento"/></td>
+                                    <td class="text-center"><span t-field="doc.oct_pegado"/></td>
+                                </tr></tbody>
+                            </table>
+                        </t>
+
+                        <!-- Guillotina -->
+                        <t t-if="doc.inspection_type == 'guillotina_pegado'">
+                            <h4>Medidas - Guillotina y Pegado</h4>
+                            <table class="table table-bordered table-sm">
+                                <thead><tr class="table-active">
+                                    <th>Corrida</th><th>Papel Ancho</th><th>Gramaje</th>
+                                    <th>Calibración</th><th>Engomado</th><th>Corte</th>
+                                </tr></thead>
+                                <tbody><tr>
+                                    <td class="text-center"><span t-field="doc.numero_corrida"/></td>
+                                    <td class="text-center"><span t-field="doc.papel_ancho"/></td>
+                                    <td class="text-center"><span t-field="doc.papel_gramaje"/></td>
+                                    <td class="text-center"><span t-field="doc.calibracion"/></td>
+                                    <td class="text-center"><span t-field="doc.engomado"/></td>
+                                    <td class="text-center"><span t-field="doc.corte_guillotina"/></td>
+                                </tr></tbody>
+                            </table>
+                        </t>
+
+                        <div style="margin-top: 30px;">
+                            <div class="row">
+                                <div class="col-6 text-center">
+                                    <p>____________________________</p>
+                                    <p class="fw-bold"><span t-field="doc.inspector_id.name"/></p>
+                                    <p>Inspector de Calidad</p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <p>____________________________</p>
+                                    <p>Supervisor</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

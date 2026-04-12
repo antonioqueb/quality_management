@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_inspection_tree" model="ir.ui.view">
+        <field name="name">quality.inspection.tree</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="state == 'aceptado'"
+                  decoration-danger="state in ('rechazado', 'retenido')"
+                  decoration-info="state == 'en_proceso'">
+                <field name="name"/>
+                <field name="inspection_type"/>
+                <field name="product_id"/>
+                <field name="partner_id"/>
+                <field name="folio"/>
+                <field name="shift"/>
+                <field name="inspector_id"/>
+                <field name="date_inspection"/>
+                <field name="is_pp" optional="show"/>
+                <field name="is_pt" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'aceptado'"
+                       decoration-danger="state in ('rechazado', 'retenido')"
+                       decoration-info="state == 'en_proceso'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quality_inspection_form" model="ir.ui.view">
+        <field name="name">quality.inspection.form</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <form string="Inspección de Calidad">
+                <header>
+                    <button name="action_start" string="Iniciar Inspección"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_accept" string="Aceptar (Liberar)"
+                            type="object" class="btn-primary"
+                            invisible="state != 'en_proceso'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_retain" string="Retener"
+                            type="object" class="btn-warning"
+                            invisible="state != 'en_proceso'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_reject" string="Rechazar"
+                            type="object" class="btn-danger"
+                            invisible="state != 'en_proceso'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_create_certificate" string="Crear Certificado"
+                            type="object" class="btn-secondary"
+                            invisible="state != 'aceptado'"
+                            groups="quality_management.group_quality_manager"/>
+                    <button name="action_reset_draft" string="Regresar a Borrador"
+                            type="object"
+                            invisible="state not in ('rechazado', 'retenido')"
+                            groups="quality_management.group_quality_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,en_proceso,aceptado"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_certificates" type="object"
+                                class="oe_stat_button" icon="fa-certificate"
+                                invisible="certificate_count == 0">
+                            <field name="certificate_count" widget="statinfo"
+                                   string="Certificados"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Datos Generales">
+                            <field name="inspection_type"/>
+                            <field name="product_id"/>
+                            <field name="production_order_id"/>
+                            <field name="lot_id"/>
+                            <field name="folio"/>
+                            <field name="code"/>
+                        </group>
+                        <group string="Personal y Ubicación">
+                            <field name="operator_id"/>
+                            <field name="supervisor_id"/>
+                            <field name="inspector_id"/>
+                            <field name="partner_id"/>
+                            <field name="shift"/>
+                            <field name="plant"/>
+                            <field name="date_inspection"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="is_pp"/>
+                        </group>
+                        <group>
+                            <field name="is_pt"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <!-- Laminadora y Remanejo -->
+                        <page string="Laminadora y Remanejo"
+                              invisible="inspection_type != 'laminadora_remanejo'">
+                            <group>
+                                <group string="Medidas Principales">
+                                    <field name="largo"/>
+                                    <field name="ancho"/>
+                                    <field name="espesor"/>
+                                    <field name="hexagono"/>
+                                </group>
+                                <group string="Propiedades">
+                                    <field name="resistencia"/>
+                                    <field name="apariencia"/>
+                                    <field name="humedad_pct"/>
+                                    <field name="pegado_result"/>
+                                </group>
+                            </group>
+                            <separator string="Capturas de Ranurado (1-10)"/>
+                            <field name="ranurado_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="medida"/>
+                                    <field name="resultado" widget="badge"
+                                           decoration-success="resultado == 'cumple'"
+                                           decoration-danger="resultado == 'no_cumple'"/>
+                                    <field name="notas"/>
+                                </tree>
+                            </field>
+                            <separator string="Capturas de Troquelado (1-10)"/>
+                            <field name="troquelado_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="medida"/>
+                                    <field name="resultado" widget="badge"
+                                           decoration-success="resultado == 'cumple'"
+                                           decoration-danger="resultado == 'no_cumple'"/>
+                                    <field name="notas"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <!-- Octágono -->
+                        <page string="Octágono"
+                              invisible="inspection_type != 'octagono'">
+                            <group>
+                                <group>
+                                    <field name="oct_ancho"/>
+                                    <field name="oct_espesor"/>
+                                    <field name="oct_hexagono"/>
+                                </group>
+                                <group>
+                                    <field name="oct_retiramiento"/>
+                                    <field name="oct_pegado"/>
+                                </group>
+                            </group>
+                        </page>
+                        <!-- Guillotina y Pegado -->
+                        <page string="Guillotina y Pegado"
+                              invisible="inspection_type != 'guillotina_pegado'">
+                            <group>
+                                <group string="Producción">
+                                    <field name="numero_corrida"/>
+                                    <field name="tipo_hexagono"/>
+                                    <field name="calibracion"/>
+                                </group>
+                                <group string="Papel">
+                                    <field name="papel_ancho"/>
+                                    <field name="papel_gramaje"/>
+                                    <field name="papel_proveedor_id"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Adhesivo">
+                                    <field name="adhesivo_lote1"/>
+                                    <field name="adhesivo_lote2"/>
+                                </group>
+                                <group string="Resultado">
+                                    <field name="engomado"/>
+                                    <field name="corte_guillotina"/>
+                                </group>
+                            </group>
+                        </page>
+                        <!-- Atributos adicionales -->
+                        <page string="Atributos Adicionales">
+                            <field name="line_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="attribute_type"/>
+                                    <field name="value_float" invisible="attribute_type != 'float'"/>
+                                    <field name="value_char" invisible="attribute_type not in ('char', 'selection')"/>
+                                    <field name="value_boolean" invisible="attribute_type != 'boolean'" widget="boolean_toggle"/>
+                                    <field name="min_value" invisible="attribute_type != 'float'"/>
+                                    <field name="max_value" invisible="attribute_type != 'float'"/>
+                                    <field name="unit"/>
+                                    <field name="result" widget="badge"
+                                           decoration-success="result == 'cumple'"
+                                           decoration-danger="result == 'no_cumple'"/>
+                                    <field name="notes"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Observaciones">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_quality_inspection_search" model="ir.ui.view">
+        <field name="name">quality.inspection.search</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <search string="Inspecciones">
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="partner_id"/>
+                <field name="folio"/>
+                <field name="inspector_id"/>
+                <filter string="Hoy" name="today"
+                        domain="[('date_inspection', '&gt;=', datetime.datetime.combine(context_today(), datetime.time(0,0,0))),
+                                 ('date_inspection', '&lt;=', datetime.datetime.combine(context_today(), datetime.time(23,59,59)))]"/>
+                <separator/>
+                <filter string="Aceptadas" name="accepted" domain="[('state', '=', 'aceptado')]"/>
+                <filter string="Retenidas" name="retained" domain="[('state', '=', 'retenido')]"/>
+                <filter string="Rechazadas" name="rejected" domain="[('state', '=', 'rechazado')]"/>
+                <separator/>
+                <filter string="Laminadora" name="laminadora" domain="[('inspection_type', '=', 'laminadora_remanejo')]"/>
+                <filter string="Octágono" name="octagono" domain="[('inspection_type', '=', 'octagono')]"/>
+                <filter string="Guillotina" name="guillotina" domain="[('inspection_type', '=', 'guillotina_pegado')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Tipo de Proceso" name="group_type" context="{'group_by': 'inspection_type'}"/>
+                    <filter string="Turno" name="group_shift" context="{'group_by': 'shift'}"/>
+                    <filter string="Planta" name="group_plant" context="{'group_by': 'plant'}"/>
+                    <filter string="Inspector" name="group_inspector" context="{'group_by': 'inspector_id'}"/>
+                    <filter string="Operador" name="group_operator" context="{'group_by': 'operator_id'}"/>
+                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Fecha" name="group_date" context="{'group_by': 'date_inspection:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_quality_inspection_pivot" model="ir.ui.view">
+        <field name="name">quality.inspection.pivot</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <pivot string="Análisis de Inspecciones">
+                <field name="inspection_type" type="row"/>
+                <field name="state" type="col"/>
+                <field name="shift" type="row"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_quality_inspection" model="ir.actions.act_window">
+        <field name="name">Inspecciones</field>
+        <field name="res_model">quality.inspection</field>
+        <field name="view_mode">tree,form,pivot</field>
+        <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear una nueva inspección de calidad
+            </p>
+            <p>Capture los datos de inspección de PP y PT.</p>
+        </field>
+    </record>
+</odoo>

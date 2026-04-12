@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_attribute_template_tree" model="ir.ui.view">
+        <field name="name">quality.attribute.template.tree</field>
+        <field name="model">quality.attribute.template</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="inspection_type"/>
+                <field name="attribute_type"/>
+                <field name="selection_options" invisible="attribute_type != 'selection'"/>
+                <field name="min_value" invisible="attribute_type != 'float'"/>
+                <field name="max_value" invisible="attribute_type != 'float'"/>
+                <field name="unit"/>
+                <field name="is_required"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quality_attribute_template_form" model="ir.ui.view">
+        <field name="name">quality.attribute.template.form</field>
+        <field name="model">quality.attribute.template</field>
+        <field name="arch" type="xml">
+            <form string="Plantilla de Atributo">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="inspection_type"/>
+                            <field name="attribute_type"/>
+                            <field name="is_required"/>
+                        </group>
+                        <group>
+                            <field name="unit"/>
+                            <field name="min_value" invisible="attribute_type != 'float'"/>
+                            <field name="max_value" invisible="attribute_type != 'float'"/>
+                            <field name="selection_options" invisible="attribute_type != 'selection'"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_quality_attribute_template" model="ir.actions.act_window">
+        <field name="name">Plantillas de Atributos</field>
+        <field name="res_model">quality.attribute.template</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear una plantilla de atributo de calidad
+            </p>
+            <p>Configure los atributos de inspección por tipo de proceso.</p>
+        </field>
+    </record>
+</odoo>

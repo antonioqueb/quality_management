@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_corrective_action_tree" model="ir.ui.view">
+        <field name="name">quality.corrective.action.tree</field>
+        <field name="model">quality.corrective.action</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="state == 'cerrada'"
+                  decoration-danger="action_overdue_count > 0"
+                  decoration-muted="state == 'no_procede'">
+                <field name="name"/>
+                <field name="origin_type"/>
+                <field name="responsible_id"/>
+                <field name="date_opened"/>
+                <field name="action_count"/>
+                <field name="action_completed_count"/>
+                <field name="action_overdue_count" decoration-danger="action_overdue_count > 0"/>
+                <field name="progress" widget="progressbar"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'cerrada'"
+                       decoration-info="state in ('abierta', 'en_proceso')"
+                       decoration-muted="state == 'no_procede'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quality_corrective_action_form" model="ir.ui.view">
+        <field name="name">quality.corrective.action.form</field>
+        <field name="model">quality.corrective.action</field>
+        <field name="arch" type="xml">
+            <form string="Acción Correctiva/Preventiva">
+                <header>
+                    <button name="action_open" string="Abrir"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"
+                            groups="quality_management.group_quality_manager"/>
+                    <button name="action_in_progress" string="En Proceso"
+                            type="object"
+                            invisible="state != 'abierta'"/>
+                    <button name="action_close" string="Cerrar"
+                            type="object" class="btn-primary"
+                            invisible="state not in ('abierta', 'en_proceso')"
+                            groups="quality_management.group_quality_manager"/>
+                    <button name="action_no_proceed" string="No Procede"
+                            type="object" class="btn-secondary"
+                            invisible="state != 'borrador'"
+                            groups="quality_management.group_quality_manager"/>
+                    <button name="action_reopen" string="Reabrir"
+                            type="object"
+                            invisible="state not in ('cerrada', 'no_procede')"
+                            groups="quality_management.group_quality_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,abierta,en_proceso,cerrada"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="origin_type"/>
+                            <field name="origin_inspection_id"
+                                   invisible="origin_type != 'inspeccion'"/>
+                            <field name="origin_return_id"
+                                   invisible="origin_type != 'devolucion'"/>
+                            <field name="responsible_id"/>
+                        </group>
+                        <group>
+                            <field name="date_opened"/>
+                            <field name="date_closed"/>
+                            <field name="progress" widget="progressbar"/>
+                        </group>
+                    </group>
+                    <separator string="Descripción del Incumplimiento"/>
+                    <field name="origin_description"/>
+                    <notebook>
+                        <page string="Acciones" name="actions">
+                            <field name="action_line_ids">
+                                <tree editable="bottom">
+                                    <field name="description"/>
+                                    <field name="responsible_id"/>
+                                    <field name="date_due"/>
+                                    <field name="date_completed"/>
+                                    <field name="evidence_ids" widget="many2many_binary"/>
+                                    <field name="delay_days"
+                                           decoration-danger="delay_days > 0"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'completada'"
+                                           decoration-danger="state == 'vencida'"
+                                           decoration-info="state == 'en_proceso'"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_quality_corrective_action_search" model="ir.ui.view">
+        <field name="name">quality.corrective.action.search</field>
+        <field name="model">quality.corrective.action</field>
+        <field name="arch" type="xml">
+            <search string="Acciones Correctivas">
+                <field name="name"/>
+                <field name="responsible_id"/>
+                <filter string="Abiertas" name="open"
+                        domain="[('state', 'in', ('abierta', 'en_proceso'))]"/>
+                <filter string="Con Acciones Vencidas" name="overdue"
+                        domain="[('action_overdue_count', '>', 0)]"/>
+                <filter string="Cerradas" name="closed"
+                        domain="[('state', '=', 'cerrada')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Tipo de Origen" name="group_origin" context="{'group_by': 'origin_type'}"/>
+                    <filter string="Responsable" name="group_resp" context="{'group_by': 'responsible_id'}"/>
+                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_quality_corrective_action" model="ir.actions.act_window">
+        <field name="name">Acciones Correctivas/Preventivas</field>
+        <field name="res_model">quality.corrective.action</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear una acción correctiva o preventiva
+            </p>
+        </field>
+    </record>
+</odoo>

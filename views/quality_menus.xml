@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Menú raíz -->
+    <menuitem id="menu_quality_root"
+              name="Calidad"
+              web_icon="quality_management,static/description/icon.png"
+              sequence="45"/>
+
+    <!-- Inspecciones -->
+    <menuitem id="menu_quality_inspection"
+              name="Inspecciones"
+              parent="menu_quality_root"
+              action="action_quality_inspection"
+              sequence="10"/>
+
+    <!-- Liberaciones -->
+    <menuitem id="menu_quality_releases"
+              name="Liberaciones"
+              parent="menu_quality_root"
+              sequence="20"/>
+
+    <menuitem id="menu_quality_sample_release"
+              name="Muestras"
+              parent="menu_quality_releases"
+              action="action_quality_sample_release"
+              sequence="10"/>
+
+    <menuitem id="menu_quality_drawing_release"
+              name="Planos"
+              parent="menu_quality_releases"
+              action="action_quality_drawing_release"
+              sequence="20"/>
+
+    <!-- Certificados -->
+    <menuitem id="menu_quality_certificate"
+              name="Certificados"
+              parent="menu_quality_root"
+              action="action_quality_certificate"
+              sequence="30"
+              groups="group_quality_manager"/>
+
+    <!-- Acciones Correctivas -->
+    <menuitem id="menu_quality_corrective_action"
+              name="Acciones Correctivas"
+              parent="menu_quality_root"
+              action="action_quality_corrective_action"
+              sequence="40"
+              groups="group_quality_manager"/>
+
+    <!-- Devoluciones -->
+    <menuitem id="menu_quality_customer_return"
+              name="Devoluciones"
+              parent="menu_quality_root"
+              action="action_quality_customer_return"
+              sequence="50"/>
+
+    <!-- Documentos de Cliente -->
+    <menuitem id="menu_quality_customer_document"
+              name="Documentos de Cliente"
+              parent="menu_quality_root"
+              action="action_quality_customer_document"
+              sequence="60"/>
+
+    <!-- Configuración -->
+    <menuitem id="menu_quality_config"
+              name="Configuración"
+              parent="menu_quality_root"
+              sequence="100"
+              groups="group_quality_admin"/>
+
+    <menuitem id="menu_quality_attribute_template"
+              name="Plantillas de Atributos"
+              parent="menu_quality_config"
+              action="action_quality_attribute_template"
+              sequence="10"/>
+</odoo>

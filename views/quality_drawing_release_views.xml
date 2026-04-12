@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_drawing_release_tree" model="ir.ui.view">
+        <field name="name">quality.drawing.release.tree</field>
+        <field name="model">quality.drawing.release</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="state == 'aceptado'"
+                  decoration-danger="state == 'rechazado'"
+                  decoration-info="state == 'en_revision'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="sale_order_id" optional="show"/>
+                <field name="requested_by"/>
+                <field name="inspector_id"/>
+                <field name="date_requested"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'aceptado'"
+                       decoration-danger="state == 'rechazado'"
+                       decoration-info="state == 'en_revision'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quality_drawing_release_form" model="ir.ui.view">
+        <field name="name">quality.drawing.release.form</field>
+        <field name="model">quality.drawing.release</field>
+        <field name="arch" type="xml">
+            <form string="Liberación de Plano">
+                <header>
+                    <button name="action_submit_review" string="Enviar a Revisión"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_accept" string="Liberar"
+                            type="object" class="btn-primary"
+                            invisible="state != 'en_revision'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_reject" string="Rechazar"
+                            type="object" class="btn-danger"
+                            invisible="state != 'en_revision'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_reset_draft" string="Regresar a Borrador"
+                            type="object"
+                            invisible="state not in ('rechazado',)"
+                            groups="quality_management.group_quality_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,en_revision,aceptado"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="sale_order_id"/>
+                            <field name="requested_by"/>
+                        </group>
+                        <group>
+                            <field name="inspector_id"/>
+                            <field name="date_requested"/>
+                            <field name="date_released"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Documentos">
+                            <field name="drawing_attachment_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Rechazo" invisible="state != 'rechazado'">
+                            <field name="rejection_reason" placeholder="Motivo de rechazo o información faltante..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_quality_drawing_release" model="ir.actions.act_window">
+        <field name="name">Liberación de Planos</field>
+        <field name="res_model">quality.drawing.release</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear solicitud de liberación de plano
+            </p>
+        </field>
+    </record>
+</odoo>

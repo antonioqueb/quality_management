@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_quality_certificate" model="ir.actions.report">
+        <field name="name">Certificado de Calidad</field>
+        <field name="model">quality.certificate</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">quality_management.report_quality_certificate_document</field>
+        <field name="report_file">quality_management.report_quality_certificate_document</field>
+        <field name="binding_model_id" ref="model_quality_certificate"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_quality_certificate_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center" style="margin-bottom: 20px;">
+                            <h2>CERTIFICADO DE CALIDAD</h2>
+                            <h4 t-field="doc.name"/>
+                        </div>
+
+                        <table class="table table-bordered" style="margin-bottom: 20px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Cliente:</td>
+                                    <td><span t-field="doc.partner_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Producto:</td>
+                                    <td><span t-field="doc.product_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Tipo de Proceso:</td>
+                                    <td><span t-field="doc.inspection_type"/></td>
+                                </tr>
+                                <tr t-if="doc.folio">
+                                    <td class="fw-bold">Folio de Producción:</td>
+                                    <td><span t-field="doc.folio"/></td>
+                                </tr>
+                                <tr t-if="doc.lot_id">
+                                    <td class="fw-bold">Lote:</td>
+                                    <td><span t-field="doc.lot_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Inspección:</td>
+                                    <td><span t-field="doc.inspection_id.date_inspection" t-options='{"widget": "date"}'/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Certificación:</td>
+                                    <td><span t-field="doc.date_generated"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4 class="text-center" style="margin-bottom: 15px;">Resultados de Inspección</h4>
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr class="table-active">
+                                    <th>Atributo</th>
+                                    <th class="text-center">Valor</th>
+                                    <th class="text-center">Unidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-if="doc.certified_largo">
+                                    <td>Largo</td>
+                                    <td class="text-center"><span t-field="doc.certified_largo"/></td>
+                                    <td class="text-center">mm</td>
+                                </tr>
+                                <tr t-if="doc.certified_ancho">
+                                    <td>Ancho</td>
+                                    <td class="text-center"><span t-field="doc.certified_ancho"/></td>
+                                    <td class="text-center">mm</td>
+                                </tr>
+                                <tr t-if="doc.certified_espesor">
+                                    <td>Espesor</td>
+                                    <td class="text-center"><span t-field="doc.certified_espesor"/></td>
+                                    <td class="text-center">mm</td>
+                                </tr>
+                                <tr t-if="doc.certified_hexagono">
+                                    <td>Hexágono</td>
+                                    <td class="text-center"><span t-field="doc.certified_hexagono"/></td>
+                                    <td class="text-center">mm</td>
+                                </tr>
+                                <tr t-if="doc.certified_resistencia">
+                                    <td>Resistencia</td>
+                                    <td class="text-center"><span t-field="doc.certified_resistencia"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr t-if="doc.certified_apariencia">
+                                    <td>Apariencia</td>
+                                    <td class="text-center"><span t-field="doc.certified_apariencia"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr t-if="doc.certified_humedad">
+                                    <td>Humedad</td>
+                                    <td class="text-center"><span t-field="doc.certified_humedad"/>%</td>
+                                    <td class="text-center">%</td>
+                                </tr>
+                                <tr t-if="doc.certified_pegado">
+                                    <td>Pegado</td>
+                                    <td class="text-center"><span t-field="doc.certified_pegado"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr t-if="doc.certified_retiramiento">
+                                    <td>Retiramiento</td>
+                                    <td class="text-center"><span t-field="doc.certified_retiramiento"/></td>
+                                    <td class="text-center">mm</td>
+                                </tr>
+                                <tr t-if="doc.certified_calibracion">
+                                    <td>Calibración</td>
+                                    <td class="text-center"><span t-field="doc.certified_calibracion"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr t-if="doc.certified_engomado">
+                                    <td>Engomado</td>
+                                    <td class="text-center"><span t-field="doc.certified_engomado"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Atributos adicionales de líneas -->
+                        <t t-if="doc.attribute_ids">
+                            <h5 style="margin-top: 15px;">Atributos Adicionales</h5>
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                    <tr class="table-active">
+                                        <th>Atributo</th>
+                                        <th class="text-center">Valor</th>
+                                        <th class="text-center">Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="doc.attribute_ids" t-as="attr">
+                                        <td><span t-field="attr.name"/></td>
+                                        <td class="text-center">
+                                            <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
+                                            <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
+                                            <span t-if="attr.attribute_type == 'boolean'" t-field="attr.value_boolean"/>
+                                        </td>
+                                        <td class="text-center"><span t-field="attr.result"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <div style="margin-top: 60px;">
+                            <div class="row">
+                                <div class="col-6 text-center">
+                                    <p>____________________________</p>
+                                    <p class="fw-bold"><span t-field="doc.certified_by.name"/></p>
+                                    <p>Responsable de Calidad</p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <p>____________________________</p>
+                                    <p>Sello de la Empresa</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

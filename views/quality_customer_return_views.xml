@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_customer_return_tree" model="ir.ui.view">
+        <field name="name">quality.customer.return.tree</field>
+        <field name="model">quality.customer.return</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="state == 'cerrada'"
+                  decoration-danger="state == 'no_procede'"
+                  decoration-info="state in ('evaluacion_ventas', 'evaluacion_calidad')">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="defect_type"/>
+                <field name="defect_pieces"/>
+                <field name="production_date"/>
+                <field name="days_since_production"/>
+                <field name="date_received"/>
+                <field name="corrective_action_id" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'cerrada'"
+                       decoration-danger="state == 'no_procede'"
+                       decoration-info="state in ('evaluacion_ventas', 'evaluacion_calidad')"
+                       decoration-warning="state == 'en_8d'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quality_customer_return_form" model="ir.ui.view">
+        <field name="name">quality.customer.return.form</field>
+        <field name="model">quality.customer.return</field>
+        <field name="arch" type="xml">
+            <form string="Devolución de Cliente">
+                <header>
+                    <button name="action_submit_sales" string="Registrar / Evaluar"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_submit_quality" string="Enviar a Calidad"
+                            type="object" class="btn-primary"
+                            invisible="state != 'evaluacion_ventas'"/>
+                    <button name="action_generate_8d" string="Generar 8D"
+                            type="object" class="btn-primary"
+                            invisible="state != 'evaluacion_calidad'"
+                            groups="quality_management.group_quality_manager"/>
+                    <button name="action_no_proceed" string="No Procede"
+                            type="object" class="btn-secondary"
+                            invisible="state not in ('evaluacion_ventas', 'evaluacion_calidad')"
+                            groups="quality_management.group_quality_manager"/>
+                    <button name="action_close" string="Cerrar"
+                            type="object" class="btn-primary"
+                            invisible="state != 'en_8d'"
+                            groups="quality_management.group_quality_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,evaluacion_ventas,evaluacion_calidad,en_8d,cerrada"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <div class="alert alert-warning" role="alert"
+                         invisible="is_within_period">
+                        <strong>⚠️ Fuera de periodo:</strong> La fecha de producción
+                        tiene más de 30 días (<field name="days_since_production" nolabel="1"/> días).
+                        Esta devolución podría no proceder.
+                    </div>
+                    <group>
+                        <group string="Datos del Cliente">
+                            <field name="partner_id"/>
+                            <field name="sale_order_id"/>
+                            <field name="date_received"/>
+                            <field name="production_date"/>
+                            <field name="days_since_production"/>
+                            <field name="is_within_period" invisible="1"/>
+                        </group>
+                        <group string="Detalle del Defecto">
+                            <field name="defect_type"/>
+                            <field name="defect_pieces"/>
+                            <field name="affects_functionality"/>
+                        </group>
+                    </group>
+                    <separator string="Motivo de la Devolución"/>
+                    <field name="return_reason"/>
+                    <notebook>
+                        <page string="Evidencia">
+                            <field name="evidence_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Tarimas">
+                            <group>
+                                <field name="pallets_returned"/>
+                                <field name="pallet_return_date"
+                                       invisible="not pallets_returned"/>
+                            </group>
+                        </page>
+                        <page string="Formato de Reclamación">
+                            <group>
+                                <field name="claim_format_id"/>
+                            </group>
+                        </page>
+                        <page string="8D" invisible="not corrective_action_id">
+                            <group>
+                                <field name="corrective_action_id"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_quality_customer_return_search" model="ir.ui.view">
+        <field name="name">quality.customer.return.search</field>
+        <field name="model">quality.customer.return</field>
+        <field name="arch" type="xml">
+            <search string="Devoluciones">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <filter string="Abiertas" name="open"
+                        domain="[('state', 'not in', ('cerrada', 'no_procede'))]"/>
+                <filter string="En 8D" name="in_8d"
+                        domain="[('state', '=', 'en_8d')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Cliente" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Tipo de Defecto" name="group_defect" context="{'group_by': 'defect_type'}"/>
+                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_quality_customer_return" model="ir.actions.act_window">
+        <field name="name">Devoluciones de Clientes</field>
+        <field name="res_model">quality.customer.return</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Registrar una devolución de cliente
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_quality_sample_release" model="ir.sequence">
+            <field name="name">Liberación de Muestras</field>
+            <field name="code">quality.sample.release</field>
+            <field name="prefix">QSR-</field>
+            <field name="padding">4</field>
+        </record>
+
+        <record id="seq_quality_drawing_release" model="ir.sequence">
+            <field name="name">Liberación de Planos</field>
+            <field name="code">quality.drawing.release</field>
+            <field name="prefix">QDR-</field>
+            <field name="padding">4</field>
+        </record>
+
+        <record id="seq_quality_inspection" model="ir.sequence">
+            <field name="name">Inspección de Calidad</field>
+            <field name="code">quality.inspection</field>
+            <field name="prefix">QI-</field>
+            <field name="padding">4</field>
+        </record>
+
+        <record id="seq_quality_certificate" model="ir.sequence">
+            <field name="name">Certificado de Calidad</field>
+            <field name="code">quality.certificate</field>
+            <field name="prefix">QC-</field>
+            <field name="padding">4</field>
+        </record>
+
+        <record id="seq_quality_corrective_action" model="ir.sequence">
+            <field name="name">Acción Correctiva</field>
+            <field name="code">quality.corrective.action</field>
+            <field name="prefix">QCA-</field>
+            <field name="padding">4</field>
+        </record>
+
+        <record id="seq_quality_customer_return" model="ir.sequence">
+            <field name="name">Devolución de Cliente</field>
+            <field name="code">quality.customer.return</field>
+            <field name="prefix">QCR-</field>
+            <field name="padding">4</field>
+        </record>
+
+        <record id="seq_quality_customer_document" model="ir.sequence">
+            <field name="name">Documento de Cliente</field>
+            <field name="code">quality.customer.document</field>
+            <field name="prefix">QCD-</field>
+            <field name="padding">4</field>
+        </record>
+
+        <!-- Email template para certificados -->
+        <record id="email_template_quality_certificate" model="mail.template">
+            <field name="name">Calidad: Envío de Certificado</field>
+            <field name="model_id" ref="model_quality_certificate"/>
+            <field name="subject">Certificado de Calidad {{ object.name }}</field>
+            <field name="email_from">{{ (object.company_id.email or user.email) }}</field>
+            <field name="email_to">{{ object.partner_id.email }}</field>
+            <field name="body_html"><![CDATA[
+<p>Estimado/a {{ object.partner_id.name }},</p>
+<p>Adjuntamos el certificado de calidad <strong>{{ object.name }}</strong>
+correspondiente al producto <strong>{{ object.product_id.name }}</strong>.</p>
+<p>Folio de producción: {{ object.folio or '' }}<br/>
+Lote: {{ object.lot_id.name or '' }}<br/>
+Fecha: {{ object.date_generated }}</p>
+<p>Saludos cordiales,<br/>
+{{ object.certified_by.name }}<br/>
+Departamento de Calidad<br/>
+{{ object.company_id.name }}</p>
+]]></field>
+
+        </record>
+    </data>
+</odoo>

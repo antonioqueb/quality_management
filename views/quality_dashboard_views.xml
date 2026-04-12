@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard action using search defaults for quick filters -->
+    <!-- Note: Full dashboard with counters would require OWL client action.
+         For now we provide pivot/graph views as analysis tools -->
+
+    <record id="view_quality_inspection_graph" model="ir.ui.view">
+        <field name="name">quality.inspection.graph</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <graph string="Inspecciones por Estado" type="bar">
+                <field name="inspection_type"/>
+                <field name="state" type="col"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_quality_corrective_action_graph" model="ir.ui.view">
+        <field name="name">quality.corrective.action.graph</field>
+        <field name="model">quality.corrective.action</field>
+        <field name="arch" type="xml">
+            <graph string="Acciones Correctivas" type="pie">
+                <field name="state"/>
+            </graph>
+        </field>
+    </record>
+</odoo>

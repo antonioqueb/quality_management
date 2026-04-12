@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_certificate_tree" model="ir.ui.view">
+        <field name="name">quality.certificate.tree</field>
+        <field name="model">quality.certificate</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="state == 'enviado'"
+                  decoration-info="state == 'generado'">
+                <field name="name"/>
+                <field name="inspection_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="inspection_type"/>
+                <field name="date_generated"/>
+                <field name="certified_by"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'enviado'"
+                       decoration-info="state == 'generado'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quality_certificate_form" model="ir.ui.view">
+        <field name="name">quality.certificate.form</field>
+        <field name="model">quality.certificate</field>
+        <field name="arch" type="xml">
+            <form string="Certificado de Calidad">
+                <header>
+                    <button name="action_generate" string="Generar Certificado"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_print_certificate" string="Imprimir PDF"
+                            type="object" class="btn-secondary"
+                            invisible="state == 'borrador'"/>
+                    <button name="action_send_email" string="Enviar por Correo"
+                            type="object" class="btn-secondary"
+                            invisible="state == 'borrador'"/>
+                    <button name="action_mark_sent" string="Marcar como Enviado"
+                            type="object"
+                            invisible="state != 'generado'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,generado,enviado"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="inspection_id"/>
+                            <field name="partner_id"/>
+                            <field name="product_id"/>
+                            <field name="inspection_type"/>
+                        </group>
+                        <group>
+                            <field name="folio"/>
+                            <field name="lot_id"/>
+                            <field name="date_generated"/>
+                            <field name="certified_by"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Valores Certificados">
+                            <group>
+                                <group>
+                                    <field name="certified_largo"
+                                           invisible="certified_largo == 0"/>
+                                    <field name="certified_ancho"
+                                           invisible="certified_ancho == 0"/>
+                                    <field name="certified_espesor"
+                                           invisible="certified_espesor == 0"/>
+                                    <field name="certified_hexagono"
+                                           invisible="certified_hexagono == 0"/>
+                                    <field name="certified_resistencia"
+                                           invisible="certified_resistencia == 0"/>
+                                </group>
+                                <group>
+                                    <field name="certified_apariencia"
+                                           invisible="not certified_apariencia"/>
+                                    <field name="certified_humedad"
+                                           invisible="certified_humedad == 0"/>
+                                    <field name="certified_pegado"
+                                           invisible="not certified_pegado"/>
+                                    <field name="certified_retiramiento"
+                                           invisible="certified_retiramiento == 0"/>
+                                    <field name="certified_calibracion"
+                                           invisible="certified_calibracion == 0"/>
+                                    <field name="certified_engomado"
+                                           invisible="not certified_engomado"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Atributos Seleccionados">
+                            <field name="attribute_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="value_float"/>
+                                    <field name="value_char"/>
+                                    <field name="result"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_quality_certificate" model="ir.actions.act_window">
+        <field name="name">Certificados de Calidad</field>
+        <field name="res_model">quality.certificate</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Los certificados se generan desde inspecciones aceptadas
+            </p>
+        </field>
+    </record>
+</odoo>

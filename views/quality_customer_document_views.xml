@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_customer_document_tree" model="ir.ui.view">
+        <field name="name">quality.customer.document.tree</field>
+        <field name="model">quality.customer.document</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="state == 'enviado'"
+                  decoration-info="state == 'en_proceso'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="document_type"/>
+                <field name="requires_dimensions"/>
+                <field name="requested_by"/>
+                <field name="responsible_id"/>
+                <field name="date_requested"/>
+                <field name="date_due"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'enviado'"
+                       decoration-info="state in ('en_proceso', 'completado')"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quality_customer_document_form" model="ir.ui.view">
+        <field name="name">quality.customer.document.form</field>
+        <field name="model">quality.customer.document</field>
+        <field name="arch" type="xml">
+            <form string="Documento de Cliente">
+                <header>
+                    <button name="action_start" string="Iniciar"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_complete" string="Completar"
+                            type="object" class="btn-primary"
+                            invisible="state != 'en_proceso'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_send" string="Marcar como Enviado"
+                            type="object"
+                            invisible="state != 'completado'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,en_proceso,completado,enviado"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="document_type"/>
+                            <field name="requires_dimensions"/>
+                            <field name="requested_by"/>
+                        </group>
+                        <group>
+                            <field name="responsible_id"/>
+                            <field name="date_requested"/>
+                            <field name="date_due"/>
+                            <field name="date_completed"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Descripción adicional del requerimiento..."/>
+                    <notebook>
+                        <page string="Formatos del Cliente">
+                            <field name="client_format_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Documentos Generados">
+                            <field name="result_document_ids" widget="many2many_binary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_quality_customer_document" model="ir.actions.act_window">
+        <field name="name">Documentos de Cliente</field>
+        <field name="res_model">quality.customer.document</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Registrar solicitud de documento de cliente
+            </p>
+        </field>
+    </record>
+</odoo>

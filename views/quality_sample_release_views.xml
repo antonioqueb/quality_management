@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_sample_release_tree" model="ir.ui.view">
+        <field name="name">quality.sample.release.tree</field>
+        <field name="model">quality.sample.release</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="state == 'aceptado'"
+                  decoration-danger="state == 'rechazado'"
+                  decoration-info="state == 'en_inspeccion'">
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="project_task_id"/>
+                <field name="requested_by"/>
+                <field name="inspector_id"/>
+                <field name="date_requested"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'aceptado'"
+                       decoration-danger="state == 'rechazado'"
+                       decoration-info="state == 'en_inspeccion'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quality_sample_release_form" model="ir.ui.view">
+        <field name="name">quality.sample.release.form</field>
+        <field name="model">quality.sample.release</field>
+        <field name="arch" type="xml">
+            <form string="Liberación de Muestra">
+                <header>
+                    <button name="action_submit_inspection" string="Enviar a Inspección"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_accept" string="Liberar (Aceptado)"
+                            type="object" class="btn-primary"
+                            invisible="state != 'en_inspeccion'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_reject" string="Rechazar"
+                            type="object" class="btn-danger"
+                            invisible="state != 'en_inspeccion'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_reset_draft" string="Regresar a Borrador"
+                            type="object"
+                            invisible="state not in ('rechazado',)"
+                            groups="quality_management.group_quality_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,en_inspeccion,aceptado"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="project_task_id"/>
+                            <field name="product_id"/>
+                            <field name="requested_by"/>
+                        </group>
+                        <group>
+                            <field name="inspector_id"/>
+                            <field name="date_requested"/>
+                            <field name="date_inspected"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Atributos de Inspección">
+                            <field name="inspection_line_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="attribute_type"/>
+                                    <field name="value_float" invisible="attribute_type != 'float'"/>
+                                    <field name="value_char" invisible="attribute_type not in ('char', 'selection')"/>
+                                    <field name="value_boolean" invisible="attribute_type != 'boolean'"/>
+                                    <field name="min_value" invisible="attribute_type != 'float'"/>
+                                    <field name="max_value" invisible="attribute_type != 'float'"/>
+                                    <field name="unit"/>
+                                    <field name="result" widget="badge"
+                                           decoration-success="result == 'cumple'"
+                                           decoration-danger="result == 'no_cumple'"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Observaciones">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_quality_sample_release_kanban" model="ir.ui.view">
+        <field name="name">quality.sample.release.kanban</field>
+        <field name="model">quality.sample.release</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="state"/>
+                <field name="requested_by"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold"/>
+                        <field name="product_id"/>
+                        <field name="requested_by"/>
+                        <field name="date_requested"/>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_quality_sample_release" model="ir.actions.act_window">
+        <field name="name">Liberación de Muestras</field>
+        <field name="res_model">quality.sample.release</field>
+        <field name="view_mode">tree,form,kanban</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear solicitud de liberación de muestra
+            </p>
+        </field>
+    </record>
+</odoo>

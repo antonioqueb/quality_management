@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_8d" model="ir.actions.report">
+        <field name="name">Reporte 8D</field>
+        <field name="model">quality.corrective.action</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">quality_management.report_8d_document</field>
+        <field name="report_file">quality_management.report_8d_document</field>
+        <field name="binding_model_id" ref="model_quality_corrective_action"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_8d_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center" style="margin-bottom: 20px;">
+                            <h2>REPORTE 8D</h2>
+                            <h3>ACCIÓN CORRECTIVA / PREVENTIVA</h3>
+                            <h4 t-field="doc.name"/>
+                        </div>
+
+                        <table class="table table-bordered" style="margin-bottom: 20px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Referencia:</td>
+                                    <td><span t-field="doc.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Tipo de Origen:</td>
+                                    <td><span t-field="doc.origin_type"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Apertura:</td>
+                                    <td><span t-field="doc.date_opened"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Responsable General:</td>
+                                    <td><span t-field="doc.responsible_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Estado:</td>
+                                    <td><span t-field="doc.state"/></td>
+                                </tr>
+                                <tr t-if="doc.date_closed">
+                                    <td class="fw-bold">Fecha de Cierre:</td>
+                                    <td><span t-field="doc.date_closed"/></td>
+                                </tr>
+                                <tr t-if="doc.origin_return_id">
+                                    <td class="fw-bold">Devolución:</td>
+                                    <td><span t-field="doc.origin_return_id.name"/></td>
+                                </tr>
+                                <tr t-if="doc.origin_inspection_id">
+                                    <td class="fw-bold">Inspección:</td>
+                                    <td><span t-field="doc.origin_inspection_id.name"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>D1 - Descripción del Problema</h4>
+                        <div style="border: 1px solid #dee2e6; padding: 10px; margin-bottom: 15px; min-height: 60px;">
+                            <span t-field="doc.origin_description"/>
+                        </div>
+
+                        <!-- Datos de devolución si aplica -->
+                        <t t-if="doc.origin_return_id">
+                            <h4>D2 - Datos de la Reclamación</h4>
+                            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" style="width: 30%;">Cliente:</td>
+                                        <td><span t-field="doc.origin_return_id.partner_id.name"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Tipo de Defecto:</td>
+                                        <td><span t-field="doc.origin_return_id.defect_type"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Piezas Afectadas:</td>
+                                        <td><span t-field="doc.origin_return_id.defect_pieces"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Afecta Funcionalidad:</td>
+                                        <td><span t-field="doc.origin_return_id.affects_functionality"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <h4>D3 - Plan de Acciones</h4>
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr class="table-active">
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 35%;">Acción</th>
+                                    <th>Responsable</th>
+                                    <th>Fecha Límite</th>
+                                    <th>Fecha Real</th>
+                                    <th>Atraso</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="doc.action_line_ids" t-as="line">
+                                    <td><t t-esc="line_index + 1"/></td>
+                                    <td><span t-field="line.description"/></td>
+                                    <td><span t-field="line.responsible_id.name"/></td>
+                                    <td><span t-field="line.date_due"/></td>
+                                    <td><span t-field="line.date_completed"/></td>
+                                    <td>
+                                        <t t-if="line.delay_days > 0">
+                                            <span t-field="line.delay_days"/> días
+                                        </t>
+                                    </td>
+                                    <td><span t-field="line.state"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div style="margin-top: 40px;">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p class="fw-bold"><span t-field="doc.responsible_id.name"/></p>
+                                    <p>Responsable</p>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p>Calidad</p>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p>Dirección</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
