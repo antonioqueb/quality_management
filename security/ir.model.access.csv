@@ -38,3 +38,4 @@ access_quality_customer_document_sale,quality.customer.document.sale,model_quali
 access_quality_customer_document_user,quality.customer.document.user,model_quality_customer_document,group_quality_user,1,0,0,0
 access_quality_certificate_wizard_inspector,quality.certificate.wizard.inspector,model_quality_certificate_wizard,group_quality_inspector,1,1,1,1
 access_quality_certificate_wizard_manager,quality.certificate.wizard.manager,model_quality_certificate_wizard,group_quality_manager,1,1,1,1
+access_product_template_quality_manager,product.template.quality.manager,product.model_product_template,quality_management.group_quality_manager,1,1,0,0

@@ -12,6 +12,11 @@ class QualityAttributeTemplate(models.Model):
         'quality.process.type', 'Tipo de Proceso',
         ondelete='set null'
     )
+    product_tmpl_id = fields.Many2one(
+        'product.template', 'Producto',
+        ondelete='cascade',
+        help='Si se especifica, esta plantilla aplica solo a este producto.'
+    )
     # Legacy - se mantiene para filtros rápidos
     inspection_type = fields.Selection([
         ('laminadora_remanejo', 'Laminadora y Remanejo'),
@@ -23,7 +28,7 @@ class QualityAttributeTemplate(models.Model):
     attribute_type = fields.Selection([
         ('float', 'Numérico'),
         ('selection', 'Selección'),
-        ('boolean', 'Sí/No'),
+        ('boolean', 'Cumple/No Cumple'),
         ('char', 'Texto'),
     ], string='Tipo de Dato', required=True, default='float')
     selection_options = fields.Char(

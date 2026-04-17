@@ -55,6 +55,8 @@
         'views/quality_customer_document_views.xml',
         'views/quality_dashboard_views.xml',
         'views/res_company_views.xml',
+        'views/quality_attribute_template_views.xml',
+        'views/product_views.xml',
         # Inherited views (integration with sale, contacts, mrp)
         'views/quality_inherited_views.xml',
         # Menus (AFTER views)

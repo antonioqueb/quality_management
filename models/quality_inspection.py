@@ -202,17 +202,31 @@ class QualityInspection(models.Model):
 
     @api.constrains('resistencia', 'resistencia_na', 'show_resistencia')
     def _check_resistencia(self):
-        for rec in self:
-            # Si aplica el campo y no está marcado "No aplica", no validamos error
-            # (solo dejamos pasar). Esta restricción explícita evita error si NA=True
-            # y resistencia queda en 0.
-            pass
+        # Si resistencia_na=True se permite dejar resistencia en 0 sin error.
+        # No se necesita validación adicional; se deja explícito como doc.
+        pass
 
-    @api.onchange('process_type_id')
-    def _onchange_process_type_id(self):
-        if self.process_type_id and self.process_type_id.attribute_template_ids:
-            lines = []
-            for tmpl in self.process_type_id.attribute_template_ids:
+    @api.onchange('process_type_id', 'product_id')
+    def _onchange_load_attribute_templates(self):
+        """Carga plantillas del tipo de proceso (sin producto específico) +
+        plantillas específicas del producto seleccionado."""
+        if not self.process_type_id and not self.product_id:
+            return
+        templates = self.env['quality.attribute.template']
+        # Plantillas del tipo de proceso (que no estén atadas a un producto)
+        if self.process_type_id:
+            templates |= self.process_type_id.attribute_template_ids.filtered(
+                lambda t: not t.product_tmpl_id and t.active
+            )
+        # Plantillas específicas del producto
+        if self.product_id and self.product_id.product_tmpl_id:
+            templates |= self.env['quality.attribute.template'].search([
+                ('product_tmpl_id', '=', self.product_id.product_tmpl_id.id),
+                ('active', '=', True),
+            ])
+        if templates:
+            lines = [(5, 0, 0)]  # limpia las líneas existentes
+            for tmpl in templates:
                 lines.append((0, 0, {
                     'attribute_template_id': tmpl.id,
                     'name': tmpl.name,

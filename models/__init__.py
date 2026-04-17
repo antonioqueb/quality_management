@@ -13,3 +13,4 @@ from . import quality_action_line
 from . import quality_customer_return
 from . import quality_customer_document
 from . import quality_inherited_models
+from . import product_template
