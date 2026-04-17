@@ -20,12 +20,16 @@ class QualityInspectionLine(models.Model):
     attribute_type = fields.Selection([
         ('float', 'Numérico'),
         ('selection', 'Selección'),
-        ('boolean', 'Sí/No'),
+        ('boolean', 'Cumple/No Cumple'),
         ('char', 'Texto'),
     ], string='Tipo de Dato', default='float')
     value_float = fields.Float('Valor Numérico')
     value_char = fields.Char('Valor Texto')
-    value_boolean = fields.Boolean('Valor Sí/No')
+    value_boolean = fields.Boolean('Valor Sí/No')  # legacy
+    value_cumple = fields.Selection([
+        ('cumple', 'Cumple'),
+        ('no_cumple', 'No Cumple'),
+    ], string='Valor Cumple/No Cumple')
     value_selection = fields.Char('Valor Selección')
     min_value = fields.Float('Mínimo')
     max_value = fields.Float('Máximo')
@@ -47,3 +51,9 @@ class QualityInspectionLine(models.Model):
                     line.result = 'no_cumple'
                 elif line.value_float:
                     line.result = 'cumple'
+
+    @api.onchange('value_cumple', 'attribute_type')
+    def _onchange_value_cumple(self):
+        for line in self:
+            if line.attribute_type == 'boolean' and line.value_cumple:
+                line.result = line.value_cumple

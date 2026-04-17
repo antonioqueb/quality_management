@@ -69,6 +69,42 @@ class ResPartnerQuality(models.Model):
         for rec in self:
             rec.quality_inspection_count = mapped.get(rec.id, 0)
 
+    @api.depends('name', 'vat', 'email', 'city', 'ref', 'parent_id')
+    @api.depends_context('show_vat', 'show_email')
+    def _compute_display_name(self):
+        """Diferenciar clientes con mismo nombre en el dropdown de calidad."""
+        show_vat = self.env.context.get('show_vat')
+        show_email = self.env.context.get('show_email')
+        if not (show_vat or show_email):
+            return super()._compute_display_name()
+        # Detectar duplicados por nombre
+        names = [p.name for p in self if p.name]
+        duplicates = set()
+        if names:
+            groups = self.env['res.partner']._read_group(
+                [('name', 'in', names)],
+                ['name'], ['__count'],
+            )
+            duplicates = {name for name, count in groups if count > 1}
+        for partner in self:
+            base = partner.name or ''
+            if partner.parent_id:
+                base = f"{partner.parent_id.name}, {base}"
+            # Solo agrega identificador si hay homónimos
+            if partner.name in duplicates:
+                extras = []
+                if show_vat and partner.vat:
+                    extras.append(partner.vat)
+                elif partner.ref:
+                    extras.append(partner.ref)
+                elif partner.city:
+                    extras.append(partner.city)
+                elif show_email and partner.email:
+                    extras.append(partner.email)
+                if extras:
+                    base = f"{base} ({' · '.join(extras)})"
+            partner.display_name = base or _('Sin nombre')
+
     def action_view_quality_certificates(self):
         self.ensure_one()
         return {

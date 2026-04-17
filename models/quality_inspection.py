@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from datetime import timedelta
 
 
@@ -66,6 +66,9 @@ class QualityInspection(models.Model):
     plant = fields.Selection([
         ('planta_1', 'Planta 1'),
         ('planta_2', 'Planta 2'),
+        ('planta_3', 'Planta 3'),
+        ('planta_6', 'Planta 6'),
+        ('planta_7', 'Planta 7'),
     ], string='Planta', required=True)
     inspector_id = fields.Many2one(
         'res.users', 'Inspector de Calidad',
@@ -93,15 +96,31 @@ class QualityInspection(models.Model):
     # ── Campos de medición ──
     largo = fields.Float('Largo (mm)')
     ancho = fields.Float('Ancho (mm)')
-    espesor = fields.Float('Espesor (mm)')
-    hexagono = fields.Float('Hexágono')
-    resistencia = fields.Float('Resistencia')
+    espesor = fields.Float('Espesor')
+    espesor_unit = fields.Selection([
+        ('in', 'Pulgadas (in)'),
+        ('mm', 'Milímetros (mm)'),
+    ], string='Unidad Espesor', default='in')
+    espesor_label = fields.Char(
+        'Etiqueta Espesor', compute='_compute_espesor_label', store=False
+    )
+    hexagono = fields.Selection([
+        ('tipo_1', 'Tipo 1'),
+        ('tipo_2', 'Tipo 2'),
+        ('tipo_3', 'Tipo 3'),
+        ('tipo_4', 'Tipo 4'),
+    ], string='Hexágono')
+    resistencia = fields.Float('Resistencia (Lbf)')
+    resistencia_na = fields.Boolean('Resistencia No Aplica')
     apariencia = fields.Selection([
-        ('buena', 'Buena'),
-        ('regular', 'Regular'),
-        ('mala', 'Mala'),
+        ('cumple', 'Cumple'),
+        ('no_cumple', 'No Cumple'),
     ], string='Apariencia')
     humedad_pct = fields.Float('% Humedad')
+    ranurado_unit = fields.Selection([
+        ('mm', 'Milímetros (mm)'),
+        ('in', 'Pulgadas (in)'),
+    ], string='Unidad Ranurado', default='mm')
     ranurado_ids = fields.One2many(
         'quality.inspection.ranurado', 'inspection_id',
         string='Capturas de Ranurado'
@@ -167,6 +186,27 @@ class QualityInspection(models.Model):
     def _compute_certificate_count(self):
         for rec in self:
             rec.certificate_count = len(rec.certificate_ids)
+
+    @api.depends('espesor_unit')
+    def _compute_espesor_label(self):
+        for rec in self:
+            if rec.espesor_unit == 'mm':
+                rec.espesor_label = 'Espesor (mm)'
+            else:
+                rec.espesor_label = 'Espesor (in)'
+
+    @api.onchange('resistencia_na')
+    def _onchange_resistencia_na(self):
+        if self.resistencia_na:
+            self.resistencia = 0.0
+
+    @api.constrains('resistencia', 'resistencia_na', 'show_resistencia')
+    def _check_resistencia(self):
+        for rec in self:
+            # Si aplica el campo y no está marcado "No aplica", no validamos error
+            # (solo dejamos pasar). Esta restricción explícita evita error si NA=True
+            # y resistencia queda en 0.
+            pass
 
     @api.onchange('process_type_id')
     def _onchange_process_type_id(self):

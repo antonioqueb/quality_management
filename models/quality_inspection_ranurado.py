@@ -11,7 +11,11 @@ class QualityInspectionRanurado(models.Model):
         required=True, ondelete='cascade'
     )
     sequence = fields.Integer('N°', default=1)
-    medida = fields.Float('Medida (mm)', required=True)
+    medida = fields.Float('Medida', required=True)
+    unidad = fields.Selection([
+        ('mm', 'mm'),
+        ('in', 'in'),
+    ], string='Unidad', default='mm', required=True)
     resultado = fields.Selection([
         ('cumple', 'Cumple'),
         ('no_cumple', 'No Cumple'),

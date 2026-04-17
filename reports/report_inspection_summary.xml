@@ -72,11 +72,13 @@
                             <h4>Medidas - <span t-field="doc.process_type_id.name"/></h4>
                             <table class="table table-bordered table-sm">
                                 <thead><tr class="table-active">
-                                    <th t-if="doc.show_largo">Largo</th>
-                                    <th t-if="doc.show_ancho">Ancho</th>
-                                    <th t-if="doc.show_espesor">Espesor</th>
+                                    <th t-if="doc.show_largo">Largo (mm)</th>
+                                    <th t-if="doc.show_ancho">Ancho (mm)</th>
+                                    <th t-if="doc.show_espesor">
+                                        Espesor (<t t-esc="doc.espesor_unit or 'in'"/>)
+                                    </th>
                                     <th t-if="doc.show_hexagono">Hexágono</th>
-                                    <th t-if="doc.show_resistencia">Resistencia</th>
+                                    <th t-if="doc.show_resistencia">Resistencia (Lbf)</th>
                                     <th t-if="doc.show_apariencia">Apariencia</th>
                                     <th t-if="doc.show_humedad">% Humedad</th>
                                     <th t-if="doc.show_pegado">Pegado</th>
@@ -87,9 +89,16 @@
                                 <tbody><tr>
                                     <td t-if="doc.show_largo" class="text-center"><span t-field="doc.largo"/></td>
                                     <td t-if="doc.show_ancho" class="text-center"><span t-esc="doc.ancho or doc.oct_ancho"/></td>
-                                    <td t-if="doc.show_espesor" class="text-center"><span t-esc="doc.espesor or doc.oct_espesor"/></td>
-                                    <td t-if="doc.show_hexagono" class="text-center"><span t-esc="doc.hexagono or doc.oct_hexagono"/></td>
-                                    <td t-if="doc.show_resistencia" class="text-center"><span t-field="doc.resistencia"/></td>
+                                    <td t-if="doc.show_espesor" class="text-center">
+                                        <span t-esc="doc.espesor or doc.oct_espesor"/>
+                                    </td>
+                                    <td t-if="doc.show_hexagono" class="text-center">
+                                        <span t-field="doc.hexagono"/>
+                                    </td>
+                                    <td t-if="doc.show_resistencia" class="text-center">
+                                        <t t-if="doc.resistencia_na">N/A</t>
+                                        <t t-else=""><span t-field="doc.resistencia"/></t>
+                                    </td>
                                     <td t-if="doc.show_apariencia" class="text-center"><span t-field="doc.apariencia"/></td>
                                     <td t-if="doc.show_humedad" class="text-center"><span t-field="doc.humedad_pct"/>%</td>
                                     <td t-if="doc.show_pegado" class="text-center"><span t-esc="doc.pegado_result or doc.oct_pegado or ''"/></td>
@@ -138,12 +147,13 @@
                             <h5>Ranurado</h5>
                             <table class="table table-bordered table-sm">
                                 <thead><tr class="table-active">
-                                    <th>N°</th><th>Medida (mm)</th><th>Resultado</th>
+                                    <th>N°</th><th>Medida</th><th>Unidad</th><th>Resultado</th>
                                 </tr></thead>
                                 <tbody>
                                     <tr t-foreach="doc.ranurado_ids" t-as="r">
                                         <td><span t-field="r.sequence"/></td>
                                         <td class="text-center"><span t-field="r.medida"/></td>
+                                        <td class="text-center"><span t-field="r.unidad"/></td>
                                         <td class="text-center"><span t-field="r.resultado"/></td>
                                     </tr>
                                 </tbody>
@@ -180,7 +190,7 @@
                                         <td class="text-center">
                                             <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
                                             <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
-                                            <span t-if="attr.attribute_type == 'boolean'" t-field="attr.value_boolean"/>
+                                            <span t-if="attr.attribute_type == 'boolean'" t-field="attr.value_cumple"/>
                                         </td>
                                         <td class="text-center">
                                             <t t-if="attr.min_value or attr.max_value">
@@ -202,6 +212,9 @@
                                 </div>
                                 <div class="col-6 text-center">
                                     <p>____________________________</p>
+                                    <p class="fw-bold" t-if="doc.supervisor_id">
+                                        <span t-field="doc.supervisor_id.name"/>
+                                    </p>
                                     <p>Supervisor</p>
                                 </div>
                             </div>

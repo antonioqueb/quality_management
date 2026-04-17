@@ -13,7 +13,7 @@
                 <field name="partner_id"/>
                 <field name="folio"/>
                 <field name="shift"/>
-                <field name="inspector_id"/>
+                <field name="inspector_id" widget="many2one_avatar_user"/>
                 <field name="date_inspection"/>
                 <field name="is_pp" optional="show"/>
                 <field name="is_pt" optional="show"/>
@@ -94,17 +94,26 @@
                     <group>
                         <group string="Datos Generales">
                             <field name="process_type_id"/>
-                            <field name="product_id"/>
-                            <field name="production_order_id"/>
-                            <field name="lot_id"/>
+                            <field name="product_id"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                            <field name="production_order_id"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True, 'no_open': False}"/>
+                            <field name="lot_id"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True, 'no_open': False}"/>
                             <field name="folio"/>
                             <field name="code"/>
                         </group>
                         <group string="Personal y Ubicación">
-                            <field name="operator_id"/>
-                            <field name="supervisor_id"/>
-                            <field name="inspector_id"/>
-                            <field name="partner_id"/>
+                            <field name="operator_id"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                            <field name="supervisor_id"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                            <field name="inspector_id"
+                                   widget="many2one_avatar_user"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                            <field name="partner_id"
+                                   context="{'show_vat': True, 'show_email': True}"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="shift"/>
                             <field name="plant"/>
                             <field name="date_inspection"/>
@@ -126,12 +135,24 @@
                                 <group string="Medidas Dimensionales">
                                     <field name="largo" invisible="not show_largo"/>
                                     <field name="ancho" invisible="not show_ancho"/>
-                                    <field name="espesor" invisible="not show_espesor"/>
+                                    <label for="espesor" string="Espesor" invisible="not show_espesor"/>
+                                    <div class="o_row" invisible="not show_espesor">
+                                        <field name="espesor"/>
+                                        <field name="espesor_unit" nolabel="1" class="oe_inline"/>
+                                    </div>
                                     <field name="hexagono" invisible="not show_hexagono"/>
                                 </group>
                                 <group string="Propiedades">
-                                    <field name="resistencia" invisible="not show_resistencia"/>
-                                    <field name="apariencia" invisible="not show_apariencia"/>
+                                    <label for="resistencia" string="Resistencia (Lbf)" invisible="not show_resistencia"/>
+                                    <div class="o_row" invisible="not show_resistencia">
+                                        <field name="resistencia"
+                                               readonly="resistencia_na"
+                                               invisible="resistencia_na"/>
+                                        <field name="resistencia_na" nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2" invisible="not resistencia_na">No Aplica</span>
+                                        <label for="resistencia_na" string="No Aplica" class="ms-2 oe_inline" invisible="resistencia_na"/>
+                                    </div>
+                                    <field name="apariencia" invisible="not show_apariencia" widget="radio"/>
                                     <field name="humedad_pct" invisible="not show_humedad"/>
                                     <field name="pegado_result" invisible="not show_pegado"/>
                                     <field name="oct_retiramiento" invisible="not show_retiramiento"/>
@@ -142,10 +163,14 @@
                         </page>
                         <!-- Ranurado -->
                         <page string="Ranurado" invisible="not show_ranurado">
-                            <field name="ranurado_ids">
+                            <group>
+                                <field name="ranurado_unit" string="Unidad predeterminada"/>
+                            </group>
+                            <field name="ranurado_ids" context="{'default_unidad': ranurado_unit}">
                                 <list editable="bottom">
                                     <field name="sequence"/>
-                                    <field name="medida"/>
+                                    <field name="medida" string="Medida"/>
+                                    <field name="unidad" string="Unidad"/>
                                     <field name="resultado" widget="badge"
                                            decoration-success="resultado == 'cumple'"
                                            decoration-danger="resultado == 'no_cumple'"/>
@@ -178,7 +203,8 @@
                                 <group string="Papel" invisible="not show_papel">
                                     <field name="papel_ancho"/>
                                     <field name="papel_gramaje"/>
-                                    <field name="papel_proveedor_id"/>
+                                    <field name="papel_proveedor_id"
+                                           options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                                 </group>
                             </group>
                             <group invisible="not show_adhesivo">
@@ -197,7 +223,12 @@
                                     <field name="attribute_type"/>
                                     <field name="value_float" invisible="attribute_type != 'float'"/>
                                     <field name="value_char" invisible="attribute_type not in ('char', 'selection')"/>
-                                    <field name="value_boolean" invisible="attribute_type != 'boolean'" widget="boolean_toggle"/>
+                                    <field name="value_cumple"
+                                           string="Cumple/No Cumple"
+                                           invisible="attribute_type != 'boolean'"
+                                           widget="badge"
+                                           decoration-success="value_cumple == 'cumple'"
+                                           decoration-danger="value_cumple == 'no_cumple'"/>
                                     <field name="min_value" invisible="attribute_type != 'float'"/>
                                     <field name="max_value" invisible="attribute_type != 'float'"/>
                                     <field name="unit"/>

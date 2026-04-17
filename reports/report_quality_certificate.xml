@@ -76,17 +76,19 @@
                                 <tr t-if="doc.certified_espesor">
                                     <td>Espesor</td>
                                     <td class="text-center"><span t-field="doc.certified_espesor"/></td>
-                                    <td class="text-center">mm</td>
+                                    <td class="text-center">
+                                        <span t-esc="doc.inspection_id.espesor_unit or 'in'"/>
+                                    </td>
                                 </tr>
                                 <tr t-if="doc.certified_hexagono">
                                     <td>Hexágono</td>
                                     <td class="text-center"><span t-field="doc.certified_hexagono"/></td>
-                                    <td class="text-center">mm</td>
+                                    <td class="text-center">-</td>
                                 </tr>
                                 <tr t-if="doc.certified_resistencia">
                                     <td>Resistencia</td>
                                     <td class="text-center"><span t-field="doc.certified_resistencia"/></td>
-                                    <td class="text-center">-</td>
+                                    <td class="text-center">Lbf</td>
                                 </tr>
                                 <tr t-if="doc.certified_apariencia">
                                     <td>Apariencia</td>
@@ -137,7 +139,7 @@
                                         <td class="text-center">
                                             <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
                                             <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
-                                            <span t-if="attr.attribute_type == 'boolean'" t-field="attr.value_boolean"/>
+                                            <span t-if="attr.attribute_type == 'boolean'" t-field="attr.value_cumple"/>
                                         </td>
                                         <td class="text-center"><span t-field="attr.result"/></td>
                                     </tr>
@@ -153,8 +155,17 @@
                                     <p>Responsable de Calidad</p>
                                 </div>
                                 <div class="col-6 text-center">
-                                    <p>____________________________</p>
-                                    <p>Sello de la Empresa</p>
+                                    <t t-if="doc.company_id.quality_stamp">
+                                        <img t-att-src="'data:image/png;base64,%s' % doc.company_id.quality_stamp.decode('utf-8')"
+                                             style="max-height: 120px; max-width: 200px;"
+                                             alt="Sello de la Empresa"/>
+                                    </t>
+                                    <t t-else="">
+                                        <div style="height: 120px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
+                                            <span class="text-muted">Sello de la Empresa</span>
+                                        </div>
+                                    </t>
+                                    <p class="fw-bold mt-2">Sello de la Empresa</p>
                                 </div>
                             </div>
                         </div>
