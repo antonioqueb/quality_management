@@ -16,6 +16,71 @@ from . import wizards
     "website": "https://alphaqueb.com",
     "license": "LGPL-3",
     "depends": [
+        "base",
+        "sales_team",
+        "web", "mail", "project", "mrp", "sale", "stock",
+        "product", "contacts", "hr",
+    ],
+    "data": [
+        "security/quality_groups.xml",
+        "security/ir.model.access.csv",
+        "security/quality_rules.xml",
+        "data/sequence_data.xml",
+        "data/process_type_data.xml",
+        "data/quality_attribute_preset_data.xml",
+        "data/quality_hardening_data.xml",
+        "data/cron_data.xml",
+        "wizards/certificate_wizard_views.xml",
+        "views/quality_process_type_views.xml",
+        "views/quality_attribute_template_views.xml",
+        "views/quality_sample_release_views.xml",
+        "views/quality_drawing_release_views.xml",
+        "views/quality_inspection_views.xml",
+        "views/quality_hardening_views.xml",
+        "views/quality_certificate_views.xml",
+        "views/quality_corrective_action_views.xml",
+        "views/quality_customer_return_views.xml",
+        "views/quality_customer_document_views.xml",
+        "views/quality_dashboard_views.xml",
+        "views/quality_troquel_views.xml",
+        "views/res_company_views.xml",
+        "views/product_views.xml",
+        "views/quality_inherited_views.xml",
+        "views/quality_menus.xml",
+        "reports/report_quality_certificate.xml",
+        "reports/report_8d.xml",
+        "reports/report_inspection_summary.xml",
+        "reports/report_sample_release.xml",
+        "reports/report_drawing_release.xml",
+        "reports/report_customer_return.xml",
+        "reports/report_customer_document.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "quality_management/static/src/css/quality_pdf_viewer.css",
+            "quality_management/static/src/css/quality_evidence_viewer.css",
+            "quality_management/static/src/js/evidence_viewer_widget.js",
+            "quality_management/static/src/xml/evidence_viewer_widget.xml",
+        ],
+    },
+    "installable": True,
+    "application": True,
+    "auto_install": False,
+}
+```
+
+## ./_backup_before_quality_patch_20260507_141515/__manifest__.py
+```py
+# -*- coding: utf-8 -*-
+{
+    "name": "Gestión de Calidad - Hexágonos Mexicanos",
+    "version": "18.0.3.0.0",
+    "category": "Manufacturing/Quality",
+    "summary": "Gestión integral de calidad - Hexágonos (req. Feb-26)",
+    "author": "Alphaqueb Consulting SAS",
+    "website": "https://alphaqueb.com",
+    "license": "LGPL-3",
+    "depends": [
         "base", "mail", "project", "mrp", "sale", "stock",
         "product", "contacts", "hr",
     ],
@@ -63,6 +128,929 @@ from . import wizards
     "application": True,
     "auto_install": False,
 }
+```
+
+## ./_backup_before_quality_patch_20260507_141515/models/__init__.py
+```py
+from . import quality_process_type
+from . import res_company
+from . import quality_attribute_template
+from . import quality_sample_release
+from . import quality_drawing_release
+from . import quality_drawing_modification
+from . import quality_inspection
+from . import quality_inspection_line
+from . import quality_inspection_ranurado
+from . import quality_inspection_troquelado
+from . import quality_certificate
+from . import quality_corrective_action
+from . import quality_action_line
+from . import quality_5why
+from . import quality_ishikawa
+from . import quality_work_team
+from . import quality_customer_return
+from . import quality_customer_document
+from . import quality_troquel
+from . import quality_inherited_models
+from . import product_template
+```
+
+## ./_backup_before_quality_patch_20260507_141515/reports/report_drawing_release.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_drawing_release" model="ir.actions.report">
+        <field name="name">Liberación de Plano</field>
+        <field name="model">quality.drawing.release</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">quality_management.report_drawing_release_document</field>
+        <field name="report_file">quality_management.report_drawing_release_document</field>
+        <field name="binding_model_id" ref="model_quality_drawing_release"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_drawing_release_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center" style="margin-bottom: 20px;">
+                            <h2>LIBERACIÓN DE PLANO</h2>
+                            <h4 t-field="doc.name"/>
+                        </div>
+
+                        <t t-if="doc.state == 'aceptado'">
+                            <div class="text-center" style="margin-bottom: 15px;">
+                                <span style="background-color: #28a745; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
+                                    ✅ PLANO LIBERADO
+                                </span>
+                            </div>
+                        </t>
+                        <t t-if="doc.state == 'rechazado'">
+                            <div class="text-center" style="margin-bottom: 15px;">
+                                <span style="background-color: #dc3545; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
+                                    ❌ PLANO RECHAZADO
+                                </span>
+                            </div>
+                        </t>
+
+                        <table class="table table-bordered" style="margin-bottom: 20px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Referencia:</td>
+                                    <td><span t-field="doc.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Cliente:</td>
+                                    <td><span t-field="doc.partner_id.name"/></td>
+                                </tr>
+                                <tr t-if="doc.sale_order_id">
+                                    <td class="fw-bold">Orden de Venta:</td>
+                                    <td><span t-field="doc.sale_order_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Solicitante (Ventas):</td>
+                                    <td><span t-field="doc.requested_by.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Inspector de Calidad:</td>
+                                    <td><span t-field="doc.inspector_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Solicitud:</td>
+                                    <td><span t-field="doc.date_requested"/></td>
+                                </tr>
+                                <tr t-if="doc.date_released">
+                                    <td class="fw-bold">Fecha de Liberación:</td>
+                                    <td><span t-field="doc.date_released"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Estado:</td>
+                                    <td><span t-field="doc.state"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <t t-if="doc.state == 'rechazado' and doc.rejection_reason">
+                            <h4>Motivo de Rechazo</h4>
+                            <div style="border: 2px solid #dc3545; padding: 10px; margin-bottom: 15px; min-height: 40px; background-color: #fff5f5;">
+                                <span t-field="doc.rejection_reason"/>
+                            </div>
+                        </t>
+
+                        <div style="margin-top: 50px;">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p class="fw-bold"><span t-field="doc.requested_by.name"/></p>
+                                    <p>Solicitante (Ventas)</p>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p class="fw-bold"><span t-field="doc.inspector_id.name"/></p>
+                                    <p>Inspector de Calidad</p>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <p>____________________________</p>
+                                    <p>Vo. Bo. Gerencia</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
+```
+
+## ./_backup_before_quality_patch_20260507_141515/reports/report_quality_certificate.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_quality_certificate" model="ir.actions.report">
+        <field name="name">Certificado de Calidad</field>
+        <field name="model">quality.certificate</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">quality_management.report_quality_certificate_document</field>
+        <field name="report_file">quality_management.report_quality_certificate_document</field>
+        <field name="binding_model_id" ref="model_quality_certificate"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_quality_certificate_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <div class="text-center" style="margin-bottom: 20px;">
+                            <h2>CERTIFICADO DE CALIDAD</h2>
+                            <h4 t-field="doc.name"/>
+                        </div>
+
+                        <table class="table table-bordered" style="margin-bottom: 20px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Cliente:</td>
+                                    <td><span t-field="doc.partner_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Producto:</td>
+                                    <td><span t-field="doc.product_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Tipo de Proceso:</td>
+                                    <td><span t-field="doc.process_type_id.name"/></td>
+                                </tr>
+                                <tr t-if="doc.folio">
+                                    <td class="fw-bold">Folio de Producción:</td>
+                                    <td><span t-field="doc.folio"/></td>
+                                </tr>
+                                <tr t-if="doc.lot_id">
+                                    <td class="fw-bold">Lote:</td>
+                                    <td><span t-field="doc.lot_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Inspección:</td>
+                                    <td><span t-field="doc.inspection_id.date_inspection" t-options='{"widget": "date"}'/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Certificación:</td>
+                                    <td><span t-field="doc.date_generated"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4 class="text-center" style="margin-bottom: 15px;">Resultados de Inspección</h4>
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr class="table-active">
+                                    <th>Atributo</th>
+                                    <th class="text-center">Valor</th>
+                                    <th class="text-center">Unidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-if="doc.certified_largo">
+                                    <td>Largo</td>
+                                    <td class="text-center"><span t-field="doc.certified_largo"/></td>
+                                    <td class="text-center">mm</td>
+                                </tr>
+                                <tr t-if="doc.certified_ancho">
+                                    <td>Ancho</td>
+                                    <td class="text-center"><span t-field="doc.certified_ancho"/></td>
+                                    <td class="text-center">mm</td>
+                                </tr>
+                                <tr t-if="doc.certified_espesor">
+                                    <td>Espesor</td>
+                                    <td class="text-center"><span t-field="doc.certified_espesor"/></td>
+                                    <td class="text-center">
+                                        <span t-esc="doc.inspection_id.espesor_unit or 'in'"/>
+                                    </td>
+                                </tr>
+                                <tr t-if="doc.certified_hexagono">
+                                    <td>Hexágono</td>
+                                    <td class="text-center"><span t-field="doc.certified_hexagono"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr t-if="doc.certified_resistencia">
+                                    <td>Resistencia</td>
+                                    <td class="text-center"><span t-field="doc.certified_resistencia"/></td>
+                                    <td class="text-center">Lbf</td>
+                                </tr>
+                                <tr t-if="doc.certified_apariencia">
+                                    <td>Apariencia</td>
+                                    <td class="text-center"><span t-field="doc.certified_apariencia"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr t-if="doc.certified_humedad">
+                                    <td>Humedad</td>
+                                    <td class="text-center"><span t-field="doc.certified_humedad"/>%</td>
+                                    <td class="text-center">%</td>
+                                </tr>
+                                <tr t-if="doc.certified_pegado">
+                                    <td>Pegado</td>
+                                    <td class="text-center"><span t-field="doc.certified_pegado"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr t-if="doc.certified_retiramiento">
+                                    <td>Retiramiento</td>
+                                    <td class="text-center"><span t-field="doc.certified_retiramiento"/></td>
+                                    <td class="text-center">mm</td>
+                                </tr>
+                                <tr t-if="doc.certified_calibracion">
+                                    <td>Calibración</td>
+                                    <td class="text-center"><span t-field="doc.certified_calibracion"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr t-if="doc.certified_engomado">
+                                    <td>Engomado</td>
+                                    <td class="text-center"><span t-field="doc.certified_engomado"/></td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <t t-if="doc.attribute_ids">
+                            <h5 style="margin-top: 15px;">Atributos Adicionales</h5>
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                    <tr class="table-active">
+                                        <th>Atributo</th>
+                                        <th class="text-center">Valor</th>
+                                        <th class="text-center">Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="doc.attribute_ids" t-as="attr">
+                                        <td><span t-field="attr.name"/></td>
+                                        <td class="text-center">
+                                            <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
+                                            <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
+                                            <span t-if="attr.attribute_type == 'boolean'" t-field="attr.value_cumple"/>
+                                        </td>
+                                        <td class="text-center"><span t-field="attr.result"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <div style="margin-top: 60px;">
+                            <div class="row">
+                                <div class="col-6 text-center">
+                                    <p>____________________________</p>
+                                    <p class="fw-bold"><span t-field="doc.certified_by.name"/></p>
+                                    <p>Responsable de Calidad</p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <t t-if="doc.company_id.quality_stamp">
+                                        <img t-att-src="'data:image/png;base64,%s' % doc.company_id.quality_stamp.decode('utf-8')"
+                                             style="max-height: 120px; max-width: 200px;"
+                                             alt="Sello de la Empresa"/>
+                                    </t>
+                                    <t t-else="">
+                                        <div style="height: 120px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
+                                            <span class="text-muted">Sello de la Empresa</span>
+                                        </div>
+                                    </t>
+                                    <p class="fw-bold mt-2">Sello de la Empresa</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>```
+
+## ./_backup_before_quality_patch_20260507_141515/views/quality_inspection_views.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_inspection_list" model="ir.ui.view">
+        <field name="name">quality.inspection.list</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'aceptado'"
+                  decoration-danger="state in ('rechazado','retenido')"
+                  decoration-info="state == 'en_proceso'">
+                <field name="name"/>
+                <field name="process_type_id"/>
+                <field name="pp_pt"/>
+                <field name="product_id"/>
+                <field name="lot_id"/>
+                <field name="partner_id"/>
+                <field name="folio"/>
+                <field name="shift"/>
+                <field name="inspector_id" widget="many2one_avatar_user"/>
+                <field name="date_inspection"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'aceptado'"
+                       decoration-danger="state in ('rechazado','retenido')"
+                       decoration-info="state == 'en_proceso'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_quality_inspection_form" model="ir.ui.view">
+        <field name="name">quality.inspection.form</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <form string="Inspección de Calidad">
+                <header>
+                    <button name="action_start" string="INICIAR INSPECCIÓN"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_accept" string="Aceptar (Liberar)"
+                            type="object" class="btn-primary"
+                            invisible="state != 'en_proceso'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_retain" string="Retener"
+                            type="object" class="btn-warning"
+                            invisible="state != 'en_proceso'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_reject" string="Rechazar"
+                            type="object" class="btn-danger"
+                            invisible="state != 'en_proceso'"
+                            groups="quality_management.group_quality_inspector"/>
+                    <button name="action_create_certificate" string="Crear Certificado"
+                            type="object" class="btn-secondary"
+                            invisible="state != 'aceptado'"
+                            groups="quality_management.group_quality_manager"/>
+                    <button name="action_print_inspection" string="Imprimir"
+                            type="object" class="btn-secondary" icon="fa-print"/>
+                    <button name="action_reset_draft" string="Regresar a Borrador"
+                            type="object"
+                            invisible="state not in ('rechazado','retenido')"
+                            groups="quality_management.group_quality_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,en_proceso,aceptado"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_certificates" type="object"
+                                class="oe_stat_button" icon="fa-certificate"
+                                invisible="certificate_count == 0">
+                            <field name="certificate_count" widget="statinfo"
+                                   string="Certificados"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <div class="alert alert-info" role="alert"
+                         invisible="state != 'borrador'">
+                        <i class="fa fa-info-circle"/>
+                        <b>Captura bloqueada hasta presionar "INICIAR INSPECCIÓN".</b>
+                    </div>
+                    <field name="show_largo" invisible="1"/>
+                    <field name="show_ancho" invisible="1"/>
+                    <field name="show_espesor" invisible="1"/>
+                    <field name="show_hexagono" invisible="1"/>
+                    <field name="show_resistencia" invisible="1"/>
+                    <field name="show_apariencia" invisible="1"/>
+                    <field name="show_humedad" invisible="1"/>
+                    <field name="show_pegado" invisible="1"/>
+                    <field name="show_retiramiento" invisible="1"/>
+                    <field name="show_calibracion" invisible="1"/>
+                    <field name="show_engomado" invisible="1"/>
+                    <field name="show_alineacion" invisible="1"/>
+                    <field name="show_ranurado" invisible="1"/>
+                    <field name="show_troquelado" invisible="1"/>
+                    <field name="show_papel" invisible="1"/>
+                    <field name="show_adhesivo" invisible="1"/>
+                    <field name="show_tipo_hexagono" invisible="1"/>
+                    <field name="show_corte_guillotina" invisible="1"/>
+                    <field name="show_numero_corrida" invisible="1"/>
+                    <field name="is_pp" invisible="1"/>
+                    <field name="is_pt" invisible="1"/>
+
+                    <group>
+                        <group string="Datos Generales">
+                            <field name="process_type_id"/>
+                            <field name="pp_pt" widget="radio"
+                                   readonly="state != 'borrador'"/>
+                            <field name="product_id"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                            <field name="production_order_id"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                            <field name="lot_id"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"
+                                   domain="[('product_id', '=', product_id)]"/>
+                            <field name="folio"/>
+                            <field name="code"/>
+                        </group>
+                        <group string="Personal y Ubicación">
+                            <field name="operator_id"
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                            <field name="supervisor_id"
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                            <field name="inspector_id"
+                                   widget="many2one_avatar_user" readonly="1"/>
+                            <field name="partner_id"
+                                   context="{'show_vat': True, 'show_email': True}"
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                            <field name="shift"/>
+                            <field name="plant"/>
+                            <field name="date_inspection" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Medidas y Propiedades"
+                              invisible="state == 'borrador' or (not show_largo and not show_ancho and not show_espesor and not show_hexagono and not show_resistencia and not show_apariencia and not show_humedad and not show_pegado and not show_retiramiento and not show_calibracion and not show_engomado)"
+                              name="medidas">
+                            <group>
+                                <group string="Medidas Dimensionales">
+                                    <field name="largo" invisible="not show_largo"/>
+                                    <field name="ancho" invisible="not show_ancho"/>
+                                    <label for="espesor" string="Espesor"
+                                           invisible="not show_espesor"/>
+                                    <div class="o_row" invisible="not show_espesor">
+                                        <field name="espesor"/>
+                                        <field name="espesor_unit" nolabel="1"
+                                               class="oe_inline"/>
+                                    </div>
+                                    <field name="hexagono" invisible="not show_hexagono"/>
+                                </group>
+                                <group string="Propiedades">
+                                    <label for="resistencia"
+                                           string="Resistencia (Lbf)"
+                                           invisible="not show_resistencia"/>
+                                    <div class="o_row" invisible="not show_resistencia">
+                                        <field name="resistencia"
+                                               readonly="resistencia_na"
+                                               invisible="resistencia_na"/>
+                                        <field name="resistencia_na"
+                                               nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2 oe_inline"
+                                              invisible="not resistencia_na">
+                                            No Aplica
+                                        </span>
+                                        <label for="resistencia_na"
+                                               string="No Aplica"
+                                               class="ms-2 oe_inline"
+                                               invisible="resistencia_na"/>
+                                    </div>
+                                    <field name="apariencia"
+                                           invisible="not show_apariencia"
+                                           widget="radio"/>
+                                    <field name="humedad_pct"
+                                           invisible="not show_humedad"/>
+                                    <field name="pegado_result"
+                                           invisible="not show_pegado"/>
+                                    <field name="oct_retiramiento"
+                                           invisible="not show_retiramiento"/>
+                                    <field name="calibracion"
+                                           invisible="not show_calibracion"/>
+                                    <field name="engomado"
+                                           invisible="not show_engomado"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Octágono (Extras)"
+                              invisible="process_type_id and process_type_id.code != 'octagono'"
+                              name="oct">
+                            <group>
+                                <group>
+                                    <field name="oct_ancho"/>
+                                    <field name="oct_alineacion" widget="radio"
+                                           invisible="not show_alineacion"/>
+                                    <field name="oct_pegado" widget="radio"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Guillotina (Extras)"
+                              invisible="process_type_id and process_type_id.code != 'guillotina'"
+                              name="guillot">
+                            <group>
+                                <group string="Retícula">
+                                    <field name="reticula_extendida"/>
+                                    <field name="reticula_vueltas"/>
+                                    <field name="lote_reticula"/>
+                                    <field name="gramaje_reticula"/>
+                                </group>
+                                <group string="Supervisión">
+                                    <field name="sin_supervisor"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Ranurado"
+                              invisible="not show_ranurado or state == 'borrador'"
+                              name="ranurado">
+                            <group>
+                                <field name="ranurado_unit"
+                                       string="Unidad predeterminada"/>
+                            </group>
+                            <field name="ranurado_ids"
+                                   context="{'default_unidad': ranurado_unit}">
+                                <list editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="medida"/>
+                                    <field name="unidad"/>
+                                    <field name="resultado" widget="badge"
+                                           decoration-success="resultado == 'cumple'"
+                                           decoration-danger="resultado == 'no_cumple'"/>
+                                    <field name="notas"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Troquelado"
+                              invisible="not show_troquelado or state == 'borrador'"
+                              name="troquelado">
+                            <field name="troquelado_ids">
+                                <list editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="medida"/>
+                                    <field name="resultado" widget="badge"
+                                           decoration-success="resultado == 'cumple'"
+                                           decoration-danger="resultado == 'no_cumple'"/>
+                                    <field name="notas"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Datos de Producción"
+                              invisible="state == 'borrador' or (not show_papel and not show_adhesivo and not show_tipo_hexagono and not show_numero_corrida and not show_corte_guillotina)"
+                              name="prod">
+                            <group>
+                                <group string="Producción"
+                                       invisible="not show_numero_corrida and not show_tipo_hexagono and not show_corte_guillotina">
+                                    <field name="numero_corrida"
+                                           invisible="not show_numero_corrida"/>
+                                    <field name="tipo_hexagono"
+                                           invisible="not show_tipo_hexagono"/>
+                                    <field name="corte_guillotina"
+                                           invisible="not show_corte_guillotina"
+                                           widget="radio"/>
+                                </group>
+                                <group string="Papel" invisible="not show_papel">
+                                    <field name="papel_ancho"/>
+                                    <field name="papel_gramaje"/>
+                                    <field name="papel_proveedor_id"
+                                           options="{'no_create': True, 'no_create_edit': True}"/>
+                                </group>
+                            </group>
+                            <group invisible="not show_adhesivo">
+                                <group string="Adhesivo">
+                                    <field name="adhesivo_lote1"/>
+                                    <field name="adhesivo_lote2"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Atributos Adicionales"
+                              invisible="state == 'borrador'" name="attrs">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                CUMPLE / NO CUMPLE / N/A — sin duplicados con
+                                Medidas y Propiedades.
+                            </p>
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="attribute_type"/>
+                                    <field name="value_float"
+                                           invisible="attribute_type != 'float'"/>
+                                    <field name="value_char"
+                                           invisible="attribute_type not in ('char','selection')"/>
+                                    <field name="value_cumple"
+                                           string="Cumple/NC/N/A"
+                                           invisible="attribute_type != 'boolean'"
+                                           widget="badge"
+                                           decoration-success="value_cumple == 'cumple'"
+                                           decoration-danger="value_cumple == 'no_cumple'"/>
+                                    <field name="min_value"
+                                           invisible="attribute_type != 'float'"/>
+                                    <field name="max_value"
+                                           invisible="attribute_type != 'float'"/>
+                                    <field name="unit"/>
+                                    <field name="result" widget="badge"
+                                           decoration-success="result == 'cumple'"
+                                           decoration-danger="result == 'no_cumple'"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Evidencia (Imágenes)" name="evimg"
+                              invisible="state == 'borrador'">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                Hasta 10 imágenes.
+                            </p>
+                            <field name="evidence_image_ids" widget="many2many_binary"/>
+                            <separator string="Vista Previa"/>
+                            <field name="evidence_image_ids"
+                                   widget="evidence_viewer" nolabel="1"/>
+                        </page>
+
+                        <page string="Evidencia PDF" name="evpdf"
+                              invisible="state == 'borrador'">
+                            <group>
+                                <field name="evidence_pdf"
+                                       filename="evidence_pdf_name"/>
+                                <field name="evidence_pdf_name" invisible="1"/>
+                            </group>
+                            <div invisible="not evidence_pdf"
+                                 class="o_quality_pdf_preview">
+                                <field name="evidence_pdf" widget="pdf_viewer" readonly="1"/>
+                            </div>
+                        </page>
+
+                        <page string="Observaciones" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_quality_inspection_search" model="ir.ui.view">
+        <field name="name">quality.inspection.search</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <search string="Inspecciones">
+                <field name="name"/>
+                <field name="product_id"/>
+                <field name="lot_id"/>
+                <field name="partner_id"/>
+                <field name="folio"/>
+                <field name="inspector_id"/>
+                <field name="process_type_id"/>
+                <filter string="Hoy" name="today"
+                        domain="[('date_inspection','&gt;=', datetime.datetime.combine(context_today(), datetime.time(0,0,0))),
+                                 ('date_inspection','&lt;=', datetime.datetime.combine(context_today(), datetime.time(23,59,59)))]"/>
+                <separator/>
+                <filter string="PP" name="pp" domain="[('pp_pt','=','pp')]"/>
+                <filter string="PT" name="pt" domain="[('pp_pt','=','pt')]"/>
+                <separator/>
+                <filter string="Aceptadas" name="accepted" domain="[('state','=','aceptado')]"/>
+                <filter string="Retenidas" name="retained" domain="[('state','=','retenido')]"/>
+                <filter string="Rechazadas" name="rejected" domain="[('state','=','rechazado')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Tipo de Proceso" name="group_type"
+                            context="{'group_by': 'process_type_id'}"/>
+                    <filter string="PP/PT" name="group_pppt"
+                            context="{'group_by': 'pp_pt'}"/>
+                    <filter string="Turno" name="group_shift"
+                            context="{'group_by': 'shift'}"/>
+                    <filter string="Planta" name="group_plant"
+                            context="{'group_by': 'plant'}"/>
+                    <filter string="Inspector" name="group_inspector"
+                            context="{'group_by': 'inspector_id'}"/>
+                    <filter string="Estado" name="group_state"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_quality_inspection_pivot" model="ir.ui.view">
+        <field name="name">quality.inspection.pivot</field>
+        <field name="model">quality.inspection</field>
+        <field name="arch" type="xml">
+            <pivot string="Análisis de Inspecciones">
+                <field name="process_type_id" type="row"/>
+                <field name="state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_quality_inspection" model="ir.actions.act_window">
+        <field name="name">Inspecciones</field>
+        <field name="res_model">quality.inspection</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+</odoo>
+```
+
+## ./_backup_before_quality_patch_20260507_141515/views/quality_menus.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_quality_root"
+              name="Calidad"
+              web_icon="quality_management,static/description/icon.png"
+              sequence="45"/>
+
+    <menuitem id="menu_quality_inspection"
+              name="Inspecciones"
+              parent="menu_quality_root"
+              action="action_quality_inspection"
+              sequence="10"/>
+
+    <menuitem id="menu_quality_releases"
+              name="Liberaciones"
+              parent="menu_quality_root"
+              sequence="20"/>
+
+    <menuitem id="menu_quality_sample_release"
+              name="Muestras"
+              parent="menu_quality_releases"
+              action="action_quality_sample_release"
+              sequence="10"/>
+
+    <menuitem id="menu_quality_drawing_release"
+              name="Planos"
+              parent="menu_quality_releases"
+              action="action_quality_drawing_release"
+              sequence="20"/>
+
+    <menuitem id="menu_quality_certificate"
+              name="Certificados"
+              parent="menu_quality_root"
+              action="action_quality_certificate"
+              sequence="30"
+              groups="group_quality_manager"/>
+
+    <menuitem id="menu_quality_corrective_action"
+              name="Acciones Correctivas"
+              parent="menu_quality_root"
+              action="action_quality_corrective_action"
+              sequence="40"
+              groups="group_quality_manager"/>
+
+    <menuitem id="menu_quality_customer_return"
+              name="Devoluciones"
+              parent="menu_quality_root"
+              action="action_quality_customer_return"
+              sequence="50"/>
+
+    <menuitem id="menu_quality_customer_document"
+              name="Documentos de Cliente"
+              parent="menu_quality_root"
+              action="action_quality_customer_document"
+              sequence="60"/>
+
+    <!-- Configuración -->
+    <menuitem id="menu_quality_config"
+              name="Configuración"
+              parent="menu_quality_root"
+              sequence="100"
+              groups="group_quality_admin"/>
+
+    <menuitem id="menu_quality_process_type"
+              name="Tipos de Proceso"
+              parent="menu_quality_config"
+              action="action_quality_process_type"
+              sequence="5"/>
+
+    <menuitem id="menu_quality_attribute_template"
+              name="Plantillas de Atributos"
+              parent="menu_quality_config"
+              action="action_quality_attribute_template"
+              sequence="10"/>
+</odoo>
+```
+
+## ./_backup_before_quality_patch_20260507_141515/views/quality_troquel_views.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_troquel_list" model="ir.ui.view">
+        <field name="name">quality.troquel.list</field>
+        <field name="model">quality.troquel</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'activo'"
+                  decoration-danger="state == 'danado'"
+                  decoration-warning="state in ('reparacion_interna','reparacion_proveedor')"
+                  decoration-muted="state == 'obsoleto'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="part_number"/>
+                <field name="proveedor_id" optional="show"/>
+                <field name="last_review_date" optional="show"/>
+                <field name="next_review_date" optional="show"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_quality_troquel_form" model="ir.ui.view">
+        <field name="name">quality.troquel.form</field>
+        <field name="model">quality.troquel</field>
+        <field name="arch" type="xml">
+            <form string="Troquel">
+                <header>
+                    <button name="action_validate" string="Convocar a Validación"
+                            type="object" class="btn-primary"
+                            invisible="state not in ('recepcion','reparacion_interna','reparacion_proveedor')"/>
+                    <button name="action_activate" string="Marcar como ACTIVO"
+                            type="object" class="btn-primary"
+                            invisible="state != 'validacion'"/>
+                    <button name="action_report_damage" string="Reportar Daño"
+                            type="object" class="btn-warning"
+                            invisible="state != 'activo'"/>
+                    <button name="action_send_to_internal_repair"
+                            string="Reparación Interna" type="object"
+                            invisible="state != 'danado'"/>
+                    <button name="action_send_to_supplier"
+                            string="Enviar a Proveedor" type="object"
+                            invisible="state != 'danado'"/>
+                    <button name="action_finish_repair" string="Reparación Finalizada"
+                            type="object"
+                            invisible="state not in ('reparacion_interna','reparacion_proveedor')"/>
+                    <button name="action_set_obsolete" string="Marcar Obsoleto"
+                            type="object"
+                            invisible="state in ('obsoleto',)"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="ID del troquel..."/></h1>
+                        <h3><field name="visible_label" readonly="1"/></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="part_number"/>
+                            <field name="proveedor_id"/>
+                            <field name="rack_location"/>
+                        </group>
+                        <group>
+                            <field name="pieces_per_review"/>
+                            <field name="last_review_date"/>
+                            <field name="next_review_date"/>
+                            <field name="days_at_supplier"
+                                   invisible="state != 'reparacion_proveedor'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Plano de Herramental">
+                            <group>
+                                <field name="plano_herramental"
+                                       filename="plano_herramental_name"/>
+                                <field name="plano_herramental_name" invisible="1"/>
+                            </group>
+                            <div invisible="not plano_herramental"
+                                 class="o_quality_pdf_preview">
+                                <field name="plano_herramental"
+                                       widget="pdf_viewer" readonly="1"/>
+                            </div>
+                        </page>
+                        <page string="Reparación" invisible="state == 'recepcion'">
+                            <field name="repair_description"
+                                   placeholder="Desglose de reparación realizada..."/>
+                        </page>
+                        <page string="Bitácora">
+                            <field name="workflow_event_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="user_id"/>
+                                    <field name="state_after"/>
+                                    <field name="description"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_quality_troquel" model="ir.actions.act_window">
+        <field name="name">Troqueles</field>
+        <field name="res_model">quality.troquel</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_quality_troquel"
+              name="Troqueles"
+              parent="menu_quality_root"
+              action="action_quality_troquel"
+              sequence="55"/>
+</odoo>
 ```
 
 ## ./apply_hexagonos_quality_changes.py
@@ -387,6 +1375,103 @@ from . import wizards
 </odoo>
 ```
 
+## ./data/quality_hardening_data.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="process_type_octagono" model="quality.process.type">
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_espesor" eval="False"/>
+        </record>
+
+        <record id="process_type_guillotina" model="quality.process.type">
+            <field name="name">Guillotina</field>
+            <field name="code">guillotina</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_pegado" model="quality.process.type">
+            <field name="name">Pegado</field>
+            <field name="code">pegado</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_laminadora" model="quality.process.type">
+            <field name="name">Laminadora</field>
+            <field name="code">laminadora</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_sierras_ranuradoras" model="quality.process.type">
+            <field name="name">Sierras y Ranuradoras</field>
+            <field name="code">sierras_ranuradoras</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_troquelado_plano" model="quality.process.type">
+            <field name="name">Troquelado Plano</field>
+            <field name="code">troquelado_plano</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_impresion" model="quality.process.type">
+            <field name="name">Impresión</field>
+            <field name="code">impresion</field>
+            <field name="capture_mode">additional_only</field>
+            <field name="require_measures" eval="False"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="False"/>
+            <field name="show_ancho" eval="False"/>
+            <field name="show_espesor" eval="False"/>
+            <field name="show_hexagono" eval="False"/>
+            <field name="show_resistencia" eval="False"/>
+            <field name="show_apariencia" eval="False"/>
+            <field name="show_humedad" eval="False"/>
+            <field name="show_pegado" eval="False"/>
+        </record>
+
+        <record id="process_type_acabado" model="quality.process.type">
+            <field name="name">Acabado y Empaque</field>
+            <field name="code">acabado_empaque</field>
+            <field name="capture_mode">additional_only</field>
+            <field name="require_measures" eval="False"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="False"/>
+            <field name="show_ancho" eval="False"/>
+            <field name="show_espesor" eval="False"/>
+            <field name="show_hexagono" eval="False"/>
+            <field name="show_resistencia" eval="False"/>
+            <field name="show_apariencia" eval="False"/>
+            <field name="show_humedad" eval="False"/>
+            <field name="show_pegado" eval="False"/>
+        </record>
+
+    </data>
+</odoo>
+```
+
 ## ./data/sequence_data.xml
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -488,6 +1573,7 @@ from . import quality_customer_document
 from . import quality_troquel
 from . import quality_inherited_models
 from . import product_template
+from . import quality_hardening
 ```
 
 ## ./models/product_template.py
@@ -1723,6 +2809,678 @@ class QualityDrawingRelease(models.Model):
         return self.env.ref(
             "quality_management.action_report_drawing_release"
         ).report_action(self)
+```
+
+## ./models/quality_hardening.py
+```py
+# -*- coding: utf-8 -*-
+
+import re
+import unicodedata
+from datetime import timedelta
+
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError, ValidationError
+
+
+PROCESS_SEQUENCE = [
+    "octagono",
+    "guillotina",
+    "pegado",
+    "laminadora",
+    "sierras_ranuradoras",
+    "troquelado_plano",
+]
+
+RESERVED_MEASURE_ATTRS = {
+    "largo", "ancho", "espesor", "hexagono", "hexágono",
+    "resistencia", "apariencia", "humedad", "pegado",
+    "retiramiento", "restiramiento", "reticula", "retícula",
+    "reticula_extendida", "retícula_extendida",
+    "calibracion", "calibración", "engomado",
+    "alineacion", "alineación",
+}
+
+
+def _slug(value):
+    value = value or ""
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
+    value = re.sub(r"[^a-zA-Z0-9]+", "_", value.lower()).strip("_")
+    return value
+
+
+class QualityProcessTypeHardening(models.Model):
+    _inherit = "quality.process.type"
+
+    capture_mode = fields.Selection([
+        ("full", "Medidas + Propiedades + Atributos"),
+        ("additional_only", "Solo Atributos Adicionales"),
+    ], default="full", required=True)
+
+    require_measures = fields.Boolean(
+        "Requerir Medidas/Propiedades para liberar",
+        default=True,
+    )
+    require_additional_attributes = fields.Boolean(
+        "Requerir Atributos Adicionales para liberar",
+        default=True,
+    )
+    zero_value_blocking = fields.Boolean(
+        "Bloquear valores numéricos en cero",
+        default=True,
+    )
+
+
+class QualityAttributeTemplateHardening(models.Model):
+    _inherit = "quality.attribute.template"
+
+    normalized_name = fields.Char(
+        "Nombre Normalizado",
+        compute="_compute_normalized_name",
+        store=True,
+        index=True,
+    )
+    capture_zone = fields.Selection([
+        ("additional", "Atributos Adicionales"),
+        ("measures", "Medidas y Propiedades"),
+        ("ranurado", "Ranurado"),
+        ("troquelado", "Troquelado"),
+        ("production", "Datos de Producción"),
+    ], default="additional", required=True)
+
+    result_mode = fields.Selection([
+        ("cumple", "Cumple / No Cumple / N/A"),
+        ("ok", "OK / NO OK / N/A"),
+    ], default="cumple", required=True)
+
+    allow_zero = fields.Boolean("Permitir valor cero", default=False)
+
+    @api.depends("name")
+    def _compute_normalized_name(self):
+        for rec in self:
+            rec.normalized_name = _slug(rec.name)
+
+
+class QualityInspectionLineHardening(models.Model):
+    _inherit = "quality.inspection.line"
+
+    normalized_name = fields.Char(
+        "Nombre Normalizado",
+        compute="_compute_normalized_name",
+        store=True,
+        index=True,
+    )
+
+    capture_zone = fields.Selection([
+        ("additional", "Atributos Adicionales"),
+        ("measures", "Medidas y Propiedades"),
+        ("ranurado", "Ranurado"),
+        ("troquelado", "Troquelado"),
+        ("production", "Datos de Producción"),
+    ], default="additional", required=True)
+
+    result_mode = fields.Selection([
+        ("cumple", "Cumple / No Cumple / N/A"),
+        ("ok", "OK / NO OK / N/A"),
+    ], default="cumple", required=True)
+
+    value_cumple = fields.Selection([
+        ("cumple", "Cumple"),
+        ("no_cumple", "No Cumple"),
+        ("na", "N/A"),
+    ], string="Cumple/No Cumple/N/A", default="na")
+
+    value_ok = fields.Selection([
+        ("ok", "OK"),
+        ("no_ok", "NO OK"),
+        ("na", "N/A"),
+    ], string="OK/NO OK/N/A", default="na")
+
+    result = fields.Selection(selection_add=[
+        ("ok", "OK"),
+        ("no_ok", "NO OK"),
+    ], ondelete={
+        "ok": "set default",
+        "no_ok": "set default",
+    })
+
+    allow_zero = fields.Boolean("Permitir cero")
+
+    @api.depends("name")
+    def _compute_normalized_name(self):
+        for line in self:
+            line.normalized_name = _slug(line.name)
+
+    @api.onchange("attribute_template_id")
+    def _onchange_template_hardening(self):
+        for line in self:
+            tmpl = line.attribute_template_id
+            if tmpl:
+                line.name = tmpl.name
+                line.attribute_type = tmpl.attribute_type
+                line.capture_zone = tmpl.capture_zone
+                line.result_mode = tmpl.result_mode
+                line.min_value = tmpl.min_value
+                line.max_value = tmpl.max_value
+                line.unit = tmpl.unit
+                line.allow_zero = tmpl.allow_zero
+
+    @api.onchange("value_float", "min_value", "max_value", "attribute_type")
+    def _onchange_evaluate_result_hardening(self):
+        for line in self:
+            if line.attribute_type != "float":
+                continue
+            if not line.value_float and not line.allow_zero:
+                line.result = "na"
+                continue
+            if line.min_value and line.value_float < line.min_value:
+                line.result = "no_cumple"
+            elif line.max_value and line.value_float > line.max_value:
+                line.result = "no_cumple"
+            else:
+                line.result = "cumple"
+
+    @api.onchange("value_cumple", "attribute_type", "result_mode")
+    def _onchange_value_cumple_hardening(self):
+        for line in self:
+            if line.attribute_type == "boolean" and line.result_mode == "cumple":
+                line.result = line.value_cumple or "na"
+
+    @api.onchange("value_ok", "attribute_type", "result_mode")
+    def _onchange_value_ok_hardening(self):
+        for line in self:
+            if line.attribute_type == "boolean" and line.result_mode == "ok":
+                line.result = line.value_ok or "na"
+
+    @api.constrains("inspection_id", "sample_release_id", "normalized_name", "capture_zone")
+    def _check_duplicate_attribute_hardening(self):
+        for line in self:
+            if not line.normalized_name:
+                continue
+
+            domain = [
+                ("id", "!=", line.id),
+                ("normalized_name", "=", line.normalized_name),
+                ("capture_zone", "=", line.capture_zone),
+            ]
+            if line.inspection_id:
+                domain.append(("inspection_id", "=", line.inspection_id.id))
+            elif line.sample_release_id:
+                domain.append(("sample_release_id", "=", line.sample_release_id.id))
+            else:
+                continue
+
+            if self.search_count(domain):
+                raise ValidationError(_(
+                    "Atributo duplicado: '%s'. No se permite repetir atributos."
+                ) % line.name)
+
+    @api.constrains("value_float", "attribute_type", "allow_zero", "result")
+    def _check_zero_numeric_hardening(self):
+        for line in self:
+            parent_state = (
+                line.inspection_id.state if line.inspection_id
+                else line.sample_release_id.state if line.sample_release_id
+                else False
+            )
+            if parent_state in ("borrador", False):
+                continue
+
+            if (
+                line.attribute_type == "float"
+                and not line.allow_zero
+                and not line.value_float
+                and line.result != "na"
+            ):
+                raise ValidationError(_(
+                    "El atributo numérico '%s' no puede quedar en cero. "
+                    "Capture el valor real o marque N/A."
+                ) % line.name)
+
+
+class QualityInspectionRanuradoHardening(models.Model):
+    _inherit = "quality.inspection.ranurado"
+
+    concepto = fields.Char("Concepto", default="Largo")
+    unidad = fields.Selection(selection_add=[
+        ("cm", "cm"),
+    ], ondelete={"cm": "set default"})
+
+    resultado = fields.Selection(selection_add=[
+        ("na", "N/A"),
+    ], ondelete={"na": "set default"})
+
+    @api.constrains("medida", "resultado")
+    def _check_medida_gt_zero(self):
+        for rec in self:
+            if rec.resultado != "na" and rec.medida <= 0:
+                raise ValidationError(_(
+                    "La medida debe ser mayor a cero o marcarse como N/A."
+                ))
+
+
+class QualityInspectionTroqueladoHardening(models.Model):
+    _inherit = "quality.inspection.troquelado"
+
+    unidad = fields.Selection([
+        ("mm", "mm"),
+        ("cm", "cm"),
+        ("in", "in"),
+    ], default="mm", required=True)
+
+    resultado = fields.Selection(selection_add=[
+        ("na", "N/A"),
+    ], ondelete={"na": "set default"})
+
+    @api.constrains("medida", "resultado")
+    def _check_medida_gt_zero(self):
+        for rec in self:
+            if rec.resultado != "na" and rec.medida <= 0:
+                raise ValidationError(_(
+                    "La medida de troquelado debe ser mayor a cero o marcarse como N/A."
+                ))
+
+
+class QualityInspectionHardening(models.Model):
+    _inherit = "quality.inspection"
+
+    process_code = fields.Char(
+        related="process_type_id.code",
+        store=True,
+        readonly=True,
+        index=True,
+    )
+    capture_mode = fields.Selection(
+        related="process_type_id.capture_mode",
+        store=True,
+        readonly=True,
+    )
+
+    sin_supervisor = fields.Boolean("Sin Supervisor")
+    date_started = fields.Datetime("Fecha de Inicio", readonly=True)
+    date_closed = fields.Datetime("Fecha de Cierre", readonly=True)
+
+    hexagono = fields.Selection([
+        ("tipo_1", "Tipo 1"),
+        ("tipo_2", "Tipo 2"),
+        ("tipo_3", "Tipo 3"),
+        ("tipo_4", "Tipo 4"),
+    ], string="Hexágono")
+
+    oct_hexagono = fields.Selection([
+        ("tipo_1", "Tipo 1"),
+        ("tipo_2", "Tipo 2"),
+        ("tipo_3", "Tipo 3"),
+        ("tipo_4", "Tipo 4"),
+    ], string="Tipo de Hexágono Octágono")
+
+    pegado_result = fields.Selection([
+        ("cumple", "Cumple"),
+        ("no_cumple", "No Cumple"),
+        ("na", "N/A"),
+    ], string="Resultado de Pegado")
+
+    engomado = fields.Selection([
+        ("cumple", "Cumple"),
+        ("no_cumple", "No Cumple"),
+        ("na", "N/A"),
+    ], string="Engomado")
+
+    corte_guillotina = fields.Selection([
+        ("si", "Sí"),
+        ("no", "No"),
+        ("na", "N/A"),
+    ], string="Corte en Guillotina")
+
+    @api.constrains("sin_supervisor", "supervisor_id")
+    def _check_supervisor_or_no_supervisor(self):
+        for rec in self:
+            if not rec.sin_supervisor and not rec.supervisor_id:
+                raise ValidationError(_("Seleccione un supervisor o marque 'Sin Supervisor'."))
+
+    @api.onchange("sin_supervisor")
+    def _onchange_sin_supervisor(self):
+        if self.sin_supervisor:
+            self.supervisor_id = False
+
+    @api.onchange("production_order_id")
+    def _onchange_production_order_hardening(self):
+        if not self.production_order_id:
+            return
+
+        mo = self.production_order_id
+        if mo.product_id:
+            self.product_id = mo.product_id
+            self.code = mo.product_id.default_code or self.code
+
+        if getattr(mo, "lot_producing_id", False):
+            self.lot_id = mo.lot_producing_id
+
+        origin_so = self.env["sale.order"].search(
+            [("name", "=", mo.origin)],
+            limit=1,
+        ) if mo.origin else False
+
+        if origin_so and origin_so.partner_id:
+            self.partner_id = origin_so.partner_id
+
+    @api.onchange("process_type_id", "product_id")
+    def _onchange_load_attribute_templates_hardening(self):
+        if not self.process_type_id and not self.product_id:
+            return
+
+        templates = self.env["quality.attribute.template"]
+        if self.process_type_id:
+            templates |= self.process_type_id.attribute_template_ids.filtered(
+                lambda t: not t.product_tmpl_id and t.active
+            )
+
+        if self.product_id and self.product_id.product_tmpl_id:
+            templates |= self.env["quality.attribute.template"].search([
+                ("product_tmpl_id", "=", self.product_id.product_tmpl_id.id),
+                ("active", "=", True),
+            ])
+
+        if templates:
+            lines = [(5, 0, 0)]
+            seen = set()
+            for t in templates.sorted(lambda x: (x.sequence, x.id)):
+                key = t.normalized_name or _slug(t.name)
+                if not key or key in seen:
+                    continue
+                seen.add(key)
+                lines.append((0, 0, {
+                    "attribute_template_id": t.id,
+                    "name": t.name,
+                    "attribute_type": t.attribute_type,
+                    "capture_zone": t.capture_zone,
+                    "result_mode": t.result_mode,
+                    "min_value": t.min_value,
+                    "max_value": t.max_value,
+                    "unit": t.unit,
+                    "allow_zero": t.allow_zero,
+                    "sequence": t.sequence,
+                    "value_cumple": "na",
+                    "value_ok": "na",
+                    "result": "na",
+                }))
+            self.line_ids = lines
+
+    def _check_previous_process_hardening(self):
+        for rec in self:
+            code = rec.process_code
+            if code not in PROCESS_SEQUENCE:
+                continue
+
+            idx = PROCESS_SEQUENCE.index(code)
+            if idx == 0:
+                continue
+
+            previous = PROCESS_SEQUENCE[idx - 1]
+            prev = self.search([
+                ("lot_id", "=", rec.lot_id.id),
+                ("process_code", "=", previous),
+                ("state", "=", "aceptado"),
+            ], limit=1)
+
+            if not prev:
+                raise UserError(_(
+                    "Secuencia bloqueada: antes de liberar '%s' debe estar liberado "
+                    "el proceso previo '%s' para el lote %s."
+                ) % (
+                    rec.process_type_id.name,
+                    previous.replace("_", " ").title(),
+                    rec.lot_id.name or "—",
+                ))
+
+    def _check_reserved_duplicate_attributes_hardening(self):
+        for rec in self:
+            duplicates = []
+            for line in rec.line_ids:
+                key = line.normalized_name or _slug(line.name)
+                if key in RESERVED_MEASURE_ATTRS:
+                    duplicates.append(line.name)
+
+            if duplicates:
+                raise UserError(_(
+                    "Estos atributos no deben capturarse como adicionales porque ya "
+                    "pertenecen a Medidas y Propiedades: %s"
+                ) % ", ".join(sorted(set(duplicates))))
+
+    def _check_required_additional_attributes_hardening(self):
+        for rec in self:
+            if not rec.process_type_id.require_additional_attributes:
+                continue
+
+            required_lines = rec.line_ids.filtered(
+                lambda l: l.attribute_template_id.is_required if l.attribute_template_id else True
+            )
+            if not required_lines:
+                raise UserError(_("Debe capturar los atributos adicionales del proceso."))
+
+            pending = required_lines.filtered(lambda l: l.result == "na")
+            if pending:
+                raise UserError(_(
+                    "Hay atributos adicionales sin dictamen. Capture Cumple/No Cumple, "
+                    "OK/NO OK o marque N/A cuando aplique: %s"
+                ) % ", ".join(pending.mapped("name")))
+
+            numeric_zero = required_lines.filtered(
+                lambda l: l.attribute_type == "float" and not l.allow_zero and not l.value_float
+            )
+            if numeric_zero:
+                raise UserError(_(
+                    "Se detectan atributos numéricos con valor igual a cero. Rectifique: %s"
+                ) % ", ".join(numeric_zero.mapped("name")))
+
+    def _check_measures_captured_hardening(self):
+        for rec in self:
+            if rec.capture_mode == "additional_only":
+                continue
+            if not rec.process_type_id.require_measures:
+                continue
+
+            missing = []
+
+            if rec.show_largo and not rec.largo:
+                missing.append("Largo")
+            if rec.show_ancho and not (rec.ancho or getattr(rec, "oct_ancho", 0.0)):
+                missing.append("Ancho")
+            if rec.show_espesor and not rec.espesor:
+                missing.append("Espesor")
+            if rec.show_hexagono and not rec.hexagono:
+                missing.append("Hexágono")
+            if rec.show_resistencia and not rec.resistencia_na and not rec.resistencia:
+                missing.append("Resistencia")
+            if rec.show_apariencia and not rec.apariencia:
+                missing.append("Apariencia")
+            if rec.show_humedad and not rec.humedad_pct:
+                missing.append("Humedad")
+            if rec.show_pegado and not rec.pegado_result:
+                missing.append("Resultado de Pegado")
+            if rec.show_retiramiento and not (
+                getattr(rec, "oct_retiramiento", 0.0) or getattr(rec, "reticula_extendida", 0.0)
+            ):
+                missing.append("Retícula Extendida / Restiramiento")
+            if rec.show_calibracion and not rec.calibracion:
+                missing.append("Calibración")
+            if rec.show_engomado and not rec.engomado:
+                missing.append("Engomado")
+            if rec.show_numero_corrida and not rec.numero_corrida:
+                missing.append("Número de Corrida")
+            if rec.show_tipo_hexagono and not rec.tipo_hexagono:
+                missing.append("Tipo de Hexágono")
+
+            if rec.show_papel:
+                if not rec.papel_ancho:
+                    missing.append("Ancho de Papel")
+                if not rec.papel_gramaje:
+                    missing.append("Gramaje de Papel")
+                if not rec.papel_proveedor_id:
+                    missing.append("Proveedor de Papel")
+
+            if rec.show_adhesivo and not (rec.adhesivo_lote1 or rec.adhesivo_lote2):
+                missing.append("Lote de Adhesivo")
+
+            if rec.show_corte_guillotina and not rec.corte_guillotina:
+                missing.append("Corte en Guillotina")
+
+            if rec.process_code == "troquelado_plano" and not rec.troquelado_ids:
+                missing.append("Pestaña Troquelado")
+
+            if rec.process_code == "sierras_ranuradoras" and rec.show_ranurado and not rec.ranurado_ids:
+                missing.append("Pestaña Ranurado / Corte Sierra")
+
+            if missing:
+                raise UserError(_(
+                    "Capture la información obligatoria antes de liberar. Faltan: %s"
+                ) % ", ".join(missing))
+
+    def _full_quality_validation_hardening(self):
+        for rec in self:
+            if rec.state != "en_proceso":
+                raise UserError(_("Debe presionar 'INICIAR INSPECCIÓN' antes de liberar."))
+
+            rec._check_reserved_duplicate_attributes_hardening()
+            rec._check_measures_captured_hardening()
+            rec._check_required_additional_attributes_hardening()
+            rec._check_previous_process_hardening()
+
+    def action_start(self):
+        for rec in self:
+            rec.date_started = fields.Datetime.now()
+            rec.state = "en_proceso"
+            rec.message_post(body=_("Inspección iniciada."), subtype_xmlid="mail.mt_comment")
+
+    def action_accept(self):
+        for rec in self:
+            rec._full_quality_validation_hardening()
+            rec.state = "aceptado"
+            rec.date_closed = fields.Datetime.now()
+            rec.message_post(
+                body=_("Inspección ACEPTADA/LIBERADA por %s.") % self.env.user.name,
+                subtype_xmlid="mail.mt_comment",
+            )
+
+    def _get_supervisor_user_hardening(self):
+        self.ensure_one()
+        if self.supervisor_id and self.supervisor_id.user_id:
+            return self.supervisor_id.user_id
+        return False
+
+    def action_retain(self):
+        for rec in self:
+            if rec.state != "en_proceso":
+                raise UserError(_("Solo se puede retener una inspección en proceso."))
+
+            rec._check_reserved_duplicate_attributes_hardening()
+            rec.state = "retenido"
+
+            supervisor_user = rec._get_supervisor_user_hardening()
+            partner_ids = []
+
+            if supervisor_user and supervisor_user.partner_id:
+                partner_ids = [supervisor_user.partner_id.id]
+                rec.message_subscribe(partner_ids=partner_ids)
+                rec.activity_schedule(
+                    "mail.mail_activity_data_todo",
+                    date_deadline=fields.Date.today() + timedelta(days=1),
+                    summary=_("Producto retenido en Calidad: %s") % rec.name,
+                    user_id=supervisor_user.id,
+                )
+
+            rec.message_post(
+                body=_(
+                    "Producto RETENIDO por %s. Supervisor en turno: %s. "
+                    "Cuando Producción marque HECHO, Calidad debe validar nuevamente."
+                ) % (
+                    self.env.user.name,
+                    rec.supervisor_id.name if rec.supervisor_id else "Sin supervisor",
+                ),
+                partner_ids=partner_ids,
+                subtype_xmlid="mail.mt_comment",
+            )
+
+    def action_reject(self):
+        for rec in self:
+            if rec.state != "en_proceso":
+                raise UserError(_("Solo se puede rechazar una inspección en proceso."))
+            rec.state = "rechazado"
+            rec.date_closed = fields.Datetime.now()
+            rec.message_post(
+                body=_("Inspección RECHAZADA por %s.") % self.env.user.name,
+                subtype_xmlid="mail.mt_comment",
+            )
+
+
+class QualityCertificateHardening(models.Model):
+    _inherit = "quality.certificate"
+
+    certified_hexagono_label = fields.Char("Hexágono")
+
+    @api.constrains("inspection_id")
+    def _check_inspection_accepted_hardening(self):
+        for rec in self:
+            if rec.inspection_id and rec.inspection_id.state != "aceptado":
+                raise ValidationError(_("Solo se puede certificar una inspección aceptada."))
+
+    @api.constrains("attribute_ids")
+    def _check_attribute_dedup_and_source_hardening(self):
+        for rec in self:
+            names = []
+            for line in rec.attribute_ids:
+                if line.inspection_id != rec.inspection_id:
+                    raise ValidationError(_("El certificado solo puede contener atributos de la inspección fuente."))
+
+                key = line.normalized_name or _slug(line.name)
+                if key:
+                    names.append(key)
+
+                if line.attribute_type == "float" and not line.allow_zero and not line.value_float:
+                    raise ValidationError(_("No se puede certificar el atributo '%s' con valor 0.") % line.name)
+
+                if line.result not in ("cumple", "ok"):
+                    raise ValidationError(_("Solo se pueden certificar atributos con resultado Cumple/OK."))
+
+            if len(names) != len(set(names)):
+                raise ValidationError(_("Hay atributos repetidos en el certificado."))
+
+    def action_generate(self):
+        for rec in self:
+            if rec.inspection_id.state != "aceptado":
+                raise UserError(_("Solo se puede generar certificado desde inspección aceptada."))
+            rec.state = "generado"
+
+
+
+class QualityActionLineHardening(models.Model):
+    _inherit = "quality.action.line"
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "evidence_ids" in vals:
+            for line in self:
+                if line.evidence_ids and line.state == "pendiente":
+                    line.state = "en_proceso"
+        return res
+
+    def action_complete(self):
+        for rec in self:
+            if not rec.evidence_ids:
+                raise UserError(_("No se puede completar la acción sin adjuntar evidencia."))
+            rec.state = "completada"
+            rec.date_completed = fields.Date.today()
+
+
+class QualityCustomerDocumentHardening(models.Model):
+    _inherit = "quality.customer.document"
+
+    def action_send(self):
+        for rec in self:
+            has_doc = rec.main_pdf or rec.main_image or rec.result_document_ids or rec.client_format_ids
+            if not has_doc:
+                raise UserError(_("No puede marcar como enviado si no existe documento cargado."))
+            rec.state = "enviado"
 ```
 
 ## ./models/quality_inherited_models.py
@@ -3536,7 +5294,7 @@ class ResCompany(models.Model):
                             <h4 t-field="doc.name"/>
                         </div>
 
-                        <t t-if="doc.state == 'aceptado'">
+                        <t t-if="doc.state == 'aceptado_diseno'">
                             <div class="text-center" style="margin-bottom: 15px;">
                                 <span style="background-color: #28a745; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
                                     ✅ PLANO LIBERADO
@@ -3935,9 +5693,12 @@ class ResCompany(models.Model):
                                         <span t-esc="doc.inspection_id.espesor_unit or 'in'"/>
                                     </td>
                                 </tr>
-                                <tr t-if="doc.certified_hexagono">
+                                <tr t-if="doc.certified_hexagono_label or doc.certified_hexagono">
                                     <td>Hexágono</td>
-                                    <td class="text-center"><span t-field="doc.certified_hexagono"/></td>
+                                    <td class="text-center">
+    <t t-if="doc.certified_hexagono_label"><span t-field="doc.certified_hexagono_label"/></t>
+    <t t-else=""><span t-field="doc.certified_hexagono"/></t>
+</td>
                                     <td class="text-center">-</td>
                                 </tr>
                                 <tr t-if="doc.certified_resistencia">
@@ -4011,7 +5772,7 @@ class ResCompany(models.Model):
                                 </div>
                                 <div class="col-6 text-center">
                                     <t t-if="doc.company_id.quality_stamp">
-                                        <img t-att-src="'data:image/png;base64,%s' % doc.company_id.quality_stamp.decode('utf-8')"
+                                        <img t-att-src="'data:image/png;base64,%s' % doc.company_id.quality_stamp"
                                              style="max-height: 120px; max-width: 200px;"
                                              alt="Sello de la Empresa"/>
                                     </t>
@@ -5583,6 +7344,79 @@ registry.category("fields").add("evidence_viewer", {
 </odoo>
 ```
 
+## ./views/quality_hardening_views.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_quality_process_type_form_hardening" model="ir.ui.view">
+        <field name="name">quality.process.type.form.hardening</field>
+        <field name="model">quality.process.type</field>
+        <field name="inherit_id" ref="quality_management.view_quality_process_type_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="capture_mode"/>
+                <field name="require_measures"/>
+                <field name="require_additional_attributes"/>
+                <field name="zero_value_blocking"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_quality_attribute_template_form_hardening" model="ir.ui.view">
+        <field name="name">quality.attribute.template.form.hardening</field>
+        <field name="model">quality.attribute.template</field>
+        <field name="inherit_id" ref="quality_management.view_quality_attribute_template_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='attribute_type']" position="after">
+                <field name="capture_zone"/>
+                <field name="result_mode" invisible="attribute_type != 'boolean'"/>
+                <field name="allow_zero" invisible="attribute_type != 'float'"/>
+                <field name="normalized_name" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_quality_inspection_form_hardening" model="ir.ui.view">
+        <field name="name">quality.inspection.form.hardening</field>
+        <field name="model">quality.inspection</field>
+        <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <field name="process_code" invisible="1"/>
+                <field name="capture_mode" invisible="1"/>
+            </xpath>
+
+            <xpath expr="//field[@name='supervisor_id']" position="before">
+                <field name="sin_supervisor"/>
+            </xpath>
+
+            <xpath expr="//field[@name='supervisor_id']" position="attributes">
+                <attribute name="invisible">sin_supervisor</attribute>
+                <attribute name="required">not sin_supervisor</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='date_inspection']" position="after">
+                <field name="date_started" readonly="1"/>
+                <field name="date_closed" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_quality_certificate_form_hardening" model="ir.ui.view">
+        <field name="name">quality.certificate.form.hardening</field>
+        <field name="model">quality.certificate</field>
+        <field name="inherit_id" ref="quality_management.view_quality_certificate_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='certified_hexagono']" position="after">
+                <field name="certified_hexagono_label" invisible="not certified_hexagono_label"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
+```
+
 ## ./views/quality_inherited_views.xml
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -5744,6 +7578,7 @@ registry.category("fields").add("evidence_viewer", {
                         <i class="fa fa-info-circle"/>
                         <b>Captura bloqueada hasta presionar "INICIAR INSPECCIÓN".</b>
                     </div>
+                    <field name="process_code" invisible="1"/>
                     <field name="show_largo" invisible="1"/>
                     <field name="show_ancho" invisible="1"/>
                     <field name="show_espesor" invisible="1"/>
@@ -5851,7 +7686,7 @@ registry.category("fields").add("evidence_viewer", {
                         </page>
 
                         <page string="Octágono (Extras)"
-                              invisible="process_type_id and process_type_id.code != 'octagono'"
+                              invisible="process_code != 'octagono'"
                               name="oct">
                             <group>
                                 <group>
@@ -5864,7 +7699,7 @@ registry.category("fields").add("evidence_viewer", {
                         </page>
 
                         <page string="Guillotina (Extras)"
-                              invisible="process_type_id and process_type_id.code != 'guillotina'"
+                              invisible="process_code != 'guillotina'"
                               name="guillot">
                             <group>
                                 <group string="Retícula">
@@ -5956,10 +7791,17 @@ registry.category("fields").add("evidence_viewer", {
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
+                                    <field name="result_mode"/>
                                     <field name="value_float"
                                            invisible="attribute_type != 'float'"/>
                                     <field name="value_char"
                                            invisible="attribute_type not in ('char','selection')"/>
+                                    <field name="value_ok"
+                                           string="OK/NO OK/N/A"
+                                           invisible="attribute_type != 'boolean' or result_mode != 'ok'"
+                                           widget="badge"
+                                           decoration-success="value_ok == 'ok'"
+                                           decoration-danger="value_ok == 'no_ok'"/>
                                     <field name="value_cumple"
                                            string="Cumple/NC/N/A"
                                            invisible="attribute_type != 'boolean'"
@@ -5971,6 +7813,7 @@ registry.category("fields").add("evidence_viewer", {
                                     <field name="max_value"
                                            invisible="attribute_type != 'float'"/>
                                     <field name="unit"/>
+                                    <field name="allow_zero"/>
                                     <field name="result" widget="badge"
                                            decoration-success="result == 'cumple'"
                                            decoration-danger="result == 'no_cumple'"/>
@@ -6125,6 +7968,14 @@ registry.category("fields").add("evidence_viewer", {
               parent="menu_quality_root"
               action="action_quality_customer_return"
               sequence="50"/>
+
+    
+    <menuitem id="menu_quality_troquel"
+              name="Troqueles"
+              parent="menu_quality_root"
+              action="action_quality_troquel"
+              sequence="55"
+              groups="group_quality_manager"/>
 
     <menuitem id="menu_quality_customer_document"
               name="Documentos de Cliente"
@@ -6531,12 +8382,6 @@ registry.category("fields").add("evidence_viewer", {
         <field name="res_model">quality.troquel</field>
         <field name="view_mode">list,form</field>
     </record>
-
-    <menuitem id="menu_quality_troquel"
-              name="Troqueles"
-              parent="menu_quality_root"
-              action="action_quality_troquel"
-              sequence="55"/>
 </odoo>
 ```
 
@@ -6562,6 +8407,102 @@ registry.category("fields").add("evidence_viewer", {
 ## ./wizards/__init__.py
 ```py
 from . import certificate_wizard
+from . import certificate_wizard_hardening
+```
+
+## ./wizards/certificate_wizard_hardening.py
+```py
+# -*- coding: utf-8 -*-
+
+import re
+import unicodedata
+
+from odoo import models, _
+
+
+def _slug(value):
+    value = value or ""
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
+    value = re.sub(r"[^a-zA-Z0-9]+", "_", value.lower()).strip("_")
+    return value
+
+
+class QualityCertificateWizardHardening(models.TransientModel):
+    _inherit = "quality.certificate.wizard"
+
+    def _selection_label(self, record, field_name, value):
+        if not value:
+            return False
+        return dict(record._fields[field_name].selection).get(value, value)
+
+    def action_create_certificate(self):
+        self.ensure_one()
+        insp = self.inspection_id
+
+        vals = {
+            "inspection_id": insp.id,
+            "partner_id": self.partner_id.id,
+            "certified_by": self.env.user.id,
+        }
+
+        if self.include_largo and insp.largo:
+            vals["certified_largo"] = insp.largo
+        if self.include_ancho and (insp.ancho or getattr(insp, "oct_ancho", 0.0)):
+            vals["certified_ancho"] = insp.ancho or insp.oct_ancho
+        if self.include_espesor and insp.espesor:
+            vals["certified_espesor"] = insp.espesor
+
+        hex_value = insp.hexagono or getattr(insp, "oct_hexagono", False) or insp.tipo_hexagono
+        if self.include_hexagono and hex_value:
+            field_name = "hexagono" if insp.hexagono else "oct_hexagono" if getattr(insp, "oct_hexagono", False) else "tipo_hexagono"
+            vals["certified_hexagono_label"] = self._selection_label(insp, field_name, hex_value)
+
+        if self.include_resistencia and insp.resistencia:
+            vals["certified_resistencia"] = insp.resistencia
+        if self.include_apariencia and insp.apariencia:
+            vals["certified_apariencia"] = self._selection_label(insp, "apariencia", insp.apariencia)
+        if self.include_humedad and insp.humedad_pct:
+            vals["certified_humedad"] = insp.humedad_pct
+
+        if self.include_pegado:
+            pegado_value = insp.pegado_result or getattr(insp, "oct_pegado", False)
+            if pegado_value:
+                field_name = "pegado_result" if insp.pegado_result else "oct_pegado"
+                vals["certified_pegado"] = self._selection_label(insp, field_name, pegado_value)
+
+        if self.include_retiramiento and (getattr(insp, "oct_retiramiento", 0.0) or getattr(insp, "reticula_extendida", 0.0)):
+            vals["certified_retiramiento"] = insp.oct_retiramiento or insp.reticula_extendida
+        if self.include_calibracion and insp.calibracion:
+            vals["certified_calibracion"] = insp.calibracion
+        if self.include_engomado and insp.engomado:
+            vals["certified_engomado"] = self._selection_label(insp, "engomado", insp.engomado)
+
+        cert = self.env["quality.certificate"].create(vals)
+
+        if self.include_all_attributes and insp.line_ids:
+            seen = set()
+            unique_ids = []
+            for line in insp.line_ids:
+                key = line.normalized_name or _slug(line.name)
+                if not key or key in seen:
+                    continue
+                if line.result not in ("cumple", "ok"):
+                    continue
+                if line.attribute_type == "float" and not line.allow_zero and not line.value_float:
+                    continue
+                seen.add(key)
+                unique_ids.append(line.id)
+            cert.attribute_ids = [(6, 0, unique_ids)]
+
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Certificado"),
+            "res_model": "quality.certificate",
+            "res_id": cert.id,
+            "view_mode": "form",
+            "target": "current",
+        }
+
 ```
 
 ## ./wizards/certificate_wizard_views.xml
