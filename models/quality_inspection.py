@@ -17,6 +17,8 @@ class QualityInspection(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "date_inspection desc, id desc"
 
+    process_code = fields.Char(related="process_type_id.code", store=True)
+
     name = fields.Char("Referencia", required=True, readonly=True,
                        default="Nuevo", copy=False)
 
@@ -195,6 +197,13 @@ class QualityInspection(models.Model):
                                  default=lambda s: s.env.company)
 
     # ------------------------------------------------------------------ compute
+    def _check_previous_process(self):  # antes _check_previous_process_hardening
+        for rec in self:
+            route = rec.quality_route_id
+            if not route:
+                return super(QualityInspectionRoute, rec)._check_previous_process()
+            codes
+
     @api.depends("process_type_id", "process_type_id.code")
     def _compute_inspection_type(self):
         legacy = ("laminadora_remanejo", "octagono", "guillotina_pegado")
