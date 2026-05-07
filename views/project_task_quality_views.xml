@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_task_form_quality" model="ir.ui.view">
+        <field name="name">project.task.form.quality</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Calidad" name="quality">
+                    <group>
+                        <group>
+                            <field name="quality_required_for_progress"/>
+                            <field name="quality_sample_release_id"
+                                   options="{'no_create': True}"/>
+                            <field name="quality_drawing_release_id"
+                                   options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="quality_block_reason" readonly="1"
+                                   invisible="not quality_block_reason"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-warning" role="alert"
+                         invisible="not quality_block_reason">
+                        <i class="fa fa-exclamation-triangle"/>
+                        <strong>Bloqueo:</strong>
+                        <field name="quality_block_reason" nolabel="1" readonly="1"/>
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

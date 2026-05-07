@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_troquel_validation_list" model="ir.ui.view">
+        <field name="name">quality.troquel.validation.list</field>
+        <field name="model">quality.troquel.validation</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'aprobado'"
+                  decoration-danger="state == 'rechazado'">
+                <field name="name"/>
+                <field name="troquel_id"/>
+                <field name="date"/>
+                <field name="dimensional_ok" widget="boolean_toggle"/>
+                <field name="functional_ok" widget="boolean_toggle"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_troquel_validation_form" model="ir.ui.view">
+        <field name="name">quality.troquel.validation.form</field>
+        <field name="model">quality.troquel.validation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" string="Iniciar Validación"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_approve" string="Aprobar"
+                            type="object" class="btn-primary"
+                            invisible="state != 'en_validacion'"/>
+                    <button name="action_reject" string="Rechazar"
+                            type="object" class="btn-danger"
+                            invisible="state != 'en_validacion'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="troquel_id"/>
+                            <field name="date"/>
+                        </group>
+                        <group>
+                            <field name="convoked_quality"/>
+                            <field name="quality_user_id"
+                                   invisible="not convoked_quality"/>
+                            <field name="convoked_production"/>
+                            <field name="production_user_id"
+                                   invisible="not convoked_production"/>
+                            <field name="design_user_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="dimensional_ok" readonly="1"/>
+                        <field name="functional_ok" readonly="1"/>
+                        <field name="overall_ok" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Mediciones / Pruebas">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="test_type"/>
+                                    <field name="name"/>
+                                    <field name="expected"/>
+                                    <field name="measured"/>
+                                    <field name="tolerance"/>
+                                    <field name="result" widget="badge"
+                                           decoration-success="result == 'cumple'"
+                                           decoration-danger="result == 'no_cumple'"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Observaciones">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_troquel_validation" model="ir.actions.act_window">
+        <field name="name">Validaciones de Troquel</field>
+        <field name="res_model">quality.troquel.validation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_troquel_repair_form" model="ir.ui.view">
+        <field name="name">quality.troquel.repair.form</field>
+        <field name="model">quality.troquel.repair</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_finish" string="Finalizar"
+                            type="object" class="btn-primary"
+                            invisible="state != 'en_curso'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="troquel_id"/>
+                            <field name="repair_type"/>
+                            <field name="proveedor_id"
+                                   invisible="repair_type != 'proveedor'"/>
+                        </group>
+                        <group>
+                            <field name="date_started"/>
+                            <field name="date_finished"/>
+                            <field name="days_estimated"/>
+                            <field name="cost"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <separator string="Desglose de Reparación"/>
+                    <field name="description"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_troquel_repair" model="ir.actions.act_window">
+        <field name="name">Reparaciones de Troquel</field>
+        <field name="res_model">quality.troquel.repair</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Smart buttons en troquel -->
+    <record id="view_quality_troquel_form_extended" model="ir.ui.view">
+        <field name="name">quality.troquel.form.extended</field>
+        <field name="model">quality.troquel</field>
+        <field name="inherit_id" ref="quality_management.view_quality_troquel_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_open_validation"
+                        string="Nueva Validación" type="object"
+                        class="btn-secondary"/>
+                <button name="action_open_repair"
+                        string="Nueva Reparación" type="object"
+                        class="btn-secondary"
+                        invisible="state not in ('reparacion_interna','reparacion_proveedor','danado')"/>
+            </xpath>
+            <xpath expr="//sheet/div[@class='oe_title']" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <field name="needs_review" invisible="1"/>
+                    <button name="%(action_troquel_validation)d"
+                            type="action"
+                            class="oe_stat_button" icon="fa-check-square-o"
+                            context="{'search_default_troquel_id': active_id}">
+                        <field name="validation_count" widget="statinfo"
+                               string="Validaciones"/>
+                    </button>
+                    <button name="%(action_troquel_repair)d"
+                            type="action"
+                            class="oe_stat_button" icon="fa-wrench"
+                            context="{'search_default_troquel_id': active_id}">
+                        <field name="repair_count" widget="statinfo"
+                               string="Reparaciones"/>
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='pieces_per_review']" position="after">
+                <field name="pieces_produced"/>
+                <field name="needs_review" readonly="1"
+                       decoration-warning="needs_review"/>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="menu_quality_troquel_validation"
+              name="Validaciones de Troquel"
+              parent="menu_quality_config"
+              action="action_troquel_validation"
+              sequence="40"/>
+    <menuitem id="menu_quality_troquel_repair"
+              name="Reparaciones de Troquel"
+              parent="menu_quality_config"
+              action="action_troquel_repair"
+              sequence="45"/>
+</odoo>

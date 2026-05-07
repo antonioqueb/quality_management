@@ -20,11 +20,3 @@ from . import quality_troquel
 from . import quality_inherited_models
 from . import product_template
 from . import quality_hardening
-from . import project_task_quality
-from . import quality_process_route
-from . import quality_retention_flow
-from . import quality_change_history
-from . import quality_certificate_email
-from . import quality_corrective_extra
-from . import quality_customer_document_extra
-from . import quality_troquel_validation

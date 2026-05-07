@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_certificate_form_email" model="ir.ui.view">
+        <field name="name">quality.certificate.form.email</field>
+        <field name="model">quality.certificate</field>
+        <field name="inherit_id" ref="quality_management.view_quality_certificate_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Bitácora de Envíos" name="emails">
+                    <group>
+                        <field name="date_sent" readonly="1"/>
+                        <field name="sent_by" readonly="1"/>
+                    </group>
+                    <field name="email_log_ids" readonly="1">
+                        <list>
+                            <field name="date"/>
+                            <field name="user_id"/>
+                            <field name="recipient_email"/>
+                            <field name="notes"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

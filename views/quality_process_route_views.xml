@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_process_route_list" model="ir.ui.view">
+        <field name="name">quality.process.route.list</field>
+        <field name="model">quality.process.route</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_quality_process_route_form" model="ir.ui.view">
+        <field name="name">quality.process.route.form</field>
+        <field name="model">quality.process.route</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Ruta..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Pasos">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="process_type_id"/>
+                                    <field name="is_optional"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Productos">
+                            <field name="product_tmpl_ids"/>
+                        </page>
+                        <page string="Categorías">
+                            <field name="product_categ_ids"/>
+                        </page>
+                        <page string="Notas">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_quality_process_route" model="ir.actions.act_window">
+        <field name="name">Rutas de Proceso</field>
+        <field name="res_model">quality.process.route</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_quality_process_route"
+              name="Rutas de Proceso"
+              parent="menu_quality_config"
+              action="action_quality_process_route"
+              sequence="20"/>
+
+    <!-- product.template: campo ruta -->
+    <record id="view_product_template_form_quality_route" model="ir.ui.view">
+        <field name="name">product.template.form.quality.route</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='quality']" position="inside">
+                <separator string="Ruta de Proceso"/>
+                <group>
+                    <field name="quality_route_id"
+                           options="{'no_create': True}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

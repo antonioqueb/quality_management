@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_8d_document_extended"
+              inherit_id="quality_management.report_8d_document">
+        <xpath expr="//h4[contains(., 'D6 - Plan de Acciones')]" position="before">
+            <h4>D4 - 5 Por qué</h4>
+            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                <thead>
+                    <tr class="table-active">
+                        <th style="width: 10%;">N°</th>
+                        <th style="width: 35%;">Pregunta</th>
+                        <th>Respuesta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="doc.why_ids" t-as="why">
+                        <td><span t-field="why.sequence"/></td>
+                        <td><span t-field="why.question"/></td>
+                        <td><span t-field="why.answer"/></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>D5 - Análisis Causa-Efecto (Ishikawa)</h4>
+            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                <thead>
+                    <tr class="table-active">
+                        <th style="width: 25%;">Categoría</th>
+                        <th>Causa</th>
+                        <th style="width: 15%;" class="text-center">Causa Raíz</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="doc.ishikawa_ids" t-as="ish">
+                        <td><span t-field="ish.category"/></td>
+                        <td><span t-field="ish.cause"/></td>
+                        <td class="text-center">
+                            <t t-if="ish.is_root_cause">
+                                <strong style="color:#c00;">★ RAÍZ</strong>
+                            </t>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>D2 - Equipo de Trabajo</h4>
+            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                <thead>
+                    <tr class="table-active">
+                        <th>Miembro</th>
+                        <th>Rol</th>
+                        <th class="text-center">Notifica</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="doc.work_team_ids" t-as="m">
+                        <td><span t-field="m.user_id.name"/></td>
+                        <td><span t-field="m.role"/></td>
+                        <td class="text-center">
+                            <t t-if="m.notify_progress">Sí</t>
+                            <t t-else="">No</t>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </xpath>
+    </template>
+</odoo>

@@ -46,15 +46,6 @@
         "reports/report_drawing_release.xml",
         "reports/report_customer_return.xml",
         "reports/report_customer_document.xml",
-            "data/quality_routes_data.xml",
-            "security/quality_strict_acl.xml",
-            "views/project_task_quality_views.xml",
-            "views/quality_process_route_views.xml",
-            "views/quality_retention_views.xml",
-            "views/quality_change_history_views.xml",
-            "views/quality_troquel_validation_views.xml",
-            "views/quality_certificate_email_views.xml",
-            "reports/report_8d_extended.xml",
     ],
     "assets": {
         "web.assets_backend": [

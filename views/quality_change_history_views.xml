@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_inspection_history_list" model="ir.ui.view">
+        <field name="name">quality.inspection.history.list</field>
+        <field name="model">quality.inspection.history</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="change_date"/>
+                <field name="changed_by"/>
+                <field name="field_label"/>
+                <field name="old_value"/>
+                <field name="new_value"/>
+                <field name="inspection_state_at_change"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_quality_inspection_form_history" model="ir.ui.view">
+        <field name="name">quality.inspection.form.history</field>
+        <field name="model">quality.inspection</field>
+        <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Historial de Cambios" name="history"
+                      invisible="state == 'borrador'">
+                    <field name="history_ids" readonly="1">
+                        <list>
+                            <field name="change_date"/>
+                            <field name="changed_by"/>
+                            <field name="field_label"/>
+                            <field name="old_value"/>
+                            <field name="new_value"/>
+                            <field name="inspection_state_at_change"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

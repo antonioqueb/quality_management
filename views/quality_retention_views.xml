@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_quality_inspection_form_retention" model="ir.ui.view">
+        <field name="name">quality.inspection.form.retention</field>
+        <field name="model">quality.inspection</field>
+        <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_accept_correction"
+                        string="Producción: Aceptar Corrección"
+                        type="object"
+                        invisible="state != 'retenido' or retention_state not in ('retenido','en_correccion')"/>
+                <button name="action_correction_done"
+                        string="Marcar Corrección Hecha"
+                        type="object" class="btn-primary"
+                        invisible="state != 'retenido' or retention_state not in ('retenido','en_correccion')"/>
+                <button name="action_start_reinspection"
+                        string="Iniciar Reinspección"
+                        type="object" class="btn-warning"
+                        invisible="retention_state != 'correccion_hecha'"
+                        groups="quality_management.group_quality_inspector"/>
+                <button name="action_accept_after_retention"
+                        string="Aceptar tras Reinspección"
+                        type="object" class="btn-primary"
+                        invisible="retention_state != 'reinspeccion'"
+                        groups="quality_management.group_quality_inspector"/>
+                <button name="action_reject_after_retention"
+                        string="Rechazar tras Reinspección"
+                        type="object" class="btn-danger"
+                        invisible="retention_state != 'reinspeccion'"
+                        groups="quality_management.group_quality_inspector"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Retención / Reinspección" name="retention"
+                      invisible="retention_state == 'none'">
+                    <group>
+                        <group>
+                            <field name="retention_state" readonly="1"/>
+                            <field name="retention_correction_done_by" readonly="1"/>
+                            <field name="retention_correction_done_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <separator string="Notas de Corrección"/>
+                    <field name="retention_correction_notes"
+                           placeholder="Detalle de la corrección aplicada por Producción..."/>
+                    <separator string="Bitácora"/>
+                    <field name="retention_log_ids" readonly="1">
+                        <list>
+                            <field name="date"/>
+                            <field name="user_id"/>
+                            <field name="retention_state_after"/>
+                            <field name="description"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
