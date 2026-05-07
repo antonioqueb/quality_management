@@ -8,11 +8,13 @@
                   decoration-danger="state == 'rechazado'"
                   decoration-info="state == 'en_inspeccion'">
                 <field name="name"/>
+                <field name="sample_type"/>
                 <field name="product_id"/>
                 <field name="project_task_id"/>
                 <field name="requested_by"/>
                 <field name="inspector_id"/>
                 <field name="date_requested"/>
+                <field name="date_limit"/>
                 <field name="state" widget="badge"
                        decoration-success="state == 'aceptado'"
                        decoration-danger="state == 'rechazado'"
@@ -27,8 +29,13 @@
         <field name="arch" type="xml">
             <form string="Liberación de Muestra">
                 <header>
-                    <button name="action_submit_inspection" string="Enviar a Inspección"
-                            type="object" class="btn-primary"
+                    <button name="action_register_cnc"
+                            string="Registrar Transformación CNC"
+                            type="object" class="btn-secondary"
+                            invisible="sample_type != 'pt' or state != 'borrador' or cnc_date_realized"/>
+                    <button name="action_submit_inspection"
+                            string="Enviar a Inspección" type="object"
+                            class="btn-primary"
                             invisible="state != 'borrador'"/>
                     <button name="action_accept" string="Liberar (Aceptado)"
                             type="object" class="btn-primary"
@@ -52,37 +59,26 @@
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
                     <group>
-                        <group>
+                        <group string="Tipo y Datos">
+                            <field name="sample_type" widget="radio"/>
                             <field name="project_task_id"/>
                             <field name="product_id"/>
                             <field name="requested_by"/>
-                        </group>
-                        <group>
                             <field name="inspector_id"/>
-                            <field name="date_requested"/>
-                            <field name="date_inspected"/>
+                        </group>
+                        <group string="Fechas (automáticas)">
+                            <field name="date_requested" readonly="1"/>
+                            <field name="date_limit" readonly="1"/>
+                            <field name="date_inspected" readonly="1"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Atributos de Inspección">
-                            <field name="inspection_line_ids">
-                                <list editable="bottom">
-                                    <field name="sequence" widget="handle"/>
-                                    <field name="name"/>
-                                    <field name="attribute_type"/>
-                                    <field name="value_float" invisible="attribute_type != 'float'"/>
-                                    <field name="value_char" invisible="attribute_type not in ('char', 'selection')"/>
-                                    <field name="value_boolean" invisible="attribute_type != 'boolean'"/>
-                                    <field name="min_value" invisible="attribute_type != 'float'"/>
-                                    <field name="max_value" invisible="attribute_type != 'float'"/>
-                                    <field name="unit"/>
-                                    <field name="result" widget="badge"
-                                           decoration-success="result == 'cumple'"
-                                           decoration-danger="result == 'no_cumple'"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="Especificación PDF">
+                        <page string="Especificación PDF" name="spec">
+                            <div class="alert alert-warning" role="alert"
+                                 invisible="spec_pdf">
+                                <i class="fa fa-exclamation-triangle"/>
+                                La especificación PDF es <b>obligatoria</b>. Sin plano o dibujo no se puede inspeccionar.
+                            </div>
                             <group>
                                 <field name="spec_pdf" filename="spec_pdf_name"/>
                                 <field name="spec_pdf_name" invisible="1"/>
@@ -91,7 +87,41 @@
                                 <field name="spec_pdf" widget="pdf_viewer" readonly="1"/>
                             </div>
                         </page>
-                        <page string="Observaciones">
+                        <page string="Atributos de Inspección" name="attrs">
+                            <field name="inspection_line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="attribute_type"/>
+                                    <field name="value_float" invisible="attribute_type != 'float'"/>
+                                    <field name="value_char" invisible="attribute_type not in ('char', 'selection')"/>
+                                    <field name="value_cumple" invisible="attribute_type != 'boolean'"/>
+                                    <field name="min_value" invisible="attribute_type != 'float'"/>
+                                    <field name="max_value" invisible="attribute_type != 'float'"/>
+                                    <field name="unit" placeholder="mm, cm, in, %..."/>
+                                    <field name="result" widget="badge"
+                                           decoration-success="result == 'cumple'"
+                                           decoration-danger="result == 'no_cumple'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Evidencia (Imágenes)" name="evidence">
+                            <field name="evidence_ids" widget="many2many_binary"/>
+                            <separator string="Vista Previa"/>
+                            <field name="evidence_ids" widget="evidence_viewer" nolabel="1"/>
+                        </page>
+                        <page string="Transformación CNC"
+                              invisible="sample_type != 'pt'" name="cnc">
+                            <group>
+                                <group>
+                                    <field name="cnc_design_user_id" readonly="1"/>
+                                    <field name="cnc_date_realized" readonly="1"/>
+                                </group>
+                            </group>
+                            <field name="cnc_observations"
+                                   placeholder="Observaciones de la transformación..."/>
+                        </page>
+                        <page string="Observaciones" name="notes">
                             <field name="notes"/>
                         </page>
                     </notebook>
@@ -101,35 +131,9 @@
         </field>
     </record>
 
-    <record id="view_quality_sample_release_kanban" model="ir.ui.view">
-        <field name="name">quality.sample.release.kanban</field>
-        <field name="model">quality.sample.release</field>
-        <field name="arch" type="xml">
-            <kanban default_group_by="state" class="o_kanban_small_column">
-                <field name="name"/>
-                <field name="product_id"/>
-                <field name="state"/>
-                <field name="requested_by"/>
-                <templates>
-                    <t t-name="card">
-                        <field name="name" class="fw-bold"/>
-                        <field name="product_id"/>
-                        <field name="requested_by"/>
-                        <field name="date_requested"/>
-                    </t>
-                </templates>
-            </kanban>
-        </field>
-    </record>
-
     <record id="action_quality_sample_release" model="ir.actions.act_window">
         <field name="name">Liberación de Muestras</field>
         <field name="res_model">quality.sample.release</field>
-        <field name="view_mode">list,form,kanban</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Crear solicitud de liberación de muestra
-            </p>
-        </field>
+        <field name="view_mode">list,form</field>
     </record>
 </odoo>

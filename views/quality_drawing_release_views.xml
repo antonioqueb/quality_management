@@ -4,19 +4,18 @@
         <field name="name">quality.drawing.release.list</field>
         <field name="model">quality.drawing.release</field>
         <field name="arch" type="xml">
-            <list decoration-success="state == 'aceptado'"
-                  decoration-danger="state == 'rechazado'"
+            <list decoration-success="state == 'aceptado_diseno'"
+                  decoration-danger="state in ('rechazado','cerrada')"
                   decoration-info="state == 'en_revision'">
                 <field name="name"/>
                 <field name="partner_id"/>
+                <field name="request_type"/>
+                <field name="modification_count"/>
                 <field name="sale_order_id" optional="show"/>
                 <field name="requested_by"/>
-                <field name="inspector_id"/>
                 <field name="date_requested"/>
-                <field name="state" widget="badge"
-                       decoration-success="state == 'aceptado'"
-                       decoration-danger="state == 'rechazado'"
-                       decoration-info="state == 'en_revision'"/>
+                <field name="date_release_expected" optional="show"/>
+                <field name="state" widget="badge"/>
             </list>
         </field>
     </record>
@@ -27,13 +26,24 @@
         <field name="arch" type="xml">
             <form string="Liberación de Plano">
                 <header>
-                    <button name="action_submit_review" string="Enviar a Revisión"
+                    <button name="action_submit_review"
+                            string="Enviar a Revisión Calidad"
                             type="object" class="btn-primary"
-                            invisible="state != 'borrador'"/>
-                    <button name="action_accept" string="Liberar"
-                            type="object" class="btn-primary"
+                            invisible="state not in ('borrador','rechazado')"/>
+                    <button name="action_quality_accept"
+                            string="✓ Calidad: Aceptar" type="object"
+                            class="btn-primary"
                             invisible="state != 'en_revision'"
                             groups="quality_management.group_quality_inspector"/>
+                    <button name="action_sales_accept"
+                            string="✓ Ventas: Aceptar" type="object"
+                            class="btn-primary"
+                            invisible="state != 'aceptado_calidad'"
+                            groups="sales_team.group_sale_salesman"/>
+                    <button name="action_design_accept"
+                            string="✓ Diseño: Aceptar (Final)" type="object"
+                            class="btn-primary"
+                            invisible="state != 'aceptado_ventas'"/>
                     <button name="action_reject" string="Rechazar"
                             type="object" class="btn-danger"
                             invisible="state != 'en_revision'"
@@ -42,29 +52,79 @@
                             type="object" class="btn-secondary" icon="fa-print"/>
                     <button name="action_reset_draft" string="Regresar a Borrador"
                             type="object"
-                            invisible="state not in ('rechazado',)"
+                            invisible="state != 'rechazado'"
                             groups="quality_management.group_quality_manager"/>
                     <field name="state" widget="statusbar"
-                           statusbar_visible="borrador,en_revision,aceptado"/>
+                           statusbar_visible="borrador,en_revision,aceptado_calidad,aceptado_ventas,aceptado_diseno"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
+                    <div class="alert alert-info" role="alert"
+                         invisible="modification_count == 0">
+                        <i class="fa fa-info-circle"/>
+                        Modificación en curso: <b><field name="modification_count" nolabel="1" readonly="1"/> de 3</b>.
+                        Si se excede el máximo, la liberación se cierra y debe iniciarse un nuevo ciclo.
+                    </div>
+                    <div class="alert alert-danger" role="alert"
+                         invisible="state != 'cerrada'">
+                        <i class="fa fa-ban"/>
+                        <b>Liberación cerrada</b>: se excedió el máximo de 3 modificaciones.
+                        Inicie un nuevo proceso de Alta/Actualización (continúe el consecutivo: 4, 5, 6...).
+                    </div>
                     <group>
-                        <group>
+                        <group string="Cliente y Solicitud">
                             <field name="partner_id"/>
                             <field name="sale_order_id"/>
                             <field name="requested_by"/>
+                            <field name="request_type" widget="radio"/>
+                            <field name="drawing_path"
+                                   placeholder="Ej. C:\Users\Calidad\Nextcloud\..."/>
                         </group>
-                        <group>
-                            <field name="inspector_id"/>
-                            <field name="date_requested"/>
-                            <field name="date_released"/>
+                        <group string="Fechas (automáticas)">
+                            <field name="date_requested" readonly="1"/>
+                            <field name="date_release_expected" readonly="1"/>
+                            <field name="date_released" readonly="1"/>
+                            <field name="modification_count" readonly="1"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Plano PDF">
+                        <page string="Requisitos de Fabricación" name="reqs">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                Captura de Ventas previa al envío a Calidad.
+                            </p>
+                            <group>
+                                <group string="Sellos">
+                                    <field name="req_sellos"/>
+                                    <field name="req_sellos_date"
+                                           invisible="not req_sellos"/>
+                                </group>
+                                <group string="Plantilla">
+                                    <field name="req_plantilla"/>
+                                    <field name="req_plantilla_date"
+                                           invisible="not req_plantilla"/>
+                                </group>
+                                <group string="Troquel">
+                                    <field name="req_troquel"/>
+                                    <field name="req_troquel_date"
+                                           invisible="not req_troquel"/>
+                                </group>
+                                <group string="Otro">
+                                    <field name="req_otro"/>
+                                    <field name="req_otro_desc"
+                                           invisible="not req_otro"/>
+                                    <field name="req_otro_date"
+                                           invisible="not req_otro"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Plano (PDF)" name="drawing">
+                            <div class="alert alert-warning" invisible="drawing_pdf">
+                                <i class="fa fa-exclamation-triangle"/>
+                                Sin plano cargado no se puede avanzar.
+                            </div>
                             <group>
                                 <field name="drawing_pdf" filename="drawing_pdf_name"/>
                                 <field name="drawing_pdf_name" invisible="1"/>
@@ -73,11 +133,51 @@
                                 <field name="drawing_pdf" widget="pdf_viewer" readonly="1"/>
                             </div>
                         </page>
-                        <page string="Documentos Adjuntos">
+                        <page string="Cotización/Dibujo (PDF)" name="quotation">
+                            <div class="alert alert-warning" invisible="quotation_pdf">
+                                <i class="fa fa-exclamation-triangle"/>
+                                Sin cotización/dibujo cargado no se puede avanzar.
+                            </div>
+                            <group>
+                                <field name="quotation_pdf" filename="quotation_pdf_name"/>
+                                <field name="quotation_pdf_name" invisible="1"/>
+                            </group>
+                            <div invisible="not quotation_pdf" class="o_quality_pdf_preview">
+                                <field name="quotation_pdf" widget="pdf_viewer" readonly="1"/>
+                            </div>
+                        </page>
+                        <page string="Adjuntos Adicionales" name="attachs">
                             <field name="drawing_attachment_ids" widget="many2many_binary"/>
                         </page>
-                        <page string="Rechazo" invisible="state != 'rechazado'">
-                            <field name="rejection_reason" placeholder="Motivo de rechazo..."/>
+                        <page string="Modificaciones" name="mods">
+                            <field name="modification_ids" readonly="1">
+                                <list>
+                                    <field name="sequence"/>
+                                    <field name="date"/>
+                                    <field name="requested_by"/>
+                                    <field name="description"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Triple Check" name="triple">
+                            <group>
+                                <group string="Calidad">
+                                    <field name="accepted_by_quality" readonly="1"/>
+                                    <field name="accepted_by_quality_date" readonly="1"/>
+                                </group>
+                                <group string="Ventas">
+                                    <field name="accepted_by_sales" readonly="1"/>
+                                    <field name="accepted_by_sales_date" readonly="1"/>
+                                </group>
+                                <group string="Diseño">
+                                    <field name="accepted_by_design" readonly="1"/>
+                                    <field name="accepted_by_design_date" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Rechazo" invisible="state != 'rechazado'" name="reject">
+                            <field name="rejection_reason"
+                                   placeholder="Motivo de rechazo..."/>
                         </page>
                     </notebook>
                 </sheet>
@@ -90,10 +190,5 @@
         <field name="name">Liberación de Planos</field>
         <field name="res_model">quality.drawing.release</field>
         <field name="view_mode">list,form</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Crear solicitud de liberación de plano
-            </p>
-        </field>
     </record>
 </odoo>

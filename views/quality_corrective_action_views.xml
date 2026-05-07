@@ -9,21 +9,20 @@
                   decoration-muted="state == 'no_procede'">
                 <field name="name"/>
                 <field name="origin_type"/>
+                <field name="defect_type" optional="show"/>
                 <field name="responsible_id"/>
                 <field name="date_opened"/>
+                <field name="date_closed" optional="show"/>
                 <field name="action_count"/>
                 <field name="action_completed_count"/>
-                <field name="action_overdue_count" decoration-danger="action_overdue_count > 0"/>
+                <field name="action_overdue_count"
+                       decoration-danger="action_overdue_count > 0"/>
                 <field name="progress" widget="progressbar"/>
-                <field name="state" widget="badge"
-                       decoration-success="state == 'cerrada'"
-                       decoration-info="state in ('abierta', 'en_proceso')"
-                       decoration-muted="state == 'no_procede'"/>
+                <field name="state" widget="badge"/>
             </list>
         </field>
     </record>
 
-    <!-- Formulario separado para quality.action.line para ver evidencia inline -->
     <record id="view_quality_action_line_form" model="ir.ui.view">
         <field name="name">quality.action.line.form</field>
         <field name="model">quality.action.line</field>
@@ -33,10 +32,7 @@
                     <group>
                         <field name="description"/>
                         <field name="responsible_id"/>
-                        <field name="state" widget="badge"
-                               decoration-success="state == 'completada'"
-                               decoration-danger="state == 'vencida'"
-                               decoration-info="state == 'en_proceso'"/>
+                        <field name="state" widget="badge"/>
                     </group>
                     <group>
                         <field name="date_due"/>
@@ -60,55 +56,97 @@
         <field name="name">quality.corrective.action.form</field>
         <field name="model">quality.corrective.action</field>
         <field name="arch" type="xml">
-            <form string="Acción Correctiva/Preventiva">
+            <form string="Acción Correctiva / 8D">
                 <header>
-                    <button name="action_open" string="Abrir"
+                    <button name="action_evaluate_quality"
+                            string="Enviar a Evaluación Calidad"
                             type="object" class="btn-primary"
-                            invisible="state != 'borrador'"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_quality_evaluated"
+                            string="Calidad Evaluó - Continuar a 8D"
+                            type="object" class="btn-primary"
+                            invisible="state != 'evaluacion_calidad'"
                             groups="quality_management.group_quality_manager"/>
                     <button name="action_in_progress" string="En Proceso"
                             type="object"
                             invisible="state != 'abierta'"/>
                     <button name="action_close" string="Cerrar"
                             type="object" class="btn-primary"
-                            invisible="state not in ('abierta', 'en_proceso')"
+                            invisible="state not in ('abierta','en_proceso')"
                             groups="quality_management.group_quality_manager"/>
                     <button name="action_no_proceed" string="No Procede"
                             type="object" class="btn-secondary"
-                            invisible="state != 'borrador'"
+                            invisible="state in ('cerrada','no_procede')"
                             groups="quality_management.group_quality_manager"/>
                     <button name="action_reopen" string="Reabrir"
                             type="object"
-                            invisible="state not in ('cerrada', 'no_procede')"
+                            invisible="state not in ('cerrada','no_procede')"
                             groups="quality_management.group_quality_manager"/>
                     <button name="action_print_8d" string="Imprimir 8D"
                             type="object" class="btn-secondary" icon="fa-print"/>
                     <field name="state" widget="statusbar"
-                           statusbar_visible="borrador,abierta,en_proceso,cerrada"/>
+                           statusbar_visible="borrador,evaluacion_calidad,abierta,en_proceso,cerrada"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
                     <group>
-                        <group>
+                        <group string="Origen e Identificación">
                             <field name="origin_type"/>
                             <field name="origin_inspection_id"
                                    invisible="origin_type != 'inspeccion'"/>
                             <field name="origin_return_id"
-                                   invisible="origin_type != 'devolucion'"/>
+                                   invisible="origin_type not in ('devolucion','reclamacion')"/>
+                            <field name="defect_type"/>
+                            <field name="defect_other_desc"
+                                   invisible="defect_type != 'otro'"
+                                   required="defect_type == 'otro'"/>
                             <field name="responsible_id"/>
                         </group>
-                        <group>
+                        <group string="Fechas y Avance">
                             <field name="date_opened"/>
-                            <field name="date_closed"/>
+                            <field name="date_closed" readonly="1"/>
+                            <field name="quality_evaluated_by" readonly="1"/>
+                            <field name="quality_evaluated_date" readonly="1"/>
                             <field name="progress" widget="progressbar"/>
                         </group>
                     </group>
-                    <separator string="Descripción del Incumplimiento"/>
+                    <separator string="D1 - Descripción del Incumplimiento"/>
                     <field name="origin_description"/>
                     <notebook>
-                        <page string="Acciones" name="actions">
+                        <page string="D2 - Equipo de Trabajo" name="team">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                Miembros que recibirán notificaciones de avance.
+                            </p>
+                            <field name="work_team_ids">
+                                <list editable="bottom">
+                                    <field name="user_id"/>
+                                    <field name="role"/>
+                                    <field name="notify_progress"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="D4 - 5 Por qué" name="why">
+                            <field name="why_ids">
+                                <list editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="question"/>
+                                    <field name="answer"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="D5 - Ishikawa (Causa-Efecto)" name="ishikawa">
+                            <field name="ishikawa_ids">
+                                <list editable="bottom">
+                                    <field name="category"/>
+                                    <field name="cause"/>
+                                    <field name="is_root_cause"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="D6 - Acciones" name="actions">
                             <field name="action_line_ids">
                                 <list editable="bottom">
                                     <field name="description"/>
@@ -125,8 +163,15 @@
                                 </list>
                             </field>
                             <div class="text-muted mt-2">
-                                <i class="fa fa-info-circle"/> Para ver la evidencia con vista previa (imágenes, videos, PDFs), abra cada línea de acción en modo formulario.
+                                <i class="fa fa-info-circle"/>
+                                Para ver vista previa de evidencia, abra cada
+                                acción en formulario.
                             </div>
+                        </page>
+                        <page string="No Procede"
+                              invisible="state != 'no_procede'" name="no_proc">
+                            <field name="no_procede_reason"
+                                   placeholder="Motivo por el que no procede la acción correctiva..."/>
                         </page>
                     </notebook>
                 </sheet>
@@ -142,30 +187,32 @@
             <search string="Acciones Correctivas">
                 <field name="name"/>
                 <field name="responsible_id"/>
+                <filter string="En Evaluación Calidad" name="eval"
+                        domain="[('state','=','evaluacion_calidad')]"/>
                 <filter string="Abiertas" name="open"
-                        domain="[('state', 'in', ('abierta', 'en_proceso'))]"/>
+                        domain="[('state','in',('abierta','en_proceso'))]"/>
                 <filter string="Con Acciones Vencidas" name="overdue"
-                        domain="[('action_line_ids.state', '=', 'vencida')]"/>
+                        domain="[('action_line_ids.state','=','vencida')]"/>
                 <filter string="Cerradas" name="closed"
-                        domain="[('state', '=', 'cerrada')]"/>
+                        domain="[('state','=','cerrada')]"/>
                 <group expand="0" string="Agrupar por">
-                    <filter string="Tipo de Origen" name="group_origin" context="{'group_by': 'origin_type'}"/>
-                    <filter string="Responsable" name="group_resp" context="{'group_by': 'responsible_id'}"/>
-                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Tipo de Origen" name="group_origin"
+                            context="{'group_by': 'origin_type'}"/>
+                    <filter string="Tipo de Defecto" name="group_defect"
+                            context="{'group_by': 'defect_type'}"/>
+                    <filter string="Responsable" name="group_resp"
+                            context="{'group_by': 'responsible_id'}"/>
+                    <filter string="Estado" name="group_state"
+                            context="{'group_by': 'state'}"/>
                 </group>
             </search>
         </field>
     </record>
 
     <record id="action_quality_corrective_action" model="ir.actions.act_window">
-        <field name="name">Acciones Correctivas/Preventivas</field>
+        <field name="name">Acciones Correctivas / 8D</field>
         <field name="res_model">quality.corrective.action</field>
         <field name="view_mode">list,form</field>
         <field name="context">{'search_default_open': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Crear una acción correctiva o preventiva
-            </p>
-        </field>
     </record>
 </odoo>

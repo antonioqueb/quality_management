@@ -11,6 +11,8 @@
                 <field name="partner_id"/>
                 <field name="product_id"/>
                 <field name="process_type_id"/>
+                <field name="folio" optional="show"/>
+                <field name="lot_id" optional="show"/>
                 <field name="date_generated"/>
                 <field name="certified_by"/>
                 <field name="state" widget="badge"
@@ -35,7 +37,8 @@
                     <button name="action_send_email" string="Enviar por Correo"
                             type="object" class="btn-secondary"
                             invisible="state == 'borrador'"/>
-                    <button name="action_mark_sent" string="Marcar como Enviado"
+                    <button name="action_mark_sent"
+                            string="Marcar como Enviado"
                             type="object"
                             invisible="state != 'generado'"/>
                     <field name="state" widget="statusbar"
@@ -49,49 +52,77 @@
                         <group>
                             <field name="inspection_id"/>
                             <field name="partner_id"/>
-                            <field name="product_id"/>
-                            <field name="process_type_id"/>
+                            <field name="product_id" readonly="1"/>
+                            <field name="process_type_id" readonly="1"/>
                         </group>
                         <group>
-                            <field name="folio"/>
-                            <field name="lot_id"/>
+                            <field name="folio" readonly="1"/>
+                            <field name="lot_id" readonly="1"/>
                             <field name="date_generated"/>
                             <field name="certified_by"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Valores Certificados">
+                        <page string="Valores Certificados" name="vals">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                No se permiten valores en cero ni atributos repetidos.
+                            </p>
                             <group>
                                 <group>
-                                    <field name="certified_largo" invisible="certified_largo == 0"/>
-                                    <field name="certified_ancho" invisible="certified_ancho == 0"/>
-                                    <field name="certified_espesor" invisible="certified_espesor == 0"/>
-                                    <field name="certified_hexagono" invisible="certified_hexagono == 0"/>
-                                    <field name="certified_resistencia" invisible="certified_resistencia == 0"/>
+                                    <field name="certified_largo"
+                                           invisible="certified_largo == 0"/>
+                                    <field name="certified_ancho"
+                                           invisible="certified_ancho == 0"/>
+                                    <field name="certified_espesor"
+                                           invisible="certified_espesor == 0"/>
+                                    <field name="certified_hexagono"
+                                           invisible="certified_hexagono == 0"/>
+                                    <field name="certified_resistencia"
+                                           invisible="certified_resistencia == 0"/>
                                 </group>
                                 <group>
-                                    <field name="certified_apariencia" invisible="not certified_apariencia"/>
-                                    <field name="certified_humedad" invisible="certified_humedad == 0"/>
-                                    <field name="certified_pegado" invisible="not certified_pegado"/>
-                                    <field name="certified_retiramiento" invisible="certified_retiramiento == 0"/>
-                                    <field name="certified_calibracion" invisible="certified_calibracion == 0"/>
-                                    <field name="certified_engomado" invisible="not certified_engomado"/>
+                                    <field name="certified_apariencia"
+                                           invisible="not certified_apariencia"/>
+                                    <field name="certified_humedad"
+                                           invisible="certified_humedad == 0"/>
+                                    <field name="certified_pegado"
+                                           invisible="not certified_pegado"/>
+                                    <field name="certified_retiramiento"
+                                           invisible="certified_retiramiento == 0"/>
+                                    <field name="certified_calibracion"
+                                           invisible="certified_calibracion == 0"/>
+                                    <field name="certified_engomado"
+                                           invisible="not certified_engomado"/>
                                 </group>
                             </group>
                         </page>
-                        <page string="Atributos Seleccionados">
-                            <field name="attribute_ids">
+                        <page string="Atributos Adicionales (solo CUMPLE)"
+                              name="attrs">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                Solo deben aparecer atributos que CUMPLEN.
+                            </p>
+                            <field name="attribute_ids"
+                                   domain="[('result','=','cumple')]">
                                 <list>
                                     <field name="name"/>
-                                    <field name="value_float"/>
-                                    <field name="value_char"/>
-                                    <field name="result"/>
+                                    <field name="attribute_type"/>
+                                    <field name="value_float"
+                                           invisible="attribute_type != 'float'"/>
+                                    <field name="value_char"
+                                           invisible="attribute_type not in ('char','selection')"/>
+                                    <field name="value_cumple"
+                                           invisible="attribute_type != 'boolean'"/>
+                                    <field name="result" widget="badge"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="PDF Generado" invisible="not report_pdf">
+                        <page string="PDF Generado" invisible="not report_pdf"
+                              name="pdf">
                             <group>
-                                <field name="report_pdf" filename="report_pdf_name"/>
+                                <field name="report_pdf"
+                                       filename="report_pdf_name"/>
                                 <field name="report_pdf_name" invisible="1"/>
                             </group>
                             <div class="o_quality_pdf_preview">
@@ -109,10 +140,5 @@
         <field name="name">Certificados de Calidad</field>
         <field name="res_model">quality.certificate</field>
         <field name="view_mode">list,form</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Los certificados se generan desde inspecciones aceptadas
-            </p>
-        </field>
     </record>
 </odoo>

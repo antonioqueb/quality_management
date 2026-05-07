@@ -5,21 +5,21 @@
         <field name="model">quality.inspection</field>
         <field name="arch" type="xml">
             <list decoration-success="state == 'aceptado'"
-                  decoration-danger="state in ('rechazado', 'retenido')"
+                  decoration-danger="state in ('rechazado','retenido')"
                   decoration-info="state == 'en_proceso'">
                 <field name="name"/>
                 <field name="process_type_id"/>
+                <field name="pp_pt"/>
                 <field name="product_id"/>
+                <field name="lot_id"/>
                 <field name="partner_id"/>
                 <field name="folio"/>
                 <field name="shift"/>
                 <field name="inspector_id" widget="many2one_avatar_user"/>
                 <field name="date_inspection"/>
-                <field name="is_pp" optional="show"/>
-                <field name="is_pt" optional="show"/>
                 <field name="state" widget="badge"
                        decoration-success="state == 'aceptado'"
-                       decoration-danger="state in ('rechazado', 'retenido')"
+                       decoration-danger="state in ('rechazado','retenido')"
                        decoration-info="state == 'en_proceso'"/>
             </list>
         </field>
@@ -31,7 +31,7 @@
         <field name="arch" type="xml">
             <form string="Inspección de Calidad">
                 <header>
-                    <button name="action_start" string="Iniciar Inspección"
+                    <button name="action_start" string="INICIAR INSPECCIÓN"
                             type="object" class="btn-primary"
                             invisible="state != 'borrador'"/>
                     <button name="action_accept" string="Aceptar (Liberar)"
@@ -54,7 +54,7 @@
                             type="object" class="btn-secondary" icon="fa-print"/>
                     <button name="action_reset_draft" string="Regresar a Borrador"
                             type="object"
-                            invisible="state not in ('rechazado', 'retenido')"
+                            invisible="state not in ('rechazado','retenido')"
                             groups="quality_management.group_quality_manager"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="borrador,en_proceso,aceptado"/>
@@ -71,7 +71,11 @@
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
-                    <!-- Campos booleanos de visibilidad (hidden) -->
+                    <div class="alert alert-info" role="alert"
+                         invisible="state != 'borrador'">
+                        <i class="fa fa-info-circle"/>
+                        <b>Captura bloqueada hasta presionar "INICIAR INSPECCIÓN".</b>
+                    </div>
                     <field name="show_largo" invisible="1"/>
                     <field name="show_ancho" invisible="1"/>
                     <field name="show_espesor" invisible="1"/>
@@ -90,87 +94,134 @@
                     <field name="show_tipo_hexagono" invisible="1"/>
                     <field name="show_corte_guillotina" invisible="1"/>
                     <field name="show_numero_corrida" invisible="1"/>
+                    <field name="is_pp" invisible="1"/>
+                    <field name="is_pt" invisible="1"/>
 
                     <group>
                         <group string="Datos Generales">
                             <field name="process_type_id"/>
+                            <field name="pp_pt" widget="radio"
+                                   readonly="state != 'borrador'"/>
                             <field name="product_id"
                                    options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="production_order_id"
-                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True, 'no_open': False}"/>
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="lot_id"
-                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True, 'no_open': False}"/>
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"
+                                   domain="[('product_id', '=', product_id)]"/>
                             <field name="folio"/>
                             <field name="code"/>
                         </group>
                         <group string="Personal y Ubicación">
                             <field name="operator_id"
-                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
                             <field name="supervisor_id"
-                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
                             <field name="inspector_id"
-                                   widget="many2one_avatar_user"
-                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                                   widget="many2one_avatar_user" readonly="1"/>
                             <field name="partner_id"
                                    context="{'show_vat': True, 'show_email': True}"
-                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
                             <field name="shift"/>
                             <field name="plant"/>
-                            <field name="date_inspection"/>
+                            <field name="date_inspection" readonly="1"/>
                         </group>
                     </group>
-                    <group>
-                        <group>
-                            <field name="is_pp"/>
-                        </group>
-                        <group>
-                            <field name="is_pt"/>
-                        </group>
-                    </group>
+
                     <notebook>
-                        <!-- Medidas dinámicas -->
                         <page string="Medidas y Propiedades"
-                              invisible="not show_largo and not show_ancho and not show_espesor and not show_hexagono and not show_resistencia and not show_apariencia and not show_humedad and not show_pegado and not show_retiramiento and not show_calibracion and not show_engomado">
+                              invisible="state == 'borrador' or (not show_largo and not show_ancho and not show_espesor and not show_hexagono and not show_resistencia and not show_apariencia and not show_humedad and not show_pegado and not show_retiramiento and not show_calibracion and not show_engomado)"
+                              name="medidas">
                             <group>
                                 <group string="Medidas Dimensionales">
                                     <field name="largo" invisible="not show_largo"/>
                                     <field name="ancho" invisible="not show_ancho"/>
-                                    <label for="espesor" string="Espesor" invisible="not show_espesor"/>
+                                    <label for="espesor" string="Espesor"
+                                           invisible="not show_espesor"/>
                                     <div class="o_row" invisible="not show_espesor">
                                         <field name="espesor"/>
-                                        <field name="espesor_unit" nolabel="1" class="oe_inline"/>
+                                        <field name="espesor_unit" nolabel="1"
+                                               class="oe_inline"/>
                                     </div>
                                     <field name="hexagono" invisible="not show_hexagono"/>
                                 </group>
                                 <group string="Propiedades">
-                                    <label for="resistencia" string="Resistencia (Lbf)" invisible="not show_resistencia"/>
+                                    <label for="resistencia"
+                                           string="Resistencia (Lbf)"
+                                           invisible="not show_resistencia"/>
                                     <div class="o_row" invisible="not show_resistencia">
                                         <field name="resistencia"
                                                readonly="resistencia_na"
                                                invisible="resistencia_na"/>
-                                        <field name="resistencia_na" nolabel="1" class="oe_inline"/>
-                                        <span class="ms-2" invisible="not resistencia_na">No Aplica</span>
-                                        <label for="resistencia_na" string="No Aplica" class="ms-2 oe_inline" invisible="resistencia_na"/>
+                                        <field name="resistencia_na"
+                                               nolabel="1" class="oe_inline"/>
+                                        <span class="ms-2 oe_inline"
+                                              invisible="not resistencia_na">
+                                            No Aplica
+                                        </span>
+                                        <label for="resistencia_na"
+                                               string="No Aplica"
+                                               class="ms-2 oe_inline"
+                                               invisible="resistencia_na"/>
                                     </div>
-                                    <field name="apariencia" invisible="not show_apariencia" widget="radio"/>
-                                    <field name="humedad_pct" invisible="not show_humedad"/>
-                                    <field name="pegado_result" invisible="not show_pegado"/>
-                                    <field name="oct_retiramiento" invisible="not show_retiramiento"/>
-                                    <field name="calibracion" invisible="not show_calibracion"/>
-                                    <field name="engomado" invisible="not show_engomado"/>
+                                    <field name="apariencia"
+                                           invisible="not show_apariencia"
+                                           widget="radio"/>
+                                    <field name="humedad_pct"
+                                           invisible="not show_humedad"/>
+                                    <field name="pegado_result"
+                                           invisible="not show_pegado"/>
+                                    <field name="oct_retiramiento"
+                                           invisible="not show_retiramiento"/>
+                                    <field name="calibracion"
+                                           invisible="not show_calibracion"/>
+                                    <field name="engomado"
+                                           invisible="not show_engomado"/>
                                 </group>
                             </group>
                         </page>
-                        <!-- Ranurado -->
-                        <page string="Ranurado" invisible="not show_ranurado">
+
+                        <page string="Octágono (Extras)"
+                              invisible="process_type_id and process_type_id.code != 'octagono'"
+                              name="oct">
                             <group>
-                                <field name="ranurado_unit" string="Unidad predeterminada"/>
+                                <group>
+                                    <field name="oct_ancho"/>
+                                    <field name="oct_alineacion" widget="radio"/>
+                                    <field name="oct_pegado" widget="radio"/>
+                                </group>
                             </group>
-                            <field name="ranurado_ids" context="{'default_unidad': ranurado_unit}">
+                        </page>
+
+                        <page string="Guillotina (Extras)"
+                              invisible="process_type_id and process_type_id.code != 'guillotina'"
+                              name="guillot">
+                            <group>
+                                <group string="Retícula">
+                                    <field name="reticula_extendida"/>
+                                    <field name="reticula_vueltas"/>
+                                    <field name="lote_reticula"/>
+                                    <field name="gramaje_reticula"/>
+                                </group>
+                                <group string="Supervisión">
+                                    <field name="sin_supervisor"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Ranurado"
+                              invisible="not show_ranurado or state == 'borrador'"
+                              name="ranurado">
+                            <group>
+                                <field name="ranurado_unit"
+                                       string="Unidad predeterminada"/>
+                            </group>
+                            <field name="ranurado_ids"
+                                   context="{'default_unidad': ranurado_unit}">
                                 <list editable="bottom">
                                     <field name="sequence"/>
-                                    <field name="medida" string="Medida"/>
-                                    <field name="unidad" string="Unidad"/>
+                                    <field name="medida"/>
+                                    <field name="unidad"/>
                                     <field name="resultado" widget="badge"
                                            decoration-success="resultado == 'cumple'"
                                            decoration-danger="resultado == 'no_cumple'"/>
@@ -178,8 +229,10 @@
                                 </list>
                             </field>
                         </page>
-                        <!-- Troquelado -->
-                        <page string="Troquelado" invisible="not show_troquelado">
+
+                        <page string="Troquelado"
+                              invisible="not show_troquelado or state == 'borrador'"
+                              name="troquelado">
                             <field name="troquelado_ids">
                                 <list editable="bottom">
                                     <field name="sequence"/>
@@ -191,20 +244,26 @@
                                 </list>
                             </field>
                         </page>
-                        <!-- Datos de Producción (papel, adhesivo, etc) -->
+
                         <page string="Datos de Producción"
-                              invisible="not show_papel and not show_adhesivo and not show_tipo_hexagono and not show_numero_corrida and not show_corte_guillotina">
+                              invisible="state == 'borrador' or (not show_papel and not show_adhesivo and not show_tipo_hexagono and not show_numero_corrida and not show_corte_guillotina)"
+                              name="prod">
                             <group>
-                                <group string="Producción" invisible="not show_numero_corrida and not show_tipo_hexagono and not show_corte_guillotina">
-                                    <field name="numero_corrida" invisible="not show_numero_corrida"/>
-                                    <field name="tipo_hexagono" invisible="not show_tipo_hexagono"/>
-                                    <field name="corte_guillotina" invisible="not show_corte_guillotina"/>
+                                <group string="Producción"
+                                       invisible="not show_numero_corrida and not show_tipo_hexagono and not show_corte_guillotina">
+                                    <field name="numero_corrida"
+                                           invisible="not show_numero_corrida"/>
+                                    <field name="tipo_hexagono"
+                                           invisible="not show_tipo_hexagono"/>
+                                    <field name="corte_guillotina"
+                                           invisible="not show_corte_guillotina"
+                                           widget="radio"/>
                                 </group>
                                 <group string="Papel" invisible="not show_papel">
                                     <field name="papel_ancho"/>
                                     <field name="papel_gramaje"/>
                                     <field name="papel_proveedor_id"
-                                           options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                                           options="{'no_create': True, 'no_create_edit': True}"/>
                                 </group>
                             </group>
                             <group invisible="not show_adhesivo">
@@ -214,23 +273,33 @@
                                 </group>
                             </group>
                         </page>
-                        <!-- Atributos adicionales -->
-                        <page string="Atributos Adicionales">
+
+                        <page string="Atributos Adicionales"
+                              invisible="state == 'borrador'" name="attrs">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                CUMPLE / NO CUMPLE / N/A — sin duplicados con
+                                Medidas y Propiedades.
+                            </p>
                             <field name="line_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
-                                    <field name="value_float" invisible="attribute_type != 'float'"/>
-                                    <field name="value_char" invisible="attribute_type not in ('char', 'selection')"/>
+                                    <field name="value_float"
+                                           invisible="attribute_type != 'float'"/>
+                                    <field name="value_char"
+                                           invisible="attribute_type not in ('char','selection')"/>
                                     <field name="value_cumple"
-                                           string="Cumple/No Cumple"
+                                           string="Cumple/NC/N/A"
                                            invisible="attribute_type != 'boolean'"
                                            widget="badge"
                                            decoration-success="value_cumple == 'cumple'"
                                            decoration-danger="value_cumple == 'no_cumple'"/>
-                                    <field name="min_value" invisible="attribute_type != 'float'"/>
-                                    <field name="max_value" invisible="attribute_type != 'float'"/>
+                                    <field name="min_value"
+                                           invisible="attribute_type != 'float'"/>
+                                    <field name="max_value"
+                                           invisible="attribute_type != 'float'"/>
                                     <field name="unit"/>
                                     <field name="result" widget="badge"
                                            decoration-success="result == 'cumple'"
@@ -239,17 +308,33 @@
                                 </list>
                             </field>
                         </page>
-                        <!-- Evidencia PDF -->
-                        <page string="Evidencia PDF">
+
+                        <page string="Evidencia (Imágenes)" name="evimg"
+                              invisible="state == 'borrador'">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                Hasta 10 imágenes.
+                            </p>
+                            <field name="evidence_image_ids" widget="many2many_binary"/>
+                            <separator string="Vista Previa"/>
+                            <field name="evidence_image_ids"
+                                   widget="evidence_viewer" nolabel="1"/>
+                        </page>
+
+                        <page string="Evidencia PDF" name="evpdf"
+                              invisible="state == 'borrador'">
                             <group>
-                                <field name="evidence_pdf" filename="evidence_pdf_name"/>
+                                <field name="evidence_pdf"
+                                       filename="evidence_pdf_name"/>
                                 <field name="evidence_pdf_name" invisible="1"/>
                             </group>
-                            <div invisible="not evidence_pdf" class="o_quality_pdf_preview">
+                            <div invisible="not evidence_pdf"
+                                 class="o_quality_pdf_preview">
                                 <field name="evidence_pdf" widget="pdf_viewer" readonly="1"/>
                             </div>
                         </page>
-                        <page string="Observaciones">
+
+                        <page string="Observaciones" name="notes">
                             <field name="notes"/>
                         </page>
                     </notebook>
@@ -266,25 +351,34 @@
             <search string="Inspecciones">
                 <field name="name"/>
                 <field name="product_id"/>
+                <field name="lot_id"/>
                 <field name="partner_id"/>
                 <field name="folio"/>
                 <field name="inspector_id"/>
                 <field name="process_type_id"/>
                 <filter string="Hoy" name="today"
-                        domain="[('date_inspection', '&gt;=', datetime.datetime.combine(context_today(), datetime.time(0,0,0))),
-                                 ('date_inspection', '&lt;=', datetime.datetime.combine(context_today(), datetime.time(23,59,59)))]"/>
+                        domain="[('date_inspection','&gt;=', datetime.datetime.combine(context_today(), datetime.time(0,0,0))),
+                                 ('date_inspection','&lt;=', datetime.datetime.combine(context_today(), datetime.time(23,59,59)))]"/>
                 <separator/>
-                <filter string="Aceptadas" name="accepted" domain="[('state', '=', 'aceptado')]"/>
-                <filter string="Retenidas" name="retained" domain="[('state', '=', 'retenido')]"/>
-                <filter string="Rechazadas" name="rejected" domain="[('state', '=', 'rechazado')]"/>
+                <filter string="PP" name="pp" domain="[('pp_pt','=','pp')]"/>
+                <filter string="PT" name="pt" domain="[('pp_pt','=','pt')]"/>
+                <separator/>
+                <filter string="Aceptadas" name="accepted" domain="[('state','=','aceptado')]"/>
+                <filter string="Retenidas" name="retained" domain="[('state','=','retenido')]"/>
+                <filter string="Rechazadas" name="rejected" domain="[('state','=','rechazado')]"/>
                 <group expand="0" string="Agrupar por">
-                    <filter string="Tipo de Proceso" name="group_type" context="{'group_by': 'process_type_id'}"/>
-                    <filter string="Turno" name="group_shift" context="{'group_by': 'shift'}"/>
-                    <filter string="Planta" name="group_plant" context="{'group_by': 'plant'}"/>
-                    <filter string="Inspector" name="group_inspector" context="{'group_by': 'inspector_id'}"/>
-                    <filter string="Operador" name="group_operator" context="{'group_by': 'operator_id'}"/>
-                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
-                    <filter string="Fecha" name="group_date" context="{'group_by': 'date_inspection:day'}"/>
+                    <filter string="Tipo de Proceso" name="group_type"
+                            context="{'group_by': 'process_type_id'}"/>
+                    <filter string="PP/PT" name="group_pppt"
+                            context="{'group_by': 'pp_pt'}"/>
+                    <filter string="Turno" name="group_shift"
+                            context="{'group_by': 'shift'}"/>
+                    <filter string="Planta" name="group_plant"
+                            context="{'group_by': 'plant'}"/>
+                    <filter string="Inspector" name="group_inspector"
+                            context="{'group_by': 'inspector_id'}"/>
+                    <filter string="Estado" name="group_state"
+                            context="{'group_by': 'state'}"/>
                 </group>
             </search>
         </field>
@@ -297,7 +391,6 @@
             <pivot string="Análisis de Inspecciones">
                 <field name="process_type_id" type="row"/>
                 <field name="state" type="col"/>
-                <field name="shift" type="row"/>
             </pivot>
         </field>
     </record>
@@ -307,11 +400,5 @@
         <field name="res_model">quality.inspection</field>
         <field name="view_mode">list,form,pivot</field>
         <field name="context">{'search_default_today': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Crear una nueva inspección de calidad
-            </p>
-            <p>Capture los datos de inspección de PP y PT.</p>
-        </field>
     </record>
 </odoo>
