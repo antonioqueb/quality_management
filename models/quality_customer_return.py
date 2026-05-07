@@ -71,9 +71,9 @@ class QualityCustomerReturn(models.Model):
     date_received = fields.Date("Fecha de Recepción", required=True,
                                 default=fields.Date.context_today)
     days_since_production = fields.Integer(
-        compute="_compute_days_since_production")
+        compute="_compute_days_since_production", store=True)
     is_within_period = fields.Boolean(
-        compute="_compute_days_since_production")
+        compute="_compute_days_since_production", store=True)
     pallet_alert_15 = fields.Boolean(
         "Alerta: Retorno >15 días",
         compute="_compute_pallet_alert_15", store=True)
