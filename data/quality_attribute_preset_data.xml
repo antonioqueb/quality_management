@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ═══════════════ GUILLOTINA ═══════════════ -->
+        <record id="attr_guillotina_medidas" model="quality.attribute.template">
+            <field name="name">Medidas correctas</field>
+            <field name="process_type_id" ref="process_type_guillotina"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">10</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_guillotina_amarre" model="quality.attribute.template">
+            <field name="name">Amarre de paquetes</field>
+            <field name="process_type_id" ref="process_type_guillotina"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">20</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_guillotina_etiquetado" model="quality.attribute.template">
+            <field name="name">Etiquetado</field>
+            <field name="process_type_id" ref="process_type_guillotina"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">30</field>
+            <field name="is_required" eval="True"/>
+        </record>
+
+        <!-- ═══════════════ PEGADO ═══════════════ -->
+        <record id="attr_pegado_aplicacion" model="quality.attribute.template">
+            <field name="name">Aplicación de adhesivo</field>
+            <field name="process_type_id" ref="process_type_pegado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">10</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_pegado_medidas" model="quality.attribute.template">
+            <field name="name">Medidas correctas</field>
+            <field name="process_type_id" ref="process_type_pegado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">20</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_pegado_amarre" model="quality.attribute.template">
+            <field name="name">Amarre de paquetes</field>
+            <field name="process_type_id" ref="process_type_pegado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">30</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_pegado_etiquetado" model="quality.attribute.template">
+            <field name="name">Etiquetado</field>
+            <field name="process_type_id" ref="process_type_pegado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">40</field>
+            <field name="is_required" eval="True"/>
+        </record>
+
+        <!-- ═══════════════ TROQUELADO ═══════════════ -->
+        <record id="attr_troq_medidas" model="quality.attribute.template">
+            <field name="name">Medidas correctas</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">10</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_descuadre" model="quality.attribute.template">
+            <field name="name">Sin descuadre</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">20</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_pandeo" model="quality.attribute.template">
+            <field name="name">Sin pandeo</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">30</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_pegado" model="quality.attribute.template">
+            <field name="name">Pegado correcto</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">40</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_ranurado" model="quality.attribute.template">
+            <field name="name">Ranurado</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">50</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_troquelado" model="quality.attribute.template">
+            <field name="name">Troquelado</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">60</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_etiquetado" model="quality.attribute.template">
+            <field name="name">Etiquetado</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">70</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_emplayado" model="quality.attribute.template">
+            <field name="name">Emplayado</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">80</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_marcado" model="quality.attribute.template">
+            <field name="name">Marcado correcto</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">90</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_troq_profundidad" model="quality.attribute.template">
+            <field name="name">Profundidad</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">100</field>
+            <field name="is_required" eval="True"/>
+        </record>
+
+        <!-- ═══════════════ IMPRESIÓN ═══════════════ -->
+        <record id="attr_imp_color" model="quality.attribute.template">
+            <field name="name">Color/Tono</field>
+            <field name="process_type_id" ref="process_type_impresion"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">10</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_imp_registro" model="quality.attribute.template">
+            <field name="name">Registro</field>
+            <field name="process_type_id" ref="process_type_impresion"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">20</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_imp_legibilidad" model="quality.attribute.template">
+            <field name="name">Legibilidad</field>
+            <field name="process_type_id" ref="process_type_impresion"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">30</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_imp_uniformidad" model="quality.attribute.template">
+            <field name="name">Uniformidad</field>
+            <field name="process_type_id" ref="process_type_impresion"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">40</field>
+            <field name="is_required" eval="True"/>
+        </record>
+
+        <!-- ═══════════════ ACABADO Y EMPAQUE ═══════════════ -->
+        <record id="attr_aca_amarre" model="quality.attribute.template">
+            <field name="name">Amarre de paquetes</field>
+            <field name="process_type_id" ref="process_type_acabado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">10</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_aca_etiquetado" model="quality.attribute.template">
+            <field name="name">Etiquetado</field>
+            <field name="process_type_id" ref="process_type_acabado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">20</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_aca_emplayado" model="quality.attribute.template">
+            <field name="name">Emplayado</field>
+            <field name="process_type_id" ref="process_type_acabado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">30</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_aca_apariencia" model="quality.attribute.template">
+            <field name="name">Apariencia general</field>
+            <field name="process_type_id" ref="process_type_acabado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">40</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_aca_cantidad" model="quality.attribute.template">
+            <field name="name">Cantidad por paquete</field>
+            <field name="process_type_id" ref="process_type_acabado"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">50</field>
+            <field name="is_required" eval="True"/>
+        </record>
+
+    </data>
+</odoo>

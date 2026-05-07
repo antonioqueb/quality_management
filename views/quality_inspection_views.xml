@@ -87,6 +87,7 @@
                     <field name="show_retiramiento" invisible="1"/>
                     <field name="show_calibracion" invisible="1"/>
                     <field name="show_engomado" invisible="1"/>
+                    <field name="show_alineacion" invisible="1"/>
                     <field name="show_ranurado" invisible="1"/>
                     <field name="show_troquelado" invisible="1"/>
                     <field name="show_papel" invisible="1"/>
@@ -187,7 +188,8 @@
                             <group>
                                 <group>
                                     <field name="oct_ancho"/>
-                                    <field name="oct_alineacion" widget="radio"/>
+                                    <field name="oct_alineacion" widget="radio"
+                                           invisible="not show_alineacion"/>
                                     <field name="oct_pegado" widget="radio"/>
                                 </group>
                             </group>

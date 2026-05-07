@@ -115,6 +115,41 @@
                     <separator string="D1 - Descripción del Incumplimiento"/>
                     <field name="origin_description"/>
                     <notebook>
+                        <page string="D3 - Contención" name="containment">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                Acciones inmediatas para proteger al cliente.
+                            </p>
+                            <group>
+                                <field name="containment_responsible_id"/>
+                                <field name="containment_date"/>
+                            </group>
+                            <field name="containment_actions"
+                                   placeholder="Describa las acciones de contención inmediatas..."/>
+                        </page>
+                        <page string="D7 - Prevención" name="prevention">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                Cambios sistémicos para evitar recurrencia.
+                            </p>
+                            <group>
+                                <field name="prevention_responsible_id"/>
+                                <field name="prevention_implemented_date"/>
+                            </group>
+                            <field name="prevention_actions"
+                                   placeholder="Cambios a procedimientos, controles, capacitación..."/>
+                        </page>
+                        <page string="D8 - Reconocimiento" name="recognition">
+                            <p class="text-muted">
+                                <i class="fa fa-info-circle"/>
+                                Reconocimiento al equipo y aprendizajes documentados.
+                            </p>
+                            <group>
+                                <field name="d8_closing_date"/>
+                            </group>
+                            <field name="team_recognition"
+                                   placeholder="Reconocimiento al equipo, lecciones aprendidas..."/>
+                        </page>
                         <page string="D2 - Equipo de Trabajo" name="team">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>

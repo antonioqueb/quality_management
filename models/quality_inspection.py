@@ -41,6 +41,7 @@ class QualityInspection(models.Model):
     show_retiramiento = fields.Boolean(related="process_type_id.show_retiramiento")
     show_calibracion = fields.Boolean(related="process_type_id.show_calibracion")
     show_engomado = fields.Boolean(related="process_type_id.show_engomado")
+    show_alineacion = fields.Boolean(related="process_type_id.show_alineacion")
     show_ranurado = fields.Boolean(related="process_type_id.show_ranurado")
     show_troquelado = fields.Boolean(related="process_type_id.show_troquelado")
     show_papel = fields.Boolean(related="process_type_id.show_papel")
@@ -62,8 +63,13 @@ class QualityInspection(models.Model):
     supervisor_id = fields.Many2one("hr.employee", "Supervisor", required=True)
     partner_id = fields.Many2one("res.partner", "Cliente",
                                  required=True, tracking=True)
-    folio = fields.Char("Folio de Producción", required=True)
-    code = fields.Char("Código de Producto", required=True)
+    folio = fields.Char(
+        "Folio de Producción", required=True,
+        help="Formato: letras y/o números (ej. F-2026-001). "
+             "Capture exactamente el folio impreso en el lote.")
+    code = fields.Char(
+        "Código de Producto", required=True,
+        help="Código interno del producto (alfanumérico, sin espacios).")
     shift = fields.Selection([
         ("turno_1", "Turno 1"), ("turno_2", "Turno 2"), ("turno_3", "Turno 3"),
     ], required=True)
@@ -252,6 +258,26 @@ class QualityInspection(models.Model):
                 }
             }
 
+    @api.onchange("production_order_id")
+    def _onchange_production_order(self):
+        """Auto-enlazar cliente y producto desde la OP (req. 5.7)."""
+        if self.production_order_id:
+            mo = self.production_order_id
+            if mo.product_id:
+                self.product_id = mo.product_id
+            # En MRP la OP no tiene partner directo, lo tomamos de la SO si existe
+            origin_so = self.env["sale.order"].search([
+                ("name", "=", mo.origin)], limit=1) if mo.origin else False
+            if origin_so and origin_so.partner_id:
+                self.partner_id = origin_so.partner_id
+
+    @api.onchange("product_id")
+    def _onchange_product_partner(self):
+        """Si hay producto y aún no hay cliente, NO sobrescribir.
+        Solo registrar que el cliente debe coincidir con la OP."""
+        # Hook reservado para reglas adicionales por cliente.
+        pass
+
     @api.onchange("process_type_id", "product_id")
     def _onchange_load_attribute_templates(self):
         if not self.process_type_id and not self.product_id:
@@ -320,6 +346,20 @@ class QualityInspection(models.Model):
         """Bloqueo guardar si no se capturan Medidas y Propiedades (req. 5.1)."""
         for rec in self:
             checks = []
+            # Troquelado: obligatorio capturar al menos una línea (req. 5.7)
+            if (rec.process_type_id.code == "troquelado_plano"
+                    and not rec.troquelado_ids):
+                raise UserError(_(
+                    "Proceso Troquelado: debe capturar al menos una medida "
+                    "en la pestaña Troquelado antes de liberar."
+                ))
+            # Sierras y Ranuradoras: obligatorio capturar al menos una línea
+            if (rec.process_type_id.code == "sierras_ranuradoras"
+                    and rec.show_ranurado and not rec.ranurado_ids):
+                raise UserError(_(
+                    "Proceso Sierras y Ranuradoras: capture al menos una "
+                    "medida en la pestaña Ranurado antes de liberar."
+                ))
             if rec.show_largo and not rec.largo:
                 checks.append("Largo")
             if rec.show_ancho and not (rec.ancho or rec.oct_ancho):

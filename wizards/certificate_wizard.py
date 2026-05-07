@@ -78,9 +78,16 @@ class QualityCertificateWizard(models.TransientModel):
 
         cert = self.env['quality.certificate'].create(vals)
 
-        # Vincular atributos adicionales si se solicitó
+        # Vincular atributos adicionales si se solicitó (con dedupe por nombre)
         if self.include_all_attributes and insp.line_ids:
-            cert.attribute_ids = [(6, 0, insp.line_ids.ids)]
+            seen = set()
+            unique_ids = []
+            for line in insp.line_ids:
+                key = (line.name or "").strip().lower()
+                if key and key not in seen:
+                    seen.add(key)
+                    unique_ids.append(line.id)
+            cert.attribute_ids = [(6, 0, unique_ids)]
 
         return {
             'type': 'ir.actions.act_window',

@@ -52,6 +52,30 @@ class QualityCorrectiveAction(models.Model):
     action_line_ids = fields.One2many("quality.action.line", "corrective_id",
                                       string="Acciones Específicas")
 
+    # D3 — Contención
+    containment_actions = fields.Text(
+        "D3 - Acciones de Contención",
+        help="Acciones inmediatas para contener el problema y proteger al cliente.")
+    containment_date = fields.Date("Fecha de Contención")
+    containment_responsible_id = fields.Many2one(
+        "res.users", "Responsable Contención")
+
+    # D7 — Prevención
+    prevention_actions = fields.Text(
+        "D7 - Acciones Preventivas Sistémicas",
+        help="Cambios al sistema (procedimientos, controles, capacitación) "
+             "para evitar recurrencia.")
+    prevention_implemented_date = fields.Date(
+        "Fecha de Implementación de Prevención")
+    prevention_responsible_id = fields.Many2one(
+        "res.users", "Responsable Prevención")
+
+    # D8 — Reconocimiento al equipo
+    team_recognition = fields.Text(
+        "D8 - Reconocimiento al Equipo",
+        help="Reconocimiento al equipo y aprendizajes documentados.")
+    d8_closing_date = fields.Date("Fecha de Cierre D8")
+
     # 5 Por qué + Ishikawa (req. 7.5)
     why_ids = fields.One2many("quality.5why", "corrective_id",
                               string="5 Por qué")
@@ -128,20 +152,26 @@ class QualityCorrectiveAction(models.Model):
 
     # -------------------------------------------------------- bloqueos de flujo
     def _check_pestañas_completas(self):
-        """Llenado obligatorio de 4 pestañas (req. 7.3)."""
+        """Llenado obligatorio de las 8 disciplinas (req. 7.3 + 7.5)."""
         for rec in self:
             faltantes = []
-            if not rec.action_line_ids:
-                faltantes.append("Acciones")
             if not rec.work_team_ids:
-                faltantes.append("Equipo de Trabajo")
+                faltantes.append("D2 Equipo de Trabajo")
+            if not rec.containment_actions:
+                faltantes.append("D3 Contención")
             if len(rec.why_ids) < 5:
-                faltantes.append("5 Por qué (mínimo 5)")
+                faltantes.append("D4 5 Por qué (mínimo 5)")
             if not rec.ishikawa_ids:
-                faltantes.append("Ishikawa")
+                faltantes.append("D5 Ishikawa")
+            if not rec.action_line_ids:
+                faltantes.append("D6 Acciones")
+            if not rec.prevention_actions:
+                faltantes.append("D7 Prevención")
+            if not rec.team_recognition:
+                faltantes.append("D8 Reconocimiento")
             if faltantes:
                 raise UserError(_(
-                    "No se puede continuar. Complete las pestañas: %s"
+                    "No se puede cerrar. Complete: %s"
                 ) % ", ".join(faltantes))
 
     def action_evaluate_quality(self):

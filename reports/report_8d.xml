@@ -87,7 +87,25 @@
                             </table>
                         </t>
 
-                        <h4>D3 - Plan de Acciones</h4>
+                        <h4>D3 - Contención</h4>
+                        <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Responsable:</td>
+                                    <td><span t-field="doc.containment_responsible_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha:</td>
+                                    <td><span t-field="doc.containment_date"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Acciones:</td>
+                                    <td><span t-field="doc.containment_actions"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>D6 - Plan de Acciones</h4>
                         <table class="table table-bordered table-sm">
                             <thead>
                                 <tr class="table-active">
@@ -113,6 +131,38 @@
                                         </t>
                                     </td>
                                     <td><span t-field="line.state"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>D7 - Acciones Preventivas Sistémicas</h4>
+                        <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Responsable:</td>
+                                    <td><span t-field="doc.prevention_responsible_id.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Fecha de Implementación:</td>
+                                    <td><span t-field="doc.prevention_implemented_date"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Acciones:</td>
+                                    <td><span t-field="doc.prevention_actions"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>D8 - Reconocimiento al Equipo</h4>
+                        <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Fecha de Cierre:</td>
+                                    <td><span t-field="doc.d8_closing_date"/></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Reconocimiento:</td>
+                                    <td><span t-field="doc.team_recognition"/></td>
                                 </tr>
                             </tbody>
                         </table>

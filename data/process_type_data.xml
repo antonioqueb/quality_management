@@ -12,6 +12,7 @@
             <field name="show_adhesivo" eval="True"/>
             <field name="show_calibracion" eval="True"/>
             <field name="show_engomado" eval="True"/>
+            <field name="show_alineacion" eval="True"/>
             <field name="show_corte_guillotina" eval="True"/>
             <field name="show_numero_corrida" eval="True"/>
         </record>

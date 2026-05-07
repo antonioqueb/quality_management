@@ -26,6 +26,7 @@ class QualityProcessType(models.Model):
     show_retiramiento = fields.Boolean('Mostrar Retiramiento')
     show_calibracion = fields.Boolean('Mostrar Calibración')
     show_engomado = fields.Boolean('Mostrar Engomado')
+    show_alineacion = fields.Boolean('Mostrar Alineación')
     show_ranurado = fields.Boolean('Mostrar Ranurado')
     show_troquelado = fields.Boolean('Mostrar Troquelado')
     show_papel = fields.Boolean('Mostrar Datos de Papel')

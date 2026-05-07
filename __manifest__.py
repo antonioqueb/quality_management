@@ -17,6 +17,7 @@
         "security/quality_rules.xml",
         "data/sequence_data.xml",
         "data/process_type_data.xml",
+        "data/quality_attribute_preset_data.xml",
         "data/cron_data.xml",
         "wizards/certificate_wizard_views.xml",
         "views/quality_process_type_views.xml",
