@@ -140,11 +140,11 @@
             <xpath expr="//header" position="inside">
                 <button name="action_open_validation"
                         string="Nueva Validación" type="object"
-                        class="btn-secondary" groups="quality_management.group_quality_manager"/>
+                        class="btn-secondary"/>
                 <button name="action_open_repair"
                         string="Nueva Reparación" type="object"
                         class="btn-secondary"
-                        invisible="state not in ('reparacion_interna','reparacion_proveedor','danado')" groups="quality_management.group_quality_manager"/>
+                        invisible="state not in ('reparacion_interna','reparacion_proveedor','danado')"/>
             </xpath>
             <xpath expr="//sheet/div[@class='oe_title']" position="before">
                 <div class="oe_button_box" name="button_box">
@@ -152,14 +152,14 @@
                     <button name="%(action_troquel_validation)d"
                             type="action"
                             class="oe_stat_button" icon="fa-check-square-o"
-                            context="{'search_default_troquel_id': id}" groups="quality_management.group_quality_manager">
+                            context="{'search_default_troquel_id': active_id}">
                         <field name="validation_count" widget="statinfo"
                                string="Validaciones"/>
                     </button>
                     <button name="%(action_troquel_repair)d"
                             type="action"
                             class="oe_stat_button" icon="fa-wrench"
-                            context="{'search_default_troquel_id': id}" groups="quality_management.group_quality_manager">
+                            context="{'search_default_troquel_id': active_id}">
                         <field name="repair_count" widget="statinfo"
                                string="Reparaciones"/>
                     </button>
