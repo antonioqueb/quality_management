@@ -8,9 +8,7 @@
     "website": "https://alphaqueb.com",
     "license": "LGPL-3",
     "depends": [
-        "base",
-        "sales_team",
-        "web", "mail", "project", "mrp", "sale", "stock",
+        "base", "mail", "project", "mrp", "sale", "stock",
         "product", "contacts", "hr",
     ],
     "data": [
@@ -20,7 +18,6 @@
         "data/sequence_data.xml",
         "data/process_type_data.xml",
         "data/quality_attribute_preset_data.xml",
-        "data/quality_hardening_data.xml",
         "data/cron_data.xml",
         "wizards/certificate_wizard_views.xml",
         "views/quality_process_type_views.xml",
@@ -28,7 +25,6 @@
         "views/quality_sample_release_views.xml",
         "views/quality_drawing_release_views.xml",
         "views/quality_inspection_views.xml",
-        "views/quality_hardening_views.xml",
         "views/quality_certificate_views.xml",
         "views/quality_corrective_action_views.xml",
         "views/quality_customer_return_views.xml",

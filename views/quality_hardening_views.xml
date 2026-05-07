@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_quality_process_type_form_hardening" model="ir.ui.view">
+        <field name="name">quality.process.type.form.hardening</field>
+        <field name="model">quality.process.type</field>
+        <field name="inherit_id" ref="quality_management.view_quality_process_type_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="capture_mode"/>
+                <field name="require_measures"/>
+                <field name="require_additional_attributes"/>
+                <field name="zero_value_blocking"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_quality_attribute_template_form_hardening" model="ir.ui.view">
+        <field name="name">quality.attribute.template.form.hardening</field>
+        <field name="model">quality.attribute.template</field>
+        <field name="inherit_id" ref="quality_management.view_quality_attribute_template_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='attribute_type']" position="after">
+                <field name="capture_zone"/>
+                <field name="result_mode" invisible="attribute_type != 'boolean'"/>
+                <field name="allow_zero" invisible="attribute_type != 'float'"/>
+                <field name="normalized_name" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_quality_inspection_form_hardening" model="ir.ui.view">
+        <field name="name">quality.inspection.form.hardening</field>
+        <field name="model">quality.inspection</field>
+        <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <field name="process_code" invisible="1"/>
+                <field name="capture_mode" invisible="1"/>
+            </xpath>
+
+            <xpath expr="//field[@name='supervisor_id']" position="before">
+                <field name="sin_supervisor"/>
+            </xpath>
+
+            <xpath expr="//field[@name='supervisor_id']" position="attributes">
+                <attribute name="invisible">sin_supervisor</attribute>
+                <attribute name="required">not sin_supervisor</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='date_inspection']" position="after">
+                <field name="date_started" readonly="1"/>
+                <field name="date_closed" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_quality_certificate_form_hardening" model="ir.ui.view">
+        <field name="name">quality.certificate.form.hardening</field>
+        <field name="model">quality.certificate</field>
+        <field name="inherit_id" ref="quality_management.view_quality_certificate_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='certified_hexagono']" position="after">
+                <field name="certified_hexagono_label" invisible="not certified_hexagono_label"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -19,4 +19,3 @@ from . import quality_customer_document
 from . import quality_troquel
 from . import quality_inherited_models
 from . import product_template
-from . import quality_hardening

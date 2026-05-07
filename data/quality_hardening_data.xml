@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="process_type_octagono" model="quality.process.type">
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_espesor" eval="False"/>
+        </record>
+
+        <record id="process_type_guillotina" model="quality.process.type">
+            <field name="name">Guillotina</field>
+            <field name="code">guillotina</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_pegado" model="quality.process.type">
+            <field name="name">Pegado</field>
+            <field name="code">pegado</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_laminadora" model="quality.process.type">
+            <field name="name">Laminadora</field>
+            <field name="code">laminadora</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_sierras_ranuradoras" model="quality.process.type">
+            <field name="name">Sierras y Ranuradoras</field>
+            <field name="code">sierras_ranuradoras</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_troquelado_plano" model="quality.process.type">
+            <field name="name">Troquelado Plano</field>
+            <field name="code">troquelado_plano</field>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+        </record>
+
+        <record id="process_type_impresion" model="quality.process.type">
+            <field name="name">Impresión</field>
+            <field name="code">impresion</field>
+            <field name="capture_mode">additional_only</field>
+            <field name="require_measures" eval="False"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="False"/>
+            <field name="show_ancho" eval="False"/>
+            <field name="show_espesor" eval="False"/>
+            <field name="show_hexagono" eval="False"/>
+            <field name="show_resistencia" eval="False"/>
+            <field name="show_apariencia" eval="False"/>
+            <field name="show_humedad" eval="False"/>
+            <field name="show_pegado" eval="False"/>
+        </record>
+
+        <record id="process_type_acabado" model="quality.process.type">
+            <field name="name">Acabado y Empaque</field>
+            <field name="code">acabado_empaque</field>
+            <field name="capture_mode">additional_only</field>
+            <field name="require_measures" eval="False"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="False"/>
+            <field name="show_ancho" eval="False"/>
+            <field name="show_espesor" eval="False"/>
+            <field name="show_hexagono" eval="False"/>
+            <field name="show_resistencia" eval="False"/>
+            <field name="show_apariencia" eval="False"/>
+            <field name="show_humedad" eval="False"/>
+            <field name="show_pegado" eval="False"/>
+        </record>
+
+    </data>
+</odoo>

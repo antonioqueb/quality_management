@@ -80,12 +80,9 @@
                                         <span t-esc="doc.inspection_id.espesor_unit or 'in'"/>
                                     </td>
                                 </tr>
-                                <tr t-if="doc.certified_hexagono_label or doc.certified_hexagono">
+                                <tr t-if="doc.certified_hexagono">
                                     <td>Hexágono</td>
-                                    <td class="text-center">
-    <t t-if="doc.certified_hexagono_label"><span t-field="doc.certified_hexagono_label"/></t>
-    <t t-else=""><span t-field="doc.certified_hexagono"/></t>
-</td>
+                                    <td class="text-center"><span t-field="doc.certified_hexagono"/></td>
                                     <td class="text-center">-</td>
                                 </tr>
                                 <tr t-if="doc.certified_resistencia">
@@ -159,7 +156,7 @@
                                 </div>
                                 <div class="col-6 text-center">
                                     <t t-if="doc.company_id.quality_stamp">
-                                        <img t-att-src="'data:image/png;base64,%s' % doc.company_id.quality_stamp"
+                                        <img t-att-src="'data:image/png;base64,%s' % doc.company_id.quality_stamp.decode('utf-8')"
                                              style="max-height: 120px; max-width: 200px;"
                                              alt="Sello de la Empresa"/>
                                     </t>

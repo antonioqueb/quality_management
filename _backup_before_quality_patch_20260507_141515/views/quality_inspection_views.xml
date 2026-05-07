@@ -76,7 +76,6 @@
                         <i class="fa fa-info-circle"/>
                         <b>Captura bloqueada hasta presionar "INICIAR INSPECCIÓN".</b>
                     </div>
-                    <field name="process_code" invisible="1"/>
                     <field name="show_largo" invisible="1"/>
                     <field name="show_ancho" invisible="1"/>
                     <field name="show_espesor" invisible="1"/>
@@ -184,7 +183,7 @@
                         </page>
 
                         <page string="Octágono (Extras)"
-                              invisible="process_code != 'octagono'"
+                              invisible="process_type_id and process_type_id.code != 'octagono'"
                               name="oct">
                             <group>
                                 <group>
@@ -197,7 +196,7 @@
                         </page>
 
                         <page string="Guillotina (Extras)"
-                              invisible="process_code != 'guillotina'"
+                              invisible="process_type_id and process_type_id.code != 'guillotina'"
                               name="guillot">
                             <group>
                                 <group string="Retícula">
@@ -289,17 +288,10 @@
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
-                                    <field name="result_mode"/>
                                     <field name="value_float"
                                            invisible="attribute_type != 'float'"/>
                                     <field name="value_char"
                                            invisible="attribute_type not in ('char','selection')"/>
-                                    <field name="value_ok"
-                                           string="OK/NO OK/N/A"
-                                           invisible="attribute_type != 'boolean' or result_mode != 'ok'"
-                                           widget="badge"
-                                           decoration-success="value_ok == 'ok'"
-                                           decoration-danger="value_ok == 'no_ok'"/>
                                     <field name="value_cumple"
                                            string="Cumple/NC/N/A"
                                            invisible="attribute_type != 'boolean'"
@@ -311,7 +303,6 @@
                                     <field name="max_value"
                                            invisible="attribute_type != 'float'"/>
                                     <field name="unit"/>
-                                    <field name="allow_zero"/>
                                     <field name="result" widget="badge"
                                            decoration-success="result == 'cumple'"
                                            decoration-danger="result == 'no_cumple'"/>
