@@ -20,17 +20,19 @@
                             <h4 t-field="doc.name"/>
                         </div>
 
+                        <!-- FOLIO-QM-ODOO18-052: se usa el estado real final del flujo triple-check. -->
                         <t t-if="doc.state == 'aceptado_diseno'">
                             <div class="text-center" style="margin-bottom: 15px;">
                                 <span style="background-color: #28a745; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
-                                    ✅ PLANO LIBERADO
+                                    PLANO LIBERADO
                                 </span>
                             </div>
                         </t>
+
                         <t t-if="doc.state == 'rechazado'">
                             <div class="text-center" style="margin-bottom: 15px;">
                                 <span style="background-color: #dc3545; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
-                                    ❌ PLANO RECHAZADO
+                                    PLANO RECHAZADO
                                 </span>
                             </div>
                         </t>
@@ -61,6 +63,10 @@
                                     <td class="fw-bold">Fecha de Solicitud:</td>
                                     <td><span t-field="doc.date_requested"/></td>
                                 </tr>
+                                <tr t-if="doc.date_release_expected">
+                                    <td class="fw-bold">Fecha Esperada:</td>
+                                    <td><span t-field="doc.date_release_expected"/></td>
+                                </tr>
                                 <tr t-if="doc.date_released">
                                     <td class="fw-bold">Fecha de Liberación:</td>
                                     <td><span t-field="doc.date_released"/></td>
@@ -72,12 +78,45 @@
                             </tbody>
                         </table>
 
-                        <t t-if="doc.state == 'rechazado' and doc.rejection_reason">
+                        <t t-if="doc.rejection_reason">
                             <h4>Motivo de Rechazo</h4>
                             <div style="border: 2px solid #dc3545; padding: 10px; margin-bottom: 15px; min-height: 40px; background-color: #fff5f5;">
                                 <span t-field="doc.rejection_reason"/>
                             </div>
                         </t>
+
+                        <h4>Triple Check</h4>
+                        <table class="table table-bordered table-sm" style="margin-bottom: 20px;">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold" style="width: 30%;">Calidad:</td>
+                                    <td>
+                                        <span t-if="doc.accepted_by_quality">
+                                            <span t-field="doc.accepted_by_quality.name"/> —
+                                            <span t-field="doc.accepted_by_quality_date"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Ventas:</td>
+                                    <td>
+                                        <span t-if="doc.accepted_by_sales">
+                                            <span t-field="doc.accepted_by_sales.name"/> —
+                                            <span t-field="doc.accepted_by_sales_date"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Diseño:</td>
+                                    <td>
+                                        <span t-if="doc.accepted_by_design">
+                                            <span t-field="doc.accepted_by_design.name"/> —
+                                            <span t-field="doc.accepted_by_design_date"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
 
                         <div style="margin-top: 50px;">
                             <div class="row">

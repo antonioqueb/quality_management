@@ -20,18 +20,17 @@
                             <h4 t-field="doc.name"/>
                         </div>
 
-                        <!-- Estado como sello visual -->
                         <t t-if="doc.state == 'aceptado'">
                             <div class="text-center" style="margin-bottom: 15px;">
                                 <span style="background-color: #28a745; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
-                                    ✅ MUESTRA LIBERADA
+                                    MUESTRA LIBERADA
                                 </span>
                             </div>
                         </t>
                         <t t-if="doc.state == 'rechazado'">
                             <div class="text-center" style="margin-bottom: 15px;">
                                 <span style="background-color: #dc3545; color: white; padding: 5px 20px; border-radius: 4px; font-size: 16px; font-weight: bold;">
-                                    ❌ MUESTRA RECHAZADA
+                                    MUESTRA RECHAZADA
                                 </span>
                             </div>
                         </t>
@@ -93,7 +92,9 @@
                                         <td class="text-center">
                                             <span t-if="line.attribute_type == 'float'" t-field="line.value_float"/>
                                             <span t-if="line.attribute_type in ('char', 'selection')" t-field="line.value_char"/>
-                                            <span t-if="line.attribute_type == 'boolean'" t-field="line.value_boolean"/>
+                                            <!-- FOLIO-QM-ODOO18-044: se deja de usar value_boolean legacy y se muestran los modos reales. -->
+                                            <span t-if="line.attribute_type == 'boolean' and line.result_mode == 'cumple'" t-field="line.value_cumple"/>
+                                            <span t-if="line.attribute_type == 'boolean' and line.result_mode == 'ok'" t-field="line.value_ok"/>
                                         </td>
                                         <td class="text-center">
                                             <t t-if="line.min_value or line.max_value">
@@ -102,8 +103,12 @@
                                         </td>
                                         <td class="text-center"><span t-field="line.unit"/></td>
                                         <td class="text-center">
-                                            <span t-if="line.result == 'cumple'" style="color: green; font-weight: bold;">CUMPLE</span>
-                                            <span t-if="line.result == 'no_cumple'" style="color: red; font-weight: bold;">NO CUMPLE</span>
+                                            <span t-if="line.result in ('cumple','ok')" style="color: green; font-weight: bold;">
+                                                <span t-field="line.result"/>
+                                            </span>
+                                            <span t-if="line.result in ('no_cumple','no_ok')" style="color: red; font-weight: bold;">
+                                                <span t-field="line.result"/>
+                                            </span>
                                             <span t-if="line.result == 'na'">N/A</span>
                                         </td>
                                     </tr>

@@ -115,6 +115,17 @@
                     <separator string="D1 - Descripción del Incumplimiento"/>
                     <field name="origin_description"/>
                     <notebook>
+                        <!-- FOLIO-QM-ODOO18-039: el motivo No Procede debe capturarse antes de presionar el botón. -->
+                        <page string="No Procede" invisible="state == 'cerrada'" name="no_proc">
+                            <div class="alert alert-warning" role="alert"
+                                 invisible="no_procede_reason">
+                                <i class="fa fa-exclamation-triangle"/>
+                                Si la acción no procede, capture aquí el motivo antes de presionar <b>No Procede</b>.
+                            </div>
+                            <field name="no_procede_reason"
+                                   placeholder="Motivo por el que no procede la acción correctiva..."/>
+                        </page>
+
                         <page string="D3 - Contención" name="containment">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>
@@ -127,6 +138,7 @@
                             <field name="containment_actions"
                                    placeholder="Describa las acciones de contención inmediatas..."/>
                         </page>
+
                         <page string="D7 - Prevención" name="prevention">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>
@@ -139,6 +151,7 @@
                             <field name="prevention_actions"
                                    placeholder="Cambios a procedimientos, controles, capacitación..."/>
                         </page>
+
                         <page string="D8 - Reconocimiento" name="recognition">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>
@@ -150,6 +163,7 @@
                             <field name="team_recognition"
                                    placeholder="Reconocimiento al equipo, lecciones aprendidas..."/>
                         </page>
+
                         <page string="D2 - Equipo de Trabajo" name="team">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>
@@ -163,6 +177,7 @@
                                 </list>
                             </field>
                         </page>
+
                         <page string="D4 - 5 Por qué" name="why">
                             <field name="why_ids">
                                 <list editable="bottom">
@@ -172,6 +187,7 @@
                                 </list>
                             </field>
                         </page>
+
                         <page string="D5 - Ishikawa (Causa-Efecto)" name="ishikawa">
                             <field name="ishikawa_ids">
                                 <list editable="bottom">
@@ -181,6 +197,7 @@
                                 </list>
                             </field>
                         </page>
+
                         <page string="D6 - Acciones" name="actions">
                             <field name="action_line_ids">
                                 <list editable="bottom">
@@ -199,14 +216,8 @@
                             </field>
                             <div class="text-muted mt-2">
                                 <i class="fa fa-info-circle"/>
-                                Para ver vista previa de evidencia, abra cada
-                                acción en formulario.
+                                Para ver vista previa de evidencia, abra cada acción en formulario.
                             </div>
-                        </page>
-                        <page string="No Procede"
-                              invisible="state != 'no_procede'" name="no_proc">
-                            <field name="no_procede_reason"
-                                   placeholder="Motivo por el que no procede la acción correctiva..."/>
                         </page>
                     </notebook>
                 </sheet>

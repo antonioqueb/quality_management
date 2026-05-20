@@ -5,6 +5,11 @@
         <field name="model">quality.inspection</field>
         <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
         <field name="arch" type="xml">
+            <!-- FOLIO-QM-ODOO18-048: retention_state se agrega como campo técnico para que las expresiones del header carguen en Odoo 18. -->
+            <xpath expr="//sheet" position="inside">
+                <field name="retention_state" invisible="1"/>
+            </xpath>
+
             <xpath expr="//header" position="inside">
                 <button name="action_accept_correction"
                         string="Producción: Aceptar Corrección"
@@ -30,6 +35,7 @@
                         invisible="retention_state != 'reinspeccion'"
                         groups="quality_management.group_quality_inspector"/>
             </xpath>
+
             <xpath expr="//notebook" position="inside">
                 <page string="Retención / Reinspección" name="retention"
                       invisible="retention_state == 'none'">

@@ -64,14 +64,15 @@
                     <div class="alert alert-info" role="alert"
                          invisible="modification_count == 0">
                         <i class="fa fa-info-circle"/>
-                        Modificación en curso: <b><field name="modification_count" nolabel="1" readonly="1"/> de 3</b>.
+                        Modificación en curso:
+                        <b><field name="modification_count" nolabel="1" readonly="1"/> de 3</b>.
                         Si se excede el máximo, la liberación se cierra y debe iniciarse un nuevo ciclo.
                     </div>
                     <div class="alert alert-danger" role="alert"
                          invisible="state != 'cerrada'">
                         <i class="fa fa-ban"/>
                         <b>Liberación cerrada</b>: se excedió el máximo de 3 modificaciones.
-                        Inicie un nuevo proceso de Alta/Actualización (continúe el consecutivo: 4, 5, 6...).
+                        Inicie un nuevo proceso de Alta/Actualización.
                     </div>
                     <group>
                         <group string="Cliente y Solicitud">
@@ -175,7 +176,15 @@
                                 </group>
                             </group>
                         </page>
-                        <page string="Rechazo" invisible="state != 'rechazado'" name="reject">
+                        <!-- FOLIO-QM-ODOO18-038: el motivo de rechazo debe capturarse antes de presionar Rechazar. -->
+                        <page string="Rechazo"
+                              invisible="state not in ('en_revision','rechazado')"
+                              name="reject">
+                            <div class="alert alert-warning" role="alert"
+                                 invisible="rejection_reason">
+                                <i class="fa fa-exclamation-triangle"/>
+                                Capture el motivo antes de presionar <b>Rechazar</b>.
+                            </div>
                             <field name="rejection_reason"
                                    placeholder="Motivo de rechazo..."/>
                         </page>

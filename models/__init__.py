@@ -28,3 +28,4 @@ from . import quality_certificate_email
 from . import quality_corrective_extra
 from . import quality_customer_document_extra
 from . import quality_troquel_validation
+from . import quality_security_enforcement

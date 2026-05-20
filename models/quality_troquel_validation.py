@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Flujo formal de troqueles:
-- Validación dimensional + funcional con líneas.
-- Reparación con bitácora detallada.
-- Revisiones por uso/piezas.
-"""
-from odoo import models, fields, api, _
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 
@@ -17,8 +11,12 @@ class QualityTroquelValidation(models.Model):
 
     name = fields.Char("Referencia", default="Nueva", readonly=True, copy=False)
     troquel_id = fields.Many2one(
-        "quality.troquel", required=True, ondelete="cascade",
-        tracking=True, index=True)
+        "quality.troquel",
+        required=True,
+        ondelete="cascade",
+        tracking=True,
+        index=True,
+    )
     date = fields.Datetime(default=fields.Datetime.now, required=True)
     convoked_quality = fields.Boolean("Calidad Convocada")
     convoked_production = fields.Boolean("Producción Convocada")
@@ -28,42 +26,67 @@ class QualityTroquelValidation(models.Model):
     design_user_id = fields.Many2one("res.users", "Diseño")
 
     line_ids = fields.One2many(
-        "quality.troquel.validation.line", "validation_id",
-        string="Mediciones / Pruebas")
+        "quality.troquel.validation.line",
+        "validation_id",
+        string="Mediciones / Pruebas",
+    )
 
     dimensional_ok = fields.Boolean(
-        "Dimensional OK", compute="_compute_results", store=True)
+        "Dimensional OK",
+        compute="_compute_results",
+        store=True,
+    )
     functional_ok = fields.Boolean(
-        "Funcional OK", compute="_compute_results", store=True)
+        "Funcional OK",
+        compute="_compute_results",
+        store=True,
+    )
     overall_ok = fields.Boolean(
-        "Resultado Global", compute="_compute_results", store=True)
+        "Resultado Global",
+        compute="_compute_results",
+        store=True,
+    )
 
-    state = fields.Selection([
-        ("borrador", "Borrador"),
-        ("en_validacion", "En Validación"),
-        ("aprobado", "Aprobado"),
-        ("rechazado", "Rechazado"),
-    ], default="borrador", required=True, tracking=True)
+    state = fields.Selection(
+        [
+            ("borrador", "Borrador"),
+            ("en_validacion", "En Validación"),
+            ("aprobado", "Aprobado"),
+            ("rechazado", "Rechazado"),
+        ],
+        default="borrador",
+        required=True,
+        tracking=True,
+    )
     notes = fields.Text("Observaciones")
 
     @api.depends("line_ids.result", "line_ids.test_type")
     def _compute_results(self):
         for rec in self:
-            dims = rec.line_ids.filtered(lambda l: l.test_type == "dimensional")
-            funcs = rec.line_ids.filtered(lambda l: l.test_type == "funcional")
-            rec.dimensional_ok = bool(dims) and all(
-                l.result == "cumple" for l in dims)
-            rec.functional_ok = bool(funcs) and all(
-                l.result == "cumple" for l in funcs)
+            dimensional_lines = rec.line_ids.filtered(
+                lambda line: line.test_type == "dimensional"
+            )
+            functional_lines = rec.line_ids.filtered(
+                lambda line: line.test_type == "funcional"
+            )
+            rec.dimensional_ok = bool(dimensional_lines) and all(
+                line.result == "cumple" for line in dimensional_lines
+            )
+            rec.functional_ok = bool(functional_lines) and all(
+                line.result == "cumple" for line in functional_lines
+            )
             rec.overall_ok = rec.dimensional_ok and rec.functional_ok
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get("name", "Nueva") == "Nueva":
-                vals["name"] = "TVAL-%s" % (
-                    self.env["ir.sequence"].next_by_code(
-                        "quality.troquel.validation") or "0001")
+                # FOLIO-QM-ODOO18-028: la secuencia ya contiene prefijo TVAL-;
+                # no debe anteponerse nuevamente para evitar TVAL-TVAL-0001.
+                vals["name"] = (
+                    self.env["ir.sequence"].next_by_code("quality.troquel.validation")
+                    or "Nueva"
+                )
         return super().create(vals_list)
 
     def action_start(self):
@@ -73,8 +96,12 @@ class QualityTroquelValidation(models.Model):
     def action_approve(self):
         for rec in self:
             if not rec.dimensional_ok or not rec.functional_ok:
-                raise UserError(_(
-                    "No se puede aprobar: faltan pruebas dimensionales o funcionales OK."))
+                raise UserError(
+                    _(
+                        "No se puede aprobar: faltan pruebas dimensionales "
+                        "o funcionales OK."
+                    )
+                )
             rec.state = "aprobado"
             rec.troquel_id.action_activate()
 
@@ -82,8 +109,9 @@ class QualityTroquelValidation(models.Model):
         for rec in self:
             rec.state = "rechazado"
             rec.troquel_id.message_post(
-                body=_("❌ Validación rechazada (%s).") % rec.name,
-                subtype_xmlid="mail.mt_comment")
+                body=_("Validación rechazada (%s).") % rec.name,
+                subtype_xmlid="mail.mt_comment",
+            )
 
 
 class QualityTroquelValidationLine(models.Model):
@@ -92,21 +120,32 @@ class QualityTroquelValidationLine(models.Model):
     _order = "sequence, id"
 
     validation_id = fields.Many2one(
-        "quality.troquel.validation", required=True, ondelete="cascade")
+        "quality.troquel.validation",
+        required=True,
+        ondelete="cascade",
+    )
     sequence = fields.Integer(default=10)
-    test_type = fields.Selection([
-        ("dimensional", "Dimensional"),
-        ("funcional", "Funcional"),
-    ], required=True, default="dimensional")
+    test_type = fields.Selection(
+        [
+            ("dimensional", "Dimensional"),
+            ("funcional", "Funcional"),
+        ],
+        required=True,
+        default="dimensional",
+    )
     name = fields.Char("Concepto / Punto de Medición", required=True)
     expected = fields.Char("Valor Esperado / Especificación")
     measured = fields.Char("Valor Medido / Observado")
     tolerance = fields.Char("Tolerancia")
-    result = fields.Selection([
-        ("cumple", "Cumple"),
-        ("no_cumple", "No Cumple"),
-        ("na", "N/A"),
-    ], default="na", required=True)
+    result = fields.Selection(
+        [
+            ("cumple", "Cumple"),
+            ("no_cumple", "No Cumple"),
+            ("na", "N/A"),
+        ],
+        default="na",
+        required=True,
+    )
     notes = fields.Char("Notas")
 
 
@@ -118,35 +157,58 @@ class QualityTroquelRepair(models.Model):
 
     name = fields.Char(default="Nueva", readonly=True, copy=False)
     troquel_id = fields.Many2one(
-        "quality.troquel", required=True, ondelete="cascade", index=True)
-    repair_type = fields.Selection([
-        ("interna", "Interna"),
-        ("proveedor", "Proveedor Externo"),
-    ], required=True, default="interna")
+        "quality.troquel",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    repair_type = fields.Selection(
+        [
+            ("interna", "Interna"),
+            ("proveedor", "Proveedor Externo"),
+        ],
+        required=True,
+        default="interna",
+    )
     proveedor_id = fields.Many2one(
-        "res.partner", "Proveedor",
-        domain=[("supplier_rank", ">", 0)])
+        "res.partner",
+        "Proveedor",
+        domain=[("supplier_rank", ">", 0)],
+    )
     date_started = fields.Datetime(
-        "Inicio Reparación", default=fields.Datetime.now, required=True)
+        "Inicio Reparación",
+        default=fields.Datetime.now,
+        required=True,
+    )
     date_finished = fields.Datetime("Fin Reparación")
     days_estimated = fields.Integer("Días Estimados Fuera")
     description = fields.Text("Desglose de Reparación", required=True)
     cost = fields.Monetary("Costo")
     currency_id = fields.Many2one(
-        "res.currency", default=lambda s: s.env.company.currency_id)
-    state = fields.Selection([
-        ("en_curso", "En Curso"),
-        ("finalizada", "Finalizada"),
-        ("rechazada", "Rechazada"),
-    ], default="en_curso", required=True, tracking=True)
+        "res.currency",
+        default=lambda s: s.env.company.currency_id,
+    )
+    state = fields.Selection(
+        [
+            ("en_curso", "En Curso"),
+            ("finalizada", "Finalizada"),
+            ("rechazada", "Rechazada"),
+        ],
+        default="en_curso",
+        required=True,
+        tracking=True,
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get("name", "Nueva") == "Nueva":
-                vals["name"] = "TREP-%s" % (
-                    self.env["ir.sequence"].next_by_code(
-                        "quality.troquel.repair") or "0001")
+                # FOLIO-QM-ODOO18-028: la secuencia ya contiene prefijo TREP-;
+                # no debe anteponerse nuevamente para evitar TREP-TREP-0001.
+                vals["name"] = (
+                    self.env["ir.sequence"].next_by_code("quality.troquel.repair")
+                    or "Nueva"
+                )
         return super().create(vals_list)
 
     def action_finish(self):
@@ -154,26 +216,39 @@ class QualityTroquelRepair(models.Model):
             rec.state = "finalizada"
             rec.date_finished = fields.Datetime.now()
             rec.troquel_id.message_post(
-                body=_("🔧 Reparación %s finalizada.") % rec.name,
-                subtype_xmlid="mail.mt_comment")
+                body=_("Reparación %s finalizada.") % rec.name,
+                subtype_xmlid="mail.mt_comment",
+            )
+            # FOLIO-QM-ODOO18-029: al finalizar reparación, el troquel vuelve
+            # a validación para no quedar activo sin revisión dimensional/funcional.
+            if rec.troquel_id.state in ("reparacion_interna", "reparacion_proveedor", "danado"):
+                rec.troquel_id.state = "validacion"
 
 
 class QualityTroquelExtended(models.Model):
     _inherit = "quality.troquel"
 
     validation_ids = fields.One2many(
-        "quality.troquel.validation", "troquel_id",
-        string="Validaciones")
+        "quality.troquel.validation",
+        "troquel_id",
+        string="Validaciones",
+    )
     validation_count = fields.Integer(compute="_compute_counts")
     repair_ids = fields.One2many(
-        "quality.troquel.repair", "troquel_id",
-        string="Reparaciones")
+        "quality.troquel.repair",
+        "troquel_id",
+        string="Reparaciones",
+    )
     repair_count = fields.Integer(compute="_compute_counts")
     pieces_produced = fields.Integer(
         "Piezas Producidas Acumuladas",
-        help="Conteo manual de piezas troqueladas para programar revisión.")
+        help="Conteo manual de piezas troqueladas para programar revisión.",
+    )
     needs_review = fields.Boolean(
-        "Requiere Revisión", compute="_compute_needs_review", store=True)
+        "Requiere Revisión",
+        compute="_compute_needs_review",
+        store=True,
+    )
 
     @api.depends("validation_ids", "repair_ids")
     def _compute_counts(self):
@@ -185,8 +260,9 @@ class QualityTroquelExtended(models.Model):
     def _compute_needs_review(self):
         for rec in self:
             rec.needs_review = bool(
-                rec.pieces_per_review and
-                rec.pieces_produced >= rec.pieces_per_review)
+                rec.pieces_per_review
+                and rec.pieces_produced >= rec.pieces_per_review
+            )
 
     def action_open_validation(self):
         self.ensure_one()

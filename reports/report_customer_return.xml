@@ -20,7 +20,6 @@
                             <h4 t-field="doc.name"/>
                         </div>
 
-                        <!-- Estado visual -->
                         <div class="text-center" style="margin-bottom: 15px;">
                             <t t-if="doc.state == 'cerrada'">
                                 <span style="background-color: #28a745; color: white; padding: 5px 20px; border-radius: 4px; font-size: 14px; font-weight: bold;">CERRADA</span>
@@ -81,6 +80,10 @@
                                     <td class="fw-bold" style="width: 30%;">Tipo de Defecto:</td>
                                     <td><span t-field="doc.defect_type"/></td>
                                 </tr>
+                                <tr t-if="doc.defect_type == 'otro' and doc.defect_other_desc">
+                                    <td class="fw-bold">Descripción Otro:</td>
+                                    <td><span t-field="doc.defect_other_desc"/></td>
+                                </tr>
                                 <tr>
                                     <td class="fw-bold">Piezas con Defecto:</td>
                                     <td><span t-field="doc.defect_pieces"/></td>
@@ -111,6 +114,27 @@
                                     <tr t-if="doc.pallet_return_date">
                                         <td class="fw-bold">Fecha Retorno:</td>
                                         <td><span t-field="doc.pallet_return_date"/></td>
+                                    </tr>
+                                    <tr t-if="doc.pallet_alert_15">
+                                        <td class="fw-bold">Alerta:</td>
+                                        <!-- FOLIO-QM-ODOO18-053: el reporte refleja la regla de más de 15 días hábiles para tarimas. -->
+                                        <td><strong style="color:red;">Retorno mayor a 15 días hábiles desde recepción.</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="doc.sales_manager_justification">
+                            <h4>Autorización Comercial</h4>
+                            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" style="width: 30%;">Gerente autorizó:</td>
+                                        <td><span t-field="doc.sales_manager_id.name"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Motivo:</td>
+                                        <td><span t-field="doc.sales_manager_justification"/></td>
                                     </tr>
                                 </tbody>
                             </table>

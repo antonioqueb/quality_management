@@ -1,53 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <!-- FOLIO-QM-ODOO18-030: se normalizan referencias de grupos con namespace del módulo. -->
         <record id="rule_inspection_inspector_own" model="ir.rule">
             <field name="name">Inspector: solo sus inspecciones</field>
             <field name="model_id" ref="model_quality_inspection"/>
             <field name="domain_force">[('inspector_id', '=', user.id)]</field>
-            <field name="groups" eval="[(4, ref('group_quality_inspector'))]"/>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_inspector'))]"/>
         </record>
+
         <record id="rule_inspection_manager_all" model="ir.rule">
             <field name="name">Manager: todas las inspecciones</field>
             <field name="model_id" ref="model_quality_inspection"/>
             <field name="domain_force">[(1, '=', 1)]</field>
-            <field name="groups" eval="[(4, ref('group_quality_manager'))]"/>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_manager'))]"/>
         </record>
+
         <record id="rule_sample_release_sale" model="ir.rule">
             <field name="name">Ventas: solo sus solicitudes de muestra</field>
             <field name="model_id" ref="model_quality_sample_release"/>
             <field name="domain_force">['|', ('requested_by', '=', user.id), ('state', 'in', ['aceptado', 'rechazado'])]</field>
             <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
         </record>
+
+        <record id="rule_sample_release_design" model="ir.rule">
+            <field name="name">Diseño: solo sus solicitudes de muestra</field>
+            <field name="model_id" ref="model_quality_sample_release"/>
+            <!-- FOLIO-QM-ODOO18-055: limita el nuevo grupo de Diseño a sus propias muestras. -->
+            <field name="domain_force">[('requested_by', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_design'))]"/>
+        </record>
+
+        <record id="rule_inspection_line_design_sample" model="ir.rule">
+            <field name="name">Diseño: atributos solo de sus muestras</field>
+            <field name="model_id" ref="model_quality_inspection_line"/>
+            <!-- FOLIO-QM-ODOO18-055: evita lectura global de líneas de inspección por el grupo Diseño. -->
+            <field name="domain_force">[('sample_release_id.requested_by', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_design'))]"/>
+        </record>
+
         <record id="rule_drawing_release_sale" model="ir.rule">
             <field name="name">Ventas: solo sus solicitudes de plano</field>
             <field name="model_id" ref="model_quality_drawing_release"/>
-            <field name="domain_force">['|', ('requested_by', '=', user.id), ('state', 'in', ['aceptado', 'rechazado'])]</field>
+            <!-- FOLIO-QM-ODOO18-031: el estado 'aceptado' no existe en quality.drawing.release; se usan estados reales del flujo triple-check. -->
+            <field name="domain_force">['|', ('requested_by', '=', user.id), ('state', 'in', ['aceptado_calidad', 'aceptado_ventas', 'aceptado_diseno', 'rechazado'])]</field>
             <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
         </record>
+
+        <record id="rule_drawing_release_design" model="ir.rule">
+            <field name="name">Diseño: planos pendientes o aprobados por Diseño</field>
+            <field name="model_id" ref="model_quality_drawing_release"/>
+            <!-- FOLIO-QM-ODOO18-055: el nuevo grupo de Diseño solo ve planos en etapa de Diseño o ya cerrados por Diseño. -->
+            <field name="domain_force">['|', ('state', 'in', ['aceptado_ventas', 'aceptado_diseno']), ('accepted_by_design', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_design'))]"/>
+        </record>
+
         <record id="rule_customer_return_sale" model="ir.rule">
-            <field name="name">Ventas: devoluciones de sus clientes</field>
+            <field name="name">Ventas: devoluciones propias o de sus órdenes</field>
+            <field name="model_id" ref="model_quality_customer_return"/>
+            <!-- FOLIO-QM-ODOO18-054: la regla anterior permitía a cualquier vendedor ver todas las devoluciones. -->
+            <field name="domain_force">['|', ('create_uid', '=', user.id), ('sale_order_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+        </record>
+
+        <record id="rule_customer_return_manager_all" model="ir.rule">
+            <field name="name">Calidad: todas las devoluciones de cliente</field>
             <field name="model_id" ref="model_quality_customer_return"/>
             <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_manager'))]"/>
+        </record>
+
+        <record id="rule_customer_document_sale" model="ir.rule">
+            <field name="name">Ventas: documentos solicitados por el usuario</field>
+            <field name="model_id" ref="model_quality_customer_document"/>
+            <!-- FOLIO-QM-ODOO18-055: se evita que Ventas vea documentos de otros solicitantes. -->
+            <field name="domain_force">[('requested_by', '=', user.id)]</field>
             <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
         </record>
+
+        <record id="rule_customer_document_manager_all" model="ir.rule">
+            <field name="name">Calidad: todos los documentos de cliente</field>
+            <field name="model_id" ref="model_quality_customer_document"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_manager'))]"/>
+        </record>
+
         <record id="rule_sample_release_manager" model="ir.rule">
             <field name="name">Manager: todas las liberaciones de muestra</field>
             <field name="model_id" ref="model_quality_sample_release"/>
             <field name="domain_force">[(1, '=', 1)]</field>
-            <field name="groups" eval="[(4, ref('group_quality_manager'))]"/>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_manager'))]"/>
         </record>
+
         <record id="rule_drawing_release_manager" model="ir.rule">
             <field name="name">Manager: todas las liberaciones de plano</field>
             <field name="model_id" ref="model_quality_drawing_release"/>
             <field name="domain_force">[(1, '=', 1)]</field>
-            <field name="groups" eval="[(4, ref('group_quality_manager'))]"/>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_manager'))]"/>
         </record>
+
         <record id="rule_corrective_action_manager" model="ir.rule">
             <field name="name">Manager: todas las acciones correctivas</field>
             <field name="model_id" ref="model_quality_corrective_action"/>
             <field name="domain_force">[(1, '=', 1)]</field>
-            <field name="groups" eval="[(4, ref('group_quality_manager'))]"/>
+            <field name="groups" eval="[(4, ref('quality_management.group_quality_manager'))]"/>
         </record>
     </data>
 </odoo>

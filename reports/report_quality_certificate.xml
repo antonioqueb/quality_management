@@ -83,9 +83,13 @@
                                 <tr t-if="doc.certified_hexagono_label or doc.certified_hexagono">
                                     <td>Hexágono</td>
                                     <td class="text-center">
-    <t t-if="doc.certified_hexagono_label"><span t-field="doc.certified_hexagono_label"/></t>
-    <t t-else=""><span t-field="doc.certified_hexagono"/></t>
-</td>
+                                        <t t-if="doc.certified_hexagono_label">
+                                            <span t-field="doc.certified_hexagono_label"/>
+                                        </t>
+                                        <t t-else="">
+                                            <span t-field="doc.certified_hexagono"/>
+                                        </t>
+                                    </td>
                                     <td class="text-center">-</td>
                                 </tr>
                                 <tr t-if="doc.certified_resistencia">
@@ -142,7 +146,9 @@
                                         <td class="text-center">
                                             <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
                                             <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
-                                            <span t-if="attr.attribute_type == 'boolean'" t-field="attr.value_cumple"/>
+                                            <!-- FOLIO-QM-ODOO18-042: el PDF del certificado muestra correctamente Cumple/NC o OK/NO OK según result_mode. -->
+                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple"/>
+                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok"/>
                                         </td>
                                         <td class="text-center"><span t-field="attr.result"/></td>
                                     </tr>
@@ -159,7 +165,8 @@
                                 </div>
                                 <div class="col-6 text-center">
                                     <t t-if="doc.company_id.quality_stamp">
-                                        <img t-att-src="'data:image/png;base64,%s' % doc.company_id.quality_stamp"
+                                        <!-- FOLIO-QM-ODOO18-043: image_data_uri evita errores por decode/bytes en binarios de Odoo 18. -->
+                                        <img t-att-src="image_data_uri(doc.company_id.quality_stamp)"
                                              style="max-height: 120px; max-width: 200px;"
                                              alt="Sello de la Empresa"/>
                                     </t>

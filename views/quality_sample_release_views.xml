@@ -54,10 +54,12 @@
                     <field name="state" widget="statusbar"
                            statusbar_visible="borrador,en_inspeccion,aceptado"/>
                 </header>
+
                 <sheet>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
+
                     <group>
                         <group string="Tipo y Datos">
                             <field name="sample_type" widget="radio"/>
@@ -72,6 +74,7 @@
                             <field name="date_inspected" readonly="1"/>
                         </group>
                     </group>
+
                     <notebook>
                         <page string="Especificación PDF" name="spec">
                             <div class="alert alert-warning" role="alert"
@@ -87,29 +90,44 @@
                                 <field name="spec_pdf" widget="pdf_viewer" readonly="1"/>
                             </div>
                         </page>
+
                         <page string="Atributos de Inspección" name="attrs">
                             <field name="inspection_line_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
+                                    <!-- FOLIO-QM-ODOO18-046: se agregan result_mode y value_ok para soportar OK/NO OK/N/A en muestras. -->
+                                    <field name="result_mode"/>
                                     <field name="value_float" invisible="attribute_type != 'float'"/>
                                     <field name="value_char" invisible="attribute_type not in ('char', 'selection')"/>
-                                    <field name="value_cumple" invisible="attribute_type != 'boolean'"/>
+                                    <field name="value_cumple"
+                                           invisible="attribute_type != 'boolean' or result_mode != 'cumple'"
+                                           widget="badge"
+                                           decoration-success="value_cumple == 'cumple'"
+                                           decoration-danger="value_cumple == 'no_cumple'"/>
+                                    <field name="value_ok"
+                                           invisible="attribute_type != 'boolean' or result_mode != 'ok'"
+                                           widget="badge"
+                                           decoration-success="value_ok == 'ok'"
+                                           decoration-danger="value_ok == 'no_ok'"/>
                                     <field name="min_value" invisible="attribute_type != 'float'"/>
                                     <field name="max_value" invisible="attribute_type != 'float'"/>
                                     <field name="unit" placeholder="mm, cm, in, %..."/>
+                                    <field name="allow_zero" invisible="attribute_type != 'float'"/>
                                     <field name="result" widget="badge"
-                                           decoration-success="result == 'cumple'"
-                                           decoration-danger="result == 'no_cumple'"/>
+                                           decoration-success="result in ('cumple','ok')"
+                                           decoration-danger="result in ('no_cumple','no_ok')"/>
                                 </list>
                             </field>
                         </page>
+
                         <page string="Evidencia (Imágenes)" name="evidence">
                             <field name="evidence_ids" widget="many2many_binary"/>
                             <separator string="Vista Previa"/>
                             <field name="evidence_ids" widget="evidence_viewer" nolabel="1"/>
                         </page>
+
                         <page string="Transformación CNC"
                               invisible="sample_type != 'pt'" name="cnc">
                             <group>
@@ -121,6 +139,7 @@
                             <field name="cnc_observations"
                                    placeholder="Observaciones de la transformación..."/>
                         </page>
+
                         <page string="Observaciones" name="notes">
                             <field name="notes"/>
                         </page>

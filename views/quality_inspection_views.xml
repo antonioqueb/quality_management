@@ -76,7 +76,10 @@
                         <i class="fa fa-info-circle"/>
                         <b>Captura bloqueada hasta presionar "INICIAR INSPECCIÓN".</b>
                     </div>
+
+                    <!-- FOLIO-QM-ODOO18-040: campos técnicos necesarios para expresiones de Odoo 18. -->
                     <field name="process_code" invisible="1"/>
+                    <field name="capture_mode" invisible="1"/>
                     <field name="show_largo" invisible="1"/>
                     <field name="show_ancho" invisible="1"/>
                     <field name="show_espesor" invisible="1"/>
@@ -281,8 +284,7 @@
                               invisible="state == 'borrador'" name="attrs">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>
-                                CUMPLE / NO CUMPLE / N/A — sin duplicados con
-                                Medidas y Propiedades.
+                                CUMPLE / NO CUMPLE / N/A u OK / NO OK / N/A — sin duplicados con Medidas y Propiedades.
                             </p>
                             <field name="line_ids">
                                 <list editable="bottom">
@@ -300,9 +302,10 @@
                                            widget="badge"
                                            decoration-success="value_ok == 'ok'"
                                            decoration-danger="value_ok == 'no_ok'"/>
+                                    <!-- FOLIO-QM-ODOO18-041: evita mostrar Cumple/NC cuando el atributo opera con OK/NO OK. -->
                                     <field name="value_cumple"
                                            string="Cumple/NC/N/A"
-                                           invisible="attribute_type != 'boolean'"
+                                           invisible="attribute_type != 'boolean' or result_mode != 'cumple'"
                                            widget="badge"
                                            decoration-success="value_cumple == 'cumple'"
                                            decoration-danger="value_cumple == 'no_cumple'"/>
@@ -313,8 +316,8 @@
                                     <field name="unit"/>
                                     <field name="allow_zero"/>
                                     <field name="result" widget="badge"
-                                           decoration-success="result == 'cumple'"
-                                           decoration-danger="result == 'no_cumple'"/>
+                                           decoration-success="result in ('cumple','ok')"
+                                           decoration-danger="result in ('no_cumple','no_ok')"/>
                                     <field name="notes"/>
                                 </list>
                             </field>

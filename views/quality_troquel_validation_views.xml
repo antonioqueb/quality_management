@@ -15,11 +15,30 @@
             </list>
         </field>
     </record>
+
+    <!-- FOLIO-QM-ODOO18-050: search view requerido para que search_default_troquel_id funcione desde smart button. -->
+    <record id="view_troquel_validation_search" model="ir.ui.view">
+        <field name="name">quality.troquel.validation.search</field>
+        <field name="model">quality.troquel.validation</field>
+        <field name="arch" type="xml">
+            <search string="Validaciones de Troquel">
+                <field name="name"/>
+                <field name="troquel_id"/>
+                <filter string="Aprobadas" name="approved" domain="[('state','=','aprobado')]"/>
+                <filter string="Rechazadas" name="rejected" domain="[('state','=','rechazado')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Troquel" name="group_troquel" context="{'group_by': 'troquel_id'}"/>
+                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <record id="view_troquel_validation_form" model="ir.ui.view">
         <field name="name">quality.troquel.validation.form</field>
         <field name="model">quality.troquel.validation</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Validación de Troquel">
                 <header>
                     <button name="action_start" string="Iniciar Validación"
                             type="object" class="btn-primary"
@@ -82,17 +101,54 @@
             </form>
         </field>
     </record>
+
     <record id="action_troquel_validation" model="ir.actions.act_window">
         <field name="name">Validaciones de Troquel</field>
         <field name="res_model">quality.troquel.validation</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_troquel_validation_search"/>
+    </record>
+
+    <record id="view_troquel_repair_list" model="ir.ui.view">
+        <field name="name">quality.troquel.repair.list</field>
+        <field name="model">quality.troquel.repair</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'finalizada'"
+                  decoration-danger="state == 'rechazada'">
+                <field name="name"/>
+                <field name="troquel_id"/>
+                <field name="repair_type"/>
+                <field name="proveedor_id"/>
+                <field name="date_started"/>
+                <field name="date_finished"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_troquel_repair_search" model="ir.ui.view">
+        <field name="name">quality.troquel.repair.search</field>
+        <field name="model">quality.troquel.repair</field>
+        <field name="arch" type="xml">
+            <search string="Reparaciones de Troquel">
+                <field name="name"/>
+                <field name="troquel_id"/>
+                <field name="proveedor_id"/>
+                <filter string="En Curso" name="open" domain="[('state','=','en_curso')]"/>
+                <filter string="Finalizadas" name="done" domain="[('state','=','finalizada')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Troquel" name="group_troquel" context="{'group_by': 'troquel_id'}"/>
+                    <filter string="Estado" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
     </record>
 
     <record id="view_troquel_repair_form" model="ir.ui.view">
         <field name="name">quality.troquel.repair.form</field>
         <field name="model">quality.troquel.repair</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Reparación de Troquel">
                 <header>
                     <button name="action_finish" string="Finalizar"
                             type="object" class="btn-primary"
@@ -125,13 +181,14 @@
             </form>
         </field>
     </record>
+
     <record id="action_troquel_repair" model="ir.actions.act_window">
         <field name="name">Reparaciones de Troquel</field>
         <field name="res_model">quality.troquel.repair</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_troquel_repair_search"/>
     </record>
 
-    <!-- Smart buttons en troquel -->
     <record id="view_quality_troquel_form_extended" model="ir.ui.view">
         <field name="name">quality.troquel.form.extended</field>
         <field name="model">quality.troquel</field>
@@ -140,35 +197,40 @@
             <xpath expr="//header" position="inside">
                 <button name="action_open_validation"
                         string="Nueva Validación" type="object"
-                        class="btn-secondary" groups="quality_management.group_quality_manager"/>
+                        class="btn-secondary"
+                        groups="quality_management.group_quality_manager"/>
                 <button name="action_open_repair"
                         string="Nueva Reparación" type="object"
                         class="btn-secondary"
-                        invisible="state not in ('reparacion_interna','reparacion_proveedor','danado')" groups="quality_management.group_quality_manager"/>
+                        invisible="state not in ('reparacion_interna','reparacion_proveedor','danado')"
+                        groups="quality_management.group_quality_manager"/>
             </xpath>
+
             <xpath expr="//sheet/div[@class='oe_title']" position="before">
                 <div class="oe_button_box" name="button_box">
                     <field name="needs_review" invisible="1"/>
                     <button name="%(action_troquel_validation)d"
                             type="action"
                             class="oe_stat_button" icon="fa-check-square-o"
-                            context="{'search_default_troquel_id': id}" groups="quality_management.group_quality_manager">
+                            context="{'search_default_troquel_id': id}"
+                            groups="quality_management.group_quality_manager">
                         <field name="validation_count" widget="statinfo"
                                string="Validaciones"/>
                     </button>
                     <button name="%(action_troquel_repair)d"
                             type="action"
                             class="oe_stat_button" icon="fa-wrench"
-                            context="{'search_default_troquel_id': id}" groups="quality_management.group_quality_manager">
+                            context="{'search_default_troquel_id': id}"
+                            groups="quality_management.group_quality_manager">
                         <field name="repair_count" widget="statinfo"
                                string="Reparaciones"/>
                     </button>
                 </div>
             </xpath>
+
             <xpath expr="//field[@name='pieces_per_review']" position="after">
                 <field name="pieces_produced"/>
-                <field name="needs_review" readonly="1"
-                       decoration-warning="needs_review"/>
+                <field name="needs_review" readonly="1"/>
             </xpath>
         </field>
     </record>
@@ -178,6 +240,7 @@
               parent="menu_quality_config"
               action="action_troquel_validation"
               sequence="40"/>
+
     <menuitem id="menu_quality_troquel_repair"
               name="Reparaciones de Troquel"
               parent="menu_quality_config"

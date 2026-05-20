@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import re
 import unicodedata
 from datetime import timedelta
@@ -18,12 +17,26 @@ PROCESS_SEQUENCE = [
 ]
 
 RESERVED_MEASURE_ATTRS = {
-    "largo", "ancho", "espesor", "hexagono", "hexágono",
-    "resistencia", "apariencia", "humedad", "pegado",
-    "retiramiento", "restiramiento", "reticula", "retícula",
-    "reticula_extendida", "retícula_extendida",
-    "calibracion", "calibración", "engomado",
-    "alineacion", "alineación",
+    "largo",
+    "ancho",
+    "espesor",
+    "hexagono",
+    "hexágono",
+    "resistencia",
+    "apariencia",
+    "humedad",
+    "pegado",
+    "retiramiento",
+    "restiramiento",
+    "reticula",
+    "retícula",
+    "reticula_extendida",
+    "retícula_extendida",
+    "calibracion",
+    "calibración",
+    "engomado",
+    "alineacion",
+    "alineación",
 }
 
 
@@ -37,11 +50,14 @@ def _slug(value):
 class QualityProcessTypeHardening(models.Model):
     _inherit = "quality.process.type"
 
-    capture_mode = fields.Selection([
-        ("full", "Medidas + Propiedades + Atributos"),
-        ("additional_only", "Solo Atributos Adicionales"),
-    ], default="full", required=True)
-
+    capture_mode = fields.Selection(
+        [
+            ("full", "Medidas + Propiedades + Atributos"),
+            ("additional_only", "Solo Atributos Adicionales"),
+        ],
+        default="full",
+        required=True,
+    )
     require_measures = fields.Boolean(
         "Requerir Medidas/Propiedades para liberar",
         default=True,
@@ -65,19 +81,25 @@ class QualityAttributeTemplateHardening(models.Model):
         store=True,
         index=True,
     )
-    capture_zone = fields.Selection([
-        ("additional", "Atributos Adicionales"),
-        ("measures", "Medidas y Propiedades"),
-        ("ranurado", "Ranurado"),
-        ("troquelado", "Troquelado"),
-        ("production", "Datos de Producción"),
-    ], default="additional", required=True)
-
-    result_mode = fields.Selection([
-        ("cumple", "Cumple / No Cumple / N/A"),
-        ("ok", "OK / NO OK / N/A"),
-    ], default="cumple", required=True)
-
+    capture_zone = fields.Selection(
+        [
+            ("additional", "Atributos Adicionales"),
+            ("measures", "Medidas y Propiedades"),
+            ("ranurado", "Ranurado"),
+            ("troquelado", "Troquelado"),
+            ("production", "Datos de Producción"),
+        ],
+        default="additional",
+        required=True,
+    )
+    result_mode = fields.Selection(
+        [
+            ("cumple", "Cumple / No Cumple / N/A"),
+            ("ok", "OK / NO OK / N/A"),
+        ],
+        default="cumple",
+        required=True,
+    )
     allow_zero = fields.Boolean("Permitir valor cero", default=False)
 
     @api.depends("name")
@@ -95,40 +117,52 @@ class QualityInspectionLineHardening(models.Model):
         store=True,
         index=True,
     )
+    capture_zone = fields.Selection(
+        [
+            ("additional", "Atributos Adicionales"),
+            ("measures", "Medidas y Propiedades"),
+            ("ranurado", "Ranurado"),
+            ("troquelado", "Troquelado"),
+            ("production", "Datos de Producción"),
+        ],
+        default="additional",
+        required=True,
+    )
+    result_mode = fields.Selection(
+        [
+            ("cumple", "Cumple / No Cumple / N/A"),
+            ("ok", "OK / NO OK / N/A"),
+        ],
+        default="cumple",
+        required=True,
+    )
 
-    capture_zone = fields.Selection([
-        ("additional", "Atributos Adicionales"),
-        ("measures", "Medidas y Propiedades"),
-        ("ranurado", "Ranurado"),
-        ("troquelado", "Troquelado"),
-        ("production", "Datos de Producción"),
-    ], default="additional", required=True)
-
-    result_mode = fields.Selection([
-        ("cumple", "Cumple / No Cumple / N/A"),
-        ("ok", "OK / NO OK / N/A"),
-    ], default="cumple", required=True)
-
-    value_cumple = fields.Selection([
-        ("cumple", "Cumple"),
-        ("no_cumple", "No Cumple"),
-        ("na", "N/A"),
-    ], string="Cumple/No Cumple/N/A", default="na")
-
-    value_ok = fields.Selection([
-        ("ok", "OK"),
-        ("no_ok", "NO OK"),
-        ("na", "N/A"),
-    ], string="OK/NO OK/N/A", default="na")
-
-    result = fields.Selection(selection_add=[
-        ("ok", "OK"),
-        ("no_ok", "NO OK"),
-    ], ondelete={
-        "ok": "set default",
-        "no_ok": "set default",
-    })
-
+    # FOLIO-QM-ODOO18-018: se extiende el campo existente con N/A sin redefinirlo
+    # por completo, evitando conflictos de upgrade en Odoo 18.
+    value_cumple = fields.Selection(
+        selection_add=[("na", "N/A")],
+        ondelete={"na": "set default"},
+        default="na",
+    )
+    value_ok = fields.Selection(
+        [
+            ("ok", "OK"),
+            ("no_ok", "NO OK"),
+            ("na", "N/A"),
+        ],
+        string="OK/NO OK/N/A",
+        default="na",
+    )
+    result = fields.Selection(
+        selection_add=[
+            ("ok", "OK"),
+            ("no_ok", "NO OK"),
+        ],
+        ondelete={
+            "ok": "set default",
+            "no_ok": "set default",
+        },
+    )
     allow_zero = fields.Boolean("Permitir cero")
 
     @api.depends("name")
@@ -139,25 +173,29 @@ class QualityInspectionLineHardening(models.Model):
     @api.onchange("attribute_template_id")
     def _onchange_template_hardening(self):
         for line in self:
-            tmpl = line.attribute_template_id
-            if tmpl:
-                line.name = tmpl.name
-                line.attribute_type = tmpl.attribute_type
-                line.capture_zone = tmpl.capture_zone
-                line.result_mode = tmpl.result_mode
-                line.min_value = tmpl.min_value
-                line.max_value = tmpl.max_value
-                line.unit = tmpl.unit
-                line.allow_zero = tmpl.allow_zero
+            template = line.attribute_template_id
+            if not template:
+                continue
+
+            line.name = template.name
+            line.attribute_type = template.attribute_type
+            line.capture_zone = template.capture_zone
+            line.result_mode = template.result_mode
+            line.min_value = template.min_value
+            line.max_value = template.max_value
+            line.unit = template.unit
+            line.allow_zero = template.allow_zero
 
     @api.onchange("value_float", "min_value", "max_value", "attribute_type")
     def _onchange_evaluate_result_hardening(self):
         for line in self:
             if line.attribute_type != "float":
                 continue
+
             if not line.value_float and not line.allow_zero:
                 line.result = "na"
                 continue
+
             if line.min_value and line.value_float < line.min_value:
                 line.result = "no_cumple"
             elif line.max_value and line.value_float > line.max_value:
@@ -177,7 +215,12 @@ class QualityInspectionLineHardening(models.Model):
             if line.attribute_type == "boolean" and line.result_mode == "ok":
                 line.result = line.value_ok or "na"
 
-    @api.constrains("inspection_id", "sample_release_id", "normalized_name", "capture_zone")
+    @api.constrains(
+        "inspection_id",
+        "sample_release_id",
+        "normalized_name",
+        "capture_zone",
+    )
     def _check_duplicate_attribute_hardening(self):
         for line in self:
             if not line.normalized_name:
@@ -188,6 +231,7 @@ class QualityInspectionLineHardening(models.Model):
                 ("normalized_name", "=", line.normalized_name),
                 ("capture_zone", "=", line.capture_zone),
             ]
+
             if line.inspection_id:
                 domain.append(("inspection_id", "=", line.inspection_id.id))
             elif line.sample_release_id:
@@ -196,16 +240,19 @@ class QualityInspectionLineHardening(models.Model):
                 continue
 
             if self.search_count(domain):
-                raise ValidationError(_(
-                    "Atributo duplicado: '%s'. No se permite repetir atributos."
-                ) % line.name)
+                raise ValidationError(
+                    _("Atributo duplicado: '%s'. No se permite repetir atributos.")
+                    % line.name
+                )
 
     @api.constrains("value_float", "attribute_type", "allow_zero", "result")
     def _check_zero_numeric_hardening(self):
         for line in self:
             parent_state = (
-                line.inspection_id.state if line.inspection_id
-                else line.sample_release_id.state if line.sample_release_id
+                line.inspection_id.state
+                if line.inspection_id
+                else line.sample_release_id.state
+                if line.sample_release_id
                 else False
             )
             if parent_state in ("borrador", False):
@@ -217,111 +264,83 @@ class QualityInspectionLineHardening(models.Model):
                 and not line.value_float
                 and line.result != "na"
             ):
-                raise ValidationError(_(
-                    "El atributo numérico '%s' no puede quedar en cero. "
-                    "Capture el valor real o marque N/A."
-                ) % line.name)
+                raise ValidationError(
+                    _(
+                        "El atributo numérico '%s' no puede quedar en cero. "
+                        "Capture el valor real o marque N/A."
+                    )
+                    % line.name
+                )
 
 
 class QualityInspectionRanuradoHardening(models.Model):
     _inherit = "quality.inspection.ranurado"
 
     concepto = fields.Char("Concepto", default="Largo")
-    unidad = fields.Selection(selection_add=[
-        ("cm", "cm"),
-    ], ondelete={"cm": "set default"})
-
-    resultado = fields.Selection(selection_add=[
-        ("na", "N/A"),
-    ], ondelete={"na": "set default"})
+    unidad = fields.Selection(
+        selection_add=[("cm", "cm")],
+        ondelete={"cm": "set default"},
+    )
+    resultado = fields.Selection(
+        selection_add=[("na", "N/A")],
+        ondelete={"na": "set default"},
+    )
 
     @api.constrains("medida", "resultado")
     def _check_medida_gt_zero(self):
         for rec in self:
             if rec.resultado != "na" and rec.medida <= 0:
-                raise ValidationError(_(
-                    "La medida debe ser mayor a cero o marcarse como N/A."
-                ))
+                raise ValidationError(
+                    _("La medida debe ser mayor a cero o marcarse como N/A.")
+                )
 
 
 class QualityInspectionTroqueladoHardening(models.Model):
     _inherit = "quality.inspection.troquelado"
 
-    unidad = fields.Selection([
-        ("mm", "mm"),
-        ("cm", "cm"),
-        ("in", "in"),
-    ], default="mm", required=True)
-
-    resultado = fields.Selection(selection_add=[
-        ("na", "N/A"),
-    ], ondelete={"na": "set default"})
+    unidad = fields.Selection(
+        [
+            ("mm", "mm"),
+            ("cm", "cm"),
+            ("in", "in"),
+        ],
+        default="mm",
+        required=True,
+    )
+    resultado = fields.Selection(
+        selection_add=[("na", "N/A")],
+        ondelete={"na": "set default"},
+    )
 
     @api.constrains("medida", "resultado")
     def _check_medida_gt_zero(self):
         for rec in self:
             if rec.resultado != "na" and rec.medida <= 0:
-                raise ValidationError(_(
-                    "La medida de troquelado debe ser mayor a cero o marcarse como N/A."
-                ))
+                raise ValidationError(
+                    _("La medida de troquelado debe ser mayor a cero o marcarse como N/A.")
+                )
 
 
 class QualityInspectionHardening(models.Model):
     _inherit = "quality.inspection"
 
-    process_code = fields.Char(
-        related="process_type_id.code",
-        store=True,
-        readonly=True,
-        index=True,
-    )
+    # FOLIO-QM-ODOO18-019: se evita redeclarar campos base con otro tipo
+    # en hardening; solo se agregan campos nuevos o relacionados.
     capture_mode = fields.Selection(
         related="process_type_id.capture_mode",
         store=True,
         readonly=True,
     )
-
-    sin_supervisor = fields.Boolean("Sin Supervisor")
     date_started = fields.Datetime("Fecha de Inicio", readonly=True)
     date_closed = fields.Datetime("Fecha de Cierre", readonly=True)
-
-    hexagono = fields.Selection([
-        ("tipo_1", "Tipo 1"),
-        ("tipo_2", "Tipo 2"),
-        ("tipo_3", "Tipo 3"),
-        ("tipo_4", "Tipo 4"),
-    ], string="Hexágono")
-
-    oct_hexagono = fields.Selection([
-        ("tipo_1", "Tipo 1"),
-        ("tipo_2", "Tipo 2"),
-        ("tipo_3", "Tipo 3"),
-        ("tipo_4", "Tipo 4"),
-    ], string="Tipo de Hexágono Octágono")
-
-    pegado_result = fields.Selection([
-        ("cumple", "Cumple"),
-        ("no_cumple", "No Cumple"),
-        ("na", "N/A"),
-    ], string="Resultado de Pegado")
-
-    engomado = fields.Selection([
-        ("cumple", "Cumple"),
-        ("no_cumple", "No Cumple"),
-        ("na", "N/A"),
-    ], string="Engomado")
-
-    corte_guillotina = fields.Selection([
-        ("si", "Sí"),
-        ("no", "No"),
-        ("na", "N/A"),
-    ], string="Corte en Guillotina")
 
     @api.constrains("sin_supervisor", "supervisor_id")
     def _check_supervisor_or_no_supervisor(self):
         for rec in self:
             if not rec.sin_supervisor and not rec.supervisor_id:
-                raise ValidationError(_("Seleccione un supervisor o marque 'Sin Supervisor'."))
+                raise ValidationError(
+                    _("Seleccione un supervisor o marque 'Sin Supervisor'.")
+                )
 
     @api.onchange("sin_supervisor")
     def _onchange_sin_supervisor(self):
@@ -329,67 +348,83 @@ class QualityInspectionHardening(models.Model):
             self.supervisor_id = False
 
     @api.onchange("production_order_id")
-    def _onchange_production_order_hardening(self):
+    def _onchange_production_order(self):
+        # FOLIO-QM-ODOO18-020: se consolida el onchange para no duplicar lógica
+        # con el archivo base y asegurar producto, lote y cliente desde la OP.
         if not self.production_order_id:
             return
 
-        mo = self.production_order_id
-        if mo.product_id:
-            self.product_id = mo.product_id
-            self.code = mo.product_id.default_code or self.code
+        production = self.production_order_id
+        if production.product_id:
+            self.product_id = production.product_id
+            self.code = production.product_id.default_code or self.code
 
-        if getattr(mo, "lot_producing_id", False):
-            self.lot_id = mo.lot_producing_id
+        if getattr(production, "lot_producing_id", False):
+            self.lot_id = production.lot_producing_id
 
-        origin_so = self.env["sale.order"].search(
-            [("name", "=", mo.origin)],
-            limit=1,
-        ) if mo.origin else False
-
-        if origin_so and origin_so.partner_id:
-            self.partner_id = origin_so.partner_id
+        sale_order = (
+            self.env["sale.order"].search([("name", "=", production.origin)], limit=1)
+            if production.origin
+            else False
+        )
+        if sale_order and sale_order.partner_id:
+            self.partner_id = sale_order.partner_id
 
     @api.onchange("process_type_id", "product_id")
-    def _onchange_load_attribute_templates_hardening(self):
+    def _onchange_load_attribute_templates(self):
+        # FOLIO-QM-ODOO18-021: se consolida la carga de atributos para evitar
+        # que dos onchanges generen líneas duplicadas o incompletas.
         if not self.process_type_id and not self.product_id:
             return
 
         templates = self.env["quality.attribute.template"]
         if self.process_type_id:
             templates |= self.process_type_id.attribute_template_ids.filtered(
-                lambda t: not t.product_tmpl_id and t.active
+                lambda template: not template.product_tmpl_id and template.active
             )
 
         if self.product_id and self.product_id.product_tmpl_id:
-            templates |= self.env["quality.attribute.template"].search([
-                ("product_tmpl_id", "=", self.product_id.product_tmpl_id.id),
-                ("active", "=", True),
-            ])
+            templates |= self.env["quality.attribute.template"].search(
+                [
+                    ("product_tmpl_id", "=", self.product_id.product_tmpl_id.id),
+                    ("active", "=", True),
+                ]
+            )
 
-        if templates:
-            lines = [(5, 0, 0)]
-            seen = set()
-            for t in templates.sorted(lambda x: (x.sequence, x.id)):
-                key = t.normalized_name or _slug(t.name)
-                if not key or key in seen:
-                    continue
-                seen.add(key)
-                lines.append((0, 0, {
-                    "attribute_template_id": t.id,
-                    "name": t.name,
-                    "attribute_type": t.attribute_type,
-                    "capture_zone": t.capture_zone,
-                    "result_mode": t.result_mode,
-                    "min_value": t.min_value,
-                    "max_value": t.max_value,
-                    "unit": t.unit,
-                    "allow_zero": t.allow_zero,
-                    "sequence": t.sequence,
-                    "value_cumple": "na",
-                    "value_ok": "na",
-                    "result": "na",
-                }))
-            self.line_ids = lines
+        if not templates:
+            return
+
+        lines = [(5, 0, 0)]
+        seen = set()
+        for template in templates.sorted(lambda item: (item.sequence, item.id)):
+            key = template.normalized_name or _slug(template.name)
+            if not key or key in seen:
+                continue
+
+            seen.add(key)
+            lines.append(
+                (
+                    0,
+                    0,
+                    {
+                        "attribute_template_id": template.id,
+                        "name": template.name,
+                        "attribute_type": template.attribute_type,
+                        "capture_zone": template.capture_zone,
+                        "result_mode": template.result_mode,
+                        "min_value": template.min_value,
+                        "max_value": template.max_value,
+                        "unit": template.unit,
+                        "allow_zero": template.allow_zero,
+                        "sequence": template.sequence,
+                        "value_cumple": "na",
+                        "value_ok": "na",
+                        "result": "na",
+                    },
+                )
+            )
+
+        self.line_ids = lines
 
     def _check_previous_process_hardening(self):
         for rec in self:
@@ -397,26 +432,32 @@ class QualityInspectionHardening(models.Model):
             if code not in PROCESS_SEQUENCE:
                 continue
 
-            idx = PROCESS_SEQUENCE.index(code)
-            if idx == 0:
+            index = PROCESS_SEQUENCE.index(code)
+            if index == 0:
                 continue
 
-            previous = PROCESS_SEQUENCE[idx - 1]
-            prev = self.search([
-                ("lot_id", "=", rec.lot_id.id),
-                ("process_code", "=", previous),
-                ("state", "=", "aceptado"),
-            ], limit=1)
+            previous = PROCESS_SEQUENCE[index - 1]
+            previous_inspection = self.search(
+                [
+                    ("lot_id", "=", rec.lot_id.id),
+                    ("process_code", "=", previous),
+                    ("state", "=", "aceptado"),
+                ],
+                limit=1,
+            )
 
-            if not prev:
-                raise UserError(_(
-                    "Secuencia bloqueada: antes de liberar '%s' debe estar liberado "
-                    "el proceso previo '%s' para el lote %s."
-                ) % (
-                    rec.process_type_id.name,
-                    previous.replace("_", " ").title(),
-                    rec.lot_id.name or "—",
-                ))
+            if not previous_inspection:
+                raise UserError(
+                    _(
+                        "Secuencia bloqueada: antes de liberar '%s' debe estar "
+                        "liberado el proceso previo '%s' para el lote %s."
+                    )
+                    % (
+                        rec.process_type_id.name,
+                        previous.replace("_", " ").title(),
+                        rec.lot_id.name or "—",
+                    )
+                )
 
     def _check_reserved_duplicate_attributes_hardening(self):
         for rec in self:
@@ -427,10 +468,13 @@ class QualityInspectionHardening(models.Model):
                     duplicates.append(line.name)
 
             if duplicates:
-                raise UserError(_(
-                    "Estos atributos no deben capturarse como adicionales porque ya "
-                    "pertenecen a Medidas y Propiedades: %s"
-                ) % ", ".join(sorted(set(duplicates))))
+                raise UserError(
+                    _(
+                        "Estos atributos no deben capturarse como adicionales porque "
+                        "ya pertenecen a Medidas y Propiedades: %s"
+                    )
+                    % ", ".join(sorted(set(duplicates)))
+                )
 
     def _check_required_additional_attributes_hardening(self):
         for rec in self:
@@ -438,25 +482,35 @@ class QualityInspectionHardening(models.Model):
                 continue
 
             required_lines = rec.line_ids.filtered(
-                lambda l: l.attribute_template_id.is_required if l.attribute_template_id else True
+                lambda line: line.attribute_template_id.is_required
+                if line.attribute_template_id
+                else True
             )
             if not required_lines:
                 raise UserError(_("Debe capturar los atributos adicionales del proceso."))
 
-            pending = required_lines.filtered(lambda l: l.result == "na")
-            if pending:
-                raise UserError(_(
-                    "Hay atributos adicionales sin dictamen. Capture Cumple/No Cumple, "
-                    "OK/NO OK o marque N/A cuando aplique: %s"
-                ) % ", ".join(pending.mapped("name")))
+            missing_result = required_lines.filtered(
+                lambda line: not line.result
+            )
+            if missing_result:
+                raise UserError(
+                    _("Hay atributos adicionales sin dictamen: %s")
+                    % ", ".join(missing_result.mapped("name"))
+                )
 
             numeric_zero = required_lines.filtered(
-                lambda l: l.attribute_type == "float" and not l.allow_zero and not l.value_float
+                lambda line: (
+                    line.attribute_type == "float"
+                    and not line.allow_zero
+                    and not line.value_float
+                    and line.result != "na"
+                )
             )
             if numeric_zero:
-                raise UserError(_(
-                    "Se detectan atributos numéricos con valor igual a cero. Rectifique: %s"
-                ) % ", ".join(numeric_zero.mapped("name")))
+                raise UserError(
+                    _("Se detectan atributos numéricos con valor igual a cero. Rectifique: %s")
+                    % ", ".join(numeric_zero.mapped("name"))
+                )
 
     def _check_measures_captured_hardening(self):
         for rec in self:
@@ -484,7 +538,8 @@ class QualityInspectionHardening(models.Model):
             if rec.show_pegado and not rec.pegado_result:
                 missing.append("Resultado de Pegado")
             if rec.show_retiramiento and not (
-                getattr(rec, "oct_retiramiento", 0.0) or getattr(rec, "reticula_extendida", 0.0)
+                getattr(rec, "oct_retiramiento", 0.0)
+                or getattr(rec, "reticula_extendida", 0.0)
             ):
                 missing.append("Retícula Extendida / Restiramiento")
             if rec.show_calibracion and not rec.calibracion:
@@ -513,13 +568,18 @@ class QualityInspectionHardening(models.Model):
             if rec.process_code == "troquelado_plano" and not rec.troquelado_ids:
                 missing.append("Pestaña Troquelado")
 
-            if rec.process_code == "sierras_ranuradoras" and rec.show_ranurado and not rec.ranurado_ids:
+            if (
+                rec.process_code == "sierras_ranuradoras"
+                and rec.show_ranurado
+                and not rec.ranurado_ids
+            ):
                 missing.append("Pestaña Ranurado / Corte Sierra")
 
             if missing:
-                raise UserError(_(
-                    "Capture la información obligatoria antes de liberar. Faltan: %s"
-                ) % ", ".join(missing))
+                raise UserError(
+                    _("Capture la información obligatoria antes de liberar. Faltan: %s")
+                    % ", ".join(missing)
+                )
 
     def _full_quality_validation_hardening(self):
         for rec in self:
@@ -535,7 +595,10 @@ class QualityInspectionHardening(models.Model):
         for rec in self:
             rec.date_started = fields.Datetime.now()
             rec.state = "en_proceso"
-            rec.message_post(body=_("Inspección iniciada."), subtype_xmlid="mail.mt_comment")
+            rec.message_post(
+                body=_("Inspección iniciada."),
+                subtype_xmlid="mail.mt_comment",
+            )
 
     def action_accept(self):
         for rec in self:
@@ -578,7 +641,8 @@ class QualityInspectionHardening(models.Model):
                 body=_(
                     "Producto RETENIDO por %s. Supervisor en turno: %s. "
                     "Cuando Producción marque HECHO, Calidad debe validar nuevamente."
-                ) % (
+                )
+                % (
                     self.env.user.name,
                     rec.supervisor_id.name if rec.supervisor_id else "Sin supervisor",
                 ),
@@ -615,17 +679,24 @@ class QualityCertificateHardening(models.Model):
             names = []
             for line in rec.attribute_ids:
                 if line.inspection_id != rec.inspection_id:
-                    raise ValidationError(_("El certificado solo puede contener atributos de la inspección fuente."))
+                    raise ValidationError(
+                        _("El certificado solo puede contener atributos de la inspección fuente.")
+                    )
 
                 key = line.normalized_name or _slug(line.name)
                 if key:
                     names.append(key)
 
                 if line.attribute_type == "float" and not line.allow_zero and not line.value_float:
-                    raise ValidationError(_("No se puede certificar el atributo '%s' con valor 0.") % line.name)
+                    raise ValidationError(
+                        _("No se puede certificar el atributo '%s' con valor 0.")
+                        % line.name
+                    )
 
                 if line.result not in ("cumple", "ok"):
-                    raise ValidationError(_("Solo se pueden certificar atributos con resultado Cumple/OK."))
+                    raise ValidationError(
+                        _("Solo se pueden certificar atributos con resultado Cumple/OK.")
+                    )
 
             if len(names) != len(set(names)):
                 raise ValidationError(_("Hay atributos repetidos en el certificado."))
@@ -635,7 +706,6 @@ class QualityCertificateHardening(models.Model):
             if rec.inspection_id.state != "aceptado":
                 raise UserError(_("Solo se puede generar certificado desde inspección aceptada."))
             rec.state = "generado"
-
 
 
 class QualityActionLineHardening(models.Model):
@@ -662,7 +732,14 @@ class QualityCustomerDocumentHardening(models.Model):
 
     def action_send(self):
         for rec in self:
-            has_doc = rec.main_pdf or rec.main_image or rec.result_document_ids or rec.client_format_ids
+            has_doc = (
+                rec.main_pdf
+                or rec.main_image
+                or rec.result_document_ids
+                or rec.client_format_ids
+            )
             if not has_doc:
-                raise UserError(_("No puede marcar como enviado si no existe documento cargado."))
+                raise UserError(
+                    _("No puede marcar como enviado si no existe documento cargado.")
+                )
             rec.state = "enviado"

@@ -6,6 +6,7 @@
         <field name="model">quality.process.type</field>
         <field name="inherit_id" ref="quality_management.view_quality_process_type_form"/>
         <field name="arch" type="xml">
+            <!-- FOLIO-QM-ODOO18-032: se agregan controles de endurecimiento del proceso en configuración. -->
             <xpath expr="//field[@name='active']" position="after">
                 <field name="capture_mode"/>
                 <field name="require_measures"/>
@@ -20,6 +21,7 @@
         <field name="model">quality.attribute.template</field>
         <field name="inherit_id" ref="quality_management.view_quality_attribute_template_form"/>
         <field name="arch" type="xml">
+            <!-- FOLIO-QM-ODOO18-033: se agregan zona de captura, modo de resultado y permiso de cero por plantilla. -->
             <xpath expr="//field[@name='attribute_type']" position="after">
                 <field name="capture_zone"/>
                 <field name="result_mode" invisible="attribute_type != 'boolean'"/>
@@ -34,11 +36,7 @@
         <field name="model">quality.inspection</field>
         <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//sheet" position="inside">
-                <field name="process_code" invisible="1"/>
-                <field name="capture_mode" invisible="1"/>
-            </xpath>
-
+            <!-- FOLIO-QM-ODOO18-034: se permite declarar inspección sin supervisor sin romper required ORM. -->
             <xpath expr="//field[@name='supervisor_id']" position="before">
                 <field name="sin_supervisor"/>
             </xpath>
@@ -48,6 +46,7 @@
                 <attribute name="required">not sin_supervisor</attribute>
             </xpath>
 
+            <!-- FOLIO-QM-ODOO18-035: se agregan fechas operativas de inicio/cierre sin duplicar process_code/capture_mode. -->
             <xpath expr="//field[@name='date_inspection']" position="after">
                 <field name="date_started" readonly="1"/>
                 <field name="date_closed" readonly="1"/>
@@ -60,6 +59,7 @@
         <field name="model">quality.certificate</field>
         <field name="inherit_id" ref="quality_management.view_quality_certificate_form"/>
         <field name="arch" type="xml">
+            <!-- FOLIO-QM-ODOO18-036: se muestra la etiqueta textual del hexágono cuando proviene de selección. -->
             <xpath expr="//field[@name='certified_hexagono']" position="after">
                 <field name="certified_hexagono_label" invisible="not certified_hexagono_label"/>
             </xpath>

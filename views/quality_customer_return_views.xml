@@ -56,23 +56,31 @@
                     <field name="state" widget="statusbar"
                            statusbar_visible="borrador,evaluacion_ventas,evaluacion_calidad,en_8d,cerrada"/>
                 </header>
+
                 <sheet>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
+
+                    <field name="is_within_period" invisible="1"/>
+                    <field name="pallet_alert_15" invisible="1"/>
+
                     <div class="alert alert-warning" role="alert"
                          invisible="is_within_period">
-                        <strong>⚠️ Fuera de periodo:</strong>
+                        <strong>Fuera de periodo:</strong>
                         <field name="days_since_production" nolabel="1" readonly="1"/> días
-                        desde producción (>30). Esta devolución NO procede,
+                        desde producción (&gt;30). Esta devolución no procede,
                         salvo justificación comercial del Gerente de Ventas.
                     </div>
+
                     <div class="alert alert-danger" role="alert"
                          invisible="not pallet_alert_15">
                         <i class="fa fa-clock-o"/>
+                        <!-- FOLIO-QM-ODOO18-047: se aclara que la alerta de tarimas opera sobre días hábiles. -->
                         <strong>Alerta:</strong> el retorno de tarimas se programó
                         a más de 15 días hábiles desde la recepción.
                     </div>
+
                     <group>
                         <group string="Datos del Cliente">
                             <field name="partner_id"/>
@@ -81,8 +89,6 @@
                             <field name="production_date"/>
                             <field name="delivery_date"/>
                             <field name="days_since_production" readonly="1"/>
-                            <field name="is_within_period" invisible="1"/>
-                            <field name="pallet_alert_15" invisible="1"/>
                         </group>
                         <group string="Detalle del Defecto">
                             <field name="defect_type"/>
@@ -93,8 +99,10 @@
                             <field name="affects_functionality"/>
                         </group>
                     </group>
+
                     <separator string="Motivo de la Devolución"/>
                     <field name="return_reason"/>
+
                     <notebook>
                         <page string="Evidencia Fotográfica" name="evi">
                             <field name="evidence_ids" widget="many2many_binary"/>
@@ -102,6 +110,7 @@
                             <field name="evidence_ids" widget="evidence_viewer"
                                    nolabel="1"/>
                         </page>
+
                         <page string="Reporte de Evidencia (PDF)" name="evpdf">
                             <group>
                                 <field name="evidence_pdf"
@@ -113,6 +122,7 @@
                                 <field name="evidence_pdf" widget="pdf_viewer" readonly="1"/>
                             </div>
                         </page>
+
                         <page string="Formato de Reclamación (PDF)" name="claim">
                             <div class="alert alert-warning" invisible="claim_format_pdf">
                                 <i class="fa fa-exclamation-triangle"/>
@@ -128,6 +138,7 @@
                                 <field name="claim_format_pdf" widget="pdf_viewer" readonly="1"/>
                             </div>
                         </page>
+
                         <page string="Tarimas" name="pallets">
                             <group>
                                 <field name="pallets_returned"/>
@@ -135,13 +146,13 @@
                                        invisible="not pallets_returned"/>
                             </group>
                         </page>
+
                         <page string="Autorización Comercial"
                               invisible="is_within_period and not sales_manager_id"
                               name="commercial">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>
-                                Aplica cuando comercialmente se decide proceder
-                                a pesar del bloqueo por >30 días.
+                                Aplica cuando comercialmente se decide proceder a pesar del bloqueo por &gt;30 días.
                             </p>
                             <group>
                                 <field name="sales_manager_id" readonly="1"/>
@@ -149,6 +160,7 @@
                             <field name="sales_manager_justification"
                                    placeholder="Motivos por los cuales se realizará la reposición..."/>
                         </page>
+
                         <page string="8D" invisible="not corrective_action_id"
                               name="eightd">
                             <group>

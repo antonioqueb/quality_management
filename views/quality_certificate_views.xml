@@ -97,29 +97,33 @@
                                 </group>
                             </group>
                         </page>
-                        <page string="Atributos Adicionales (solo CUMPLE)"
-                              name="attrs">
+                        <page string="Atributos Adicionales (solo CUMPLE/OK)" name="attrs">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>
-                                Solo deben aparecer atributos que CUMPLEN.
+                                <!-- FOLIO-QM-ODOO18-037: el certificado acepta resultados Cumple y OK, no solo Cumple. -->
+                                Solo deben aparecer atributos con resultado CUMPLE u OK.
                             </p>
                             <field name="attribute_ids"
-                                   domain="[('result','=','cumple')]">
+                                   domain="[('result','in',['cumple','ok'])]">
                                 <list>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
+                                    <field name="result_mode"/>
                                     <field name="value_float"
                                            invisible="attribute_type != 'float'"/>
                                     <field name="value_char"
                                            invisible="attribute_type not in ('char','selection')"/>
                                     <field name="value_cumple"
-                                           invisible="attribute_type != 'boolean'"/>
-                                    <field name="result" widget="badge"/>
+                                           invisible="attribute_type != 'boolean' or result_mode != 'cumple'"/>
+                                    <field name="value_ok"
+                                           invisible="attribute_type != 'boolean' or result_mode != 'ok'"/>
+                                    <field name="result" widget="badge"
+                                           decoration-success="result in ('cumple','ok')"
+                                           decoration-danger="result in ('no_cumple','no_ok')"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="PDF Generado" invisible="not report_pdf"
-                              name="pdf">
+                        <page string="PDF Generado" invisible="not report_pdf" name="pdf">
                             <group>
                                 <field name="report_pdf"
                                        filename="report_pdf_name"/>
