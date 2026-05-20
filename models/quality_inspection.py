@@ -14,6 +14,15 @@ PROCESS_SEQUENCE = [
     "troquelado_plano",
 ]
 
+OCT_HEXAGONO_SELECTION = [
+    ("tipo_1", "Tipo 1"),
+    ("tipo_2", "Tipo 2"),
+    ("tipo_3", "Tipo 3"),
+    ("tipo_4", "Tipo 4"),
+]
+
+OCT_HEXAGONO_VALUES = {value for value, _label in OCT_HEXAGONO_SELECTION}
+
 
 class QualityInspection(models.Model):
     _name = "quality.inspection"
@@ -198,12 +207,7 @@ class QualityInspection(models.Model):
     espesor_label = fields.Char(compute="_compute_espesor_label")
 
     hexagono = fields.Selection(
-        [
-            ("tipo_1", "Tipo 1"),
-            ("tipo_2", "Tipo 2"),
-            ("tipo_3", "Tipo 3"),
-            ("tipo_4", "Tipo 4"),
-        ],
+        OCT_HEXAGONO_SELECTION,
         string="Hexágono",
     )
 
@@ -245,9 +249,29 @@ class QualityInspection(models.Model):
 
     oct_ancho = fields.Float("Ancho Octágono (mm)")
     oct_espesor = fields.Float("Espesor Octágono (mm)")
-    # FOLIO-QM-ODOO18-024: se conserva Float porque el módulo ya pudo haber
-    # creado la columna como double precision; cambiarla a Selection rompe upgrade.
-    oct_hexagono = fields.Float("Hexágono Octágono")
+
+    # FOLIO-QM-ODOO18-061: se conserva oct_hexagono como Selection legacy para no romper
+    # upgrades donde Odoo ya creó ir.model.fields.selection para este campo.
+    # No debe volver a cambiarse a Float dentro de este mismo upgrade.
+    oct_hexagono = fields.Selection(
+        OCT_HEXAGONO_SELECTION,
+        string="Hexágono Octágono Legacy",
+        copy=False,
+        help=(
+            "Campo legacy conservado para compatibilidad de actualización. "
+            "El campo definitivo para nuevas capturas es 'Tipo de Hexágono Octágono'."
+        ),
+    )
+
+    # FOLIO-QM-ODOO18-062: nuevo campo definitivo para capturar el tipo de hexágono
+    # de Octágono sin reutilizar/modificar la columna histórica oct_hexagono.
+    oct_hexagono_tipo = fields.Selection(
+        OCT_HEXAGONO_SELECTION,
+        string="Tipo de Hexágono Octágono",
+        tracking=True,
+        copy=False,
+    )
+
     oct_retiramiento = fields.Float("Retiramiento (cm)")
     oct_alineacion = fields.Selection(
         [
@@ -277,12 +301,8 @@ class QualityInspection(models.Model):
     adhesivo_lote1 = fields.Char("Lote 1 Adhesivo")
     adhesivo_lote2 = fields.Char("Lote 2 Adhesivo")
     tipo_hexagono = fields.Selection(
-        [
-            ("tipo_1", "Tipo 1"),
-            ("tipo_2", "Tipo 2"),
-            ("tipo_3", "Tipo 3"),
-            ("tipo_4", "Tipo 4"),
-        ]
+        OCT_HEXAGONO_SELECTION,
+        string="Tipo de Hexágono",
     )
     calibracion = fields.Float("Calibración", digits=(16, 6))
     engomado = fields.Selection(
@@ -331,6 +351,68 @@ class QualityInspection(models.Model):
         default=lambda s: s.env.company,
     )
 
+    def init(self):
+        """
+        FOLIO-QM-ODOO18-063:
+        Migración defensiva para bases donde oct_hexagono ya recibió valores de selección.
+        Copia esos valores al campo nuevo oct_hexagono_tipo sin eliminar ni transformar
+        la columna legacy durante el upgrade.
+        """
+        super().init()
+        cr = self.env.cr
+
+        cr.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                  FROM information_schema.tables
+                 WHERE table_name = 'quality_inspection'
+            )
+            """
+        )
+        table_exists = cr.fetchone()[0]
+        if not table_exists:
+            return
+
+        cr.execute(
+            """
+            SELECT column_name
+              FROM information_schema.columns
+             WHERE table_name = 'quality_inspection'
+               AND column_name IN ('oct_hexagono', 'oct_hexagono_tipo')
+            """
+        )
+        existing_columns = {row[0] for row in cr.fetchall()}
+        if not {"oct_hexagono", "oct_hexagono_tipo"}.issubset(existing_columns):
+            return
+
+        cr.execute(
+            """
+            UPDATE quality_inspection
+               SET oct_hexagono_tipo = oct_hexagono::text
+             WHERE oct_hexagono_tipo IS NULL
+               AND oct_hexagono IS NOT NULL
+               AND oct_hexagono::text IN ('tipo_1', 'tipo_2', 'tipo_3', 'tipo_4')
+            """
+        )
+
+    @staticmethod
+    def _sync_oct_hexagono_values(vals):
+        """
+        FOLIO-QM-ODOO18-064:
+        Mantiene sincronizados el campo legacy y el campo nuevo durante el periodo
+        de transición. Las nuevas capturas deben terminar en oct_hexagono_tipo.
+        """
+        vals = dict(vals)
+
+        if "oct_hexagono" in vals and "oct_hexagono_tipo" not in vals:
+            vals["oct_hexagono_tipo"] = vals.get("oct_hexagono")
+
+        if "oct_hexagono_tipo" in vals and "oct_hexagono" not in vals:
+            vals["oct_hexagono"] = vals.get("oct_hexagono_tipo")
+
+        return vals
+
     @api.depends("process_type_id", "process_type_id.code")
     def _compute_inspection_type(self):
         legacy = ("laminadora_remanejo", "octagono", "guillotina_pegado")
@@ -359,6 +441,22 @@ class QualityInspection(models.Model):
         for rec in self:
             if len(rec.evidence_image_ids) > 10:
                 raise ValidationError(_("Máximo 10 imágenes de evidencia por inspección."))
+
+    @api.onchange("oct_hexagono")
+    def _onchange_oct_hexagono_legacy(self):
+        # FOLIO-QM-ODOO18-065: si alguna vista antigua todavía escribe en el campo legacy,
+        # se migra inmediatamente al campo nuevo.
+        for rec in self:
+            if rec.oct_hexagono and not rec.oct_hexagono_tipo:
+                rec.oct_hexagono_tipo = rec.oct_hexagono
+
+    @api.onchange("oct_hexagono_tipo")
+    def _onchange_oct_hexagono_tipo(self):
+        # FOLIO-QM-ODOO18-066: mantiene compatibilidad con reportes o lógica antigua
+        # que todavía consulten oct_hexagono.
+        for rec in self:
+            if rec.oct_hexagono_tipo:
+                rec.oct_hexagono = rec.oct_hexagono_tipo
 
     @api.onchange("resistencia_na")
     def _onchange_resistencia_na(self):
@@ -460,13 +558,20 @@ class QualityInspection(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        clean_vals_list = []
         for vals in vals_list:
+            vals = self._sync_oct_hexagono_values(vals)
             if vals.get("name", "Nuevo") == "Nuevo":
                 vals["name"] = (
                     self.env["ir.sequence"].next_by_code("quality.inspection")
                     or "Nuevo"
                 )
-        return super().create(vals_list)
+            clean_vals_list.append(vals)
+        return super().create(clean_vals_list)
+
+    def write(self, vals):
+        vals = self._sync_oct_hexagono_values(vals)
+        return super().write(vals)
 
     def _check_previous_process(self):
         for rec in self:
@@ -526,12 +631,17 @@ class QualityInspection(models.Model):
                 checks.append("Ancho")
             if rec.show_espesor and not (rec.espesor or rec.oct_espesor):
                 checks.append("Espesor")
-            # FOLIO-QM-ODOO18-059: compatibilidad con registros instalados antes,
-            # donde Octágono podía guardar el valor histórico en oct_hexagono.
+
+            # FOLIO-QM-ODOO18-067: la validación acepta el campo nuevo
+            # oct_hexagono_tipo y conserva compatibilidad con oct_hexagono legacy.
             if rec.show_hexagono and not (
-                rec.hexagono or rec.tipo_hexagono or rec.oct_hexagono
+                rec.hexagono
+                or rec.tipo_hexagono
+                or rec.oct_hexagono_tipo
+                or rec.oct_hexagono
             ):
                 checks.append("Hexágono")
+
             if rec.show_resistencia and not rec.resistencia_na and not rec.resistencia:
                 checks.append("Resistencia")
             if rec.show_apariencia and not rec.apariencia:
