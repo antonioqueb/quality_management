@@ -1153,131 +1153,6 @@ from . import product_template
 from . import quality_hardening
 ```
 
-## ./apply_hexagonos_quality_changes.py
-```py
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-fix_troquel_smart_buttons.py
-============================
-Corrige el error de Odoo 18:
-    "el campo 'active_id' no existe en el modelo 'quality.troquel'"
-
-en views/quality_troquel_validation_views.xml.
-
-Cambios:
-  1. active_id  →  id   (en context de smart buttons)
-  2. Agrega groups="quality_management.group_quality_manager" a los
-     smart buttons y botones de acción para evitar inconsistencia
-     de permisos.
-  3. Valida XML después de parchar.
-  4. Idempotente: re-ejecutarlo no rompe nada.
-
-Uso:
-    python3 fix_troquel_smart_buttons.py .
-    python3 fix_troquel_smart_buttons.py /ruta/a/quality_management
-"""
-import re
-import sys
-import shutil
-from datetime import datetime
-from pathlib import Path
-from xml.etree import ElementTree as ET
-
-
-def main():
-    if len(sys.argv) < 2:
-        print("Uso: python3 fix_troquel_smart_buttons.py <ruta_modulo>")
-        sys.exit(1)
-
-    module_root = Path(sys.argv[1]).resolve()
-    target = module_root / "views" / "quality_troquel_validation_views.xml"
-
-    if not target.exists():
-        print(f"✗ ERROR: no encuentro {target}")
-        sys.exit(1)
-
-    print(f">>> Parchando: {target}")
-
-    original = target.read_text(encoding="utf-8")
-    text = original
-    changes = []
-
-    # 1) active_id → id
-    pattern_active = re.compile(
-        r"context=\"\{'search_default_troquel_id':\s*active_id\}\""
-    )
-    n = len(pattern_active.findall(text))
-    if n:
-        text = pattern_active.sub(
-            "context=\"{'search_default_troquel_id': id}\"",
-            text,
-        )
-        changes.append(f"active_id → id ({n} ocurrencias)")
-
-    # 2) groups en smart buttons (oe_stat_button)
-    smart_btn_re = re.compile(
-        r"(<button\b[^>]*?\btype=\"action\"[^>]*?\bclass=\"oe_stat_button\"[^>]*?)(/?>)",
-        re.DOTALL,
-    )
-    matches_needing = [m for m in smart_btn_re.finditer(text)
-                       if "groups=" not in m.group(1)]
-    if matches_needing:
-        def add_group_smart(m):
-            head, close = m.group(1), m.group(2)
-            if "groups=" in head:
-                return m.group(0)
-            return head + ' groups="quality_management.group_quality_manager"' + close
-        text = smart_btn_re.sub(add_group_smart, text)
-        changes.append(f"groups en smart buttons (+{len(matches_needing)})")
-
-    # 3) groups en botones de acción del header (action_open_*)
-    action_btn_re = re.compile(
-        r"(<button\b[^>]*?\bname=\"action_open_(validation|repair)\"[^>]*?)(/?>)",
-        re.DOTALL,
-    )
-    matches_needing2 = [m for m in action_btn_re.finditer(text)
-                        if "groups=" not in m.group(1)]
-    if matches_needing2:
-        def add_group_action(m):
-            head, _action, close = m.group(1), m.group(2), m.group(3)
-            if "groups=" in head:
-                return m.group(0)
-            return head + ' groups="quality_management.group_quality_manager"' + close
-        text = action_btn_re.sub(add_group_action, text)
-        changes.append(f"groups en botones de acción (+{len(matches_needing2)})")
-
-    # ¿hubo cambios?
-    if text == original:
-        print("✓ Nada que parchar — ya estaba al día.")
-        sys.exit(0)
-
-    # validar XML
-    try:
-        ET.fromstring(text)
-    except ET.ParseError as e:
-        print(f"✗ ERROR: el XML resultante no es válido: {e}")
-        print("  No se escribió ningún cambio.")
-        sys.exit(2)
-
-    # backup
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup = target.with_suffix(f".xml.bak_{timestamp}")
-    shutil.copy2(target, backup)
-    target.write_text(text, encoding="utf-8")
-
-    print()
-    print("✓ Cambios aplicados:")
-    for c in changes:
-        print(f"   - {c}")
-    print(f"\n✓ Backup: {backup}")
-    print("\nSiguiente paso:")
-    print("  docker compose exec odoo odoo -u quality_management -d <tu_db> --stop-after-init")
-
-
-if __name__ == "__main__":
-    main()```
-
 ## ./data/cron_data.xml
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -2143,134 +2018,6 @@ class QualityAttributeTemplate(models.Model):
         default=lambda self: self.env.company
     )```
 
-## ./models/quality_certificate_email.py
-```py
-# -*- coding: utf-8 -*-
-"""
-Certificados:
-- Adjuntar PDF generado al correo automáticamente.
-- Registrar bitácora de envíos.
-- Marcar fecha de envío real.
-"""
-from odoo import models, fields, api, _
-from odoo.exceptions import UserError
-import base64
-
-
-class QualityCertificateEmail(models.Model):
-    _inherit = "quality.certificate"
-
-    date_sent = fields.Datetime("Fecha de Envío Real", readonly=True, copy=False)
-    sent_by = fields.Many2one("res.users", "Enviado por", readonly=True, copy=False)
-    email_log_ids = fields.One2many(
-        "quality.certificate.email.log", "certificate_id",
-        string="Bitácora de Envíos")
-
-    def _generate_certificate_attachment(self):
-        self.ensure_one()
-        report = self.env.ref(
-            "quality_management.action_report_quality_certificate")
-        pdf_content, _content_type = report._render_qweb_pdf(
-            "quality_management.report_quality_certificate_document",
-            res_ids=[self.id])
-        filename = "Certificado_%s.pdf" % (self.name or "").replace("/", "-")
-        attachment = self.env["ir.attachment"].create({
-            "name": filename,
-            "type": "binary",
-            "datas": base64.b64encode(pdf_content),
-            "res_model": "quality.certificate",
-            "res_id": self.id,
-            "mimetype": "application/pdf",
-        })
-        # Guardar también en report_pdf
-        self.write({
-            "report_pdf": base64.b64encode(pdf_content),
-            "report_pdf_name": filename,
-        })
-        return attachment
-
-    def action_send_email(self):
-        """Override: adjunta PDF generado y precarga template."""
-        self.ensure_one()
-        if self.state == "borrador":
-            raise UserError(_(
-                "Genere primero el certificado antes de enviarlo."))
-
-        attachment = self._generate_certificate_attachment()
-        template = self.env.ref(
-            "quality_management.email_template_quality_certificate",
-            raise_if_not_found=False)
-        compose = self.env.ref("mail.email_compose_message_wizard_form")
-        ctx = {
-            "default_model": "quality.certificate",
-            "default_res_ids": self.ids,
-            "default_template_id": template.id if template else False,
-            "default_composition_mode": "comment",
-            "default_attachment_ids": [(6, 0, [attachment.id])],
-            "mark_so_as_sent": True,
-            "force_email": True,
-        }
-        return {
-            "type": "ir.actions.act_window",
-            "view_mode": "form",
-            "res_model": "mail.compose.message",
-            "views": [(compose.id, "form")],
-            "target": "new",
-            "context": ctx,
-        }
-
-    def action_mark_sent(self):
-        for rec in self:
-            rec.state = "enviado"
-            rec.date_sent = fields.Datetime.now()
-            rec.sent_by = self.env.user
-            self.env["quality.certificate.email.log"].create({
-                "certificate_id": rec.id,
-                "user_id": self.env.user.id,
-                "recipient_email": rec.partner_id.email or "",
-                "notes": _("Marcado como enviado manualmente."),
-            })
-
-    def message_post(self, **kwargs):
-        """Detectar envíos vía mail.compose para registrar bitácora y fecha."""
-        msg = super().message_post(**kwargs)
-        try:
-            if (kwargs.get("subtype_xmlid") == "mail.mt_comment"
-                    and kwargs.get("partner_ids")
-                    and self.state in ("generado", "enviado")):
-                if not self.date_sent:
-                    self.write({
-                        "date_sent": fields.Datetime.now(),
-                        "sent_by": self.env.user.id,
-                        "state": "enviado",
-                    })
-                self.env["quality.certificate.email.log"].create({
-                    "certificate_id": self.id,
-                    "user_id": self.env.user.id,
-                    "recipient_email": self.partner_id.email or "",
-                    "message_id": msg.id if msg else False,
-                    "notes": _("Envío registrado vía mensajería."),
-                })
-        except Exception:
-            # Nunca romper el envío por la bitácora
-            pass
-        return msg
-
-
-class QualityCertificateEmailLog(models.Model):
-    _name = "quality.certificate.email.log"
-    _description = "Bitácora de Envío de Certificados"
-    _order = "date desc, id desc"
-
-    certificate_id = fields.Many2one(
-        "quality.certificate", required=True, ondelete="cascade", index=True)
-    date = fields.Datetime(default=fields.Datetime.now, readonly=True)
-    user_id = fields.Many2one("res.users", "Enviado por")
-    recipient_email = fields.Char("Destinatario")
-    message_id = fields.Many2one("mail.message", "Mensaje", ondelete="set null")
-    notes = fields.Text("Notas")
-```
-
 ## ./models/quality_certificate.py
 ```py
 # -*- coding: utf-8 -*-
@@ -2415,6 +2162,134 @@ class QualityCertificate(models.Model):
         return self.env.ref(
             "quality_management.action_report_quality_certificate"
         ).report_action(self)
+```
+
+## ./models/quality_certificate_email.py
+```py
+# -*- coding: utf-8 -*-
+"""
+Certificados:
+- Adjuntar PDF generado al correo automáticamente.
+- Registrar bitácora de envíos.
+- Marcar fecha de envío real.
+"""
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError
+import base64
+
+
+class QualityCertificateEmail(models.Model):
+    _inherit = "quality.certificate"
+
+    date_sent = fields.Datetime("Fecha de Envío Real", readonly=True, copy=False)
+    sent_by = fields.Many2one("res.users", "Enviado por", readonly=True, copy=False)
+    email_log_ids = fields.One2many(
+        "quality.certificate.email.log", "certificate_id",
+        string="Bitácora de Envíos")
+
+    def _generate_certificate_attachment(self):
+        self.ensure_one()
+        report = self.env.ref(
+            "quality_management.action_report_quality_certificate")
+        pdf_content, _content_type = report._render_qweb_pdf(
+            "quality_management.report_quality_certificate_document",
+            res_ids=[self.id])
+        filename = "Certificado_%s.pdf" % (self.name or "").replace("/", "-")
+        attachment = self.env["ir.attachment"].create({
+            "name": filename,
+            "type": "binary",
+            "datas": base64.b64encode(pdf_content),
+            "res_model": "quality.certificate",
+            "res_id": self.id,
+            "mimetype": "application/pdf",
+        })
+        # Guardar también en report_pdf
+        self.write({
+            "report_pdf": base64.b64encode(pdf_content),
+            "report_pdf_name": filename,
+        })
+        return attachment
+
+    def action_send_email(self):
+        """Override: adjunta PDF generado y precarga template."""
+        self.ensure_one()
+        if self.state == "borrador":
+            raise UserError(_(
+                "Genere primero el certificado antes de enviarlo."))
+
+        attachment = self._generate_certificate_attachment()
+        template = self.env.ref(
+            "quality_management.email_template_quality_certificate",
+            raise_if_not_found=False)
+        compose = self.env.ref("mail.email_compose_message_wizard_form")
+        ctx = {
+            "default_model": "quality.certificate",
+            "default_res_ids": self.ids,
+            "default_template_id": template.id if template else False,
+            "default_composition_mode": "comment",
+            "default_attachment_ids": [(6, 0, [attachment.id])],
+            "mark_so_as_sent": True,
+            "force_email": True,
+        }
+        return {
+            "type": "ir.actions.act_window",
+            "view_mode": "form",
+            "res_model": "mail.compose.message",
+            "views": [(compose.id, "form")],
+            "target": "new",
+            "context": ctx,
+        }
+
+    def action_mark_sent(self):
+        for rec in self:
+            rec.state = "enviado"
+            rec.date_sent = fields.Datetime.now()
+            rec.sent_by = self.env.user
+            self.env["quality.certificate.email.log"].create({
+                "certificate_id": rec.id,
+                "user_id": self.env.user.id,
+                "recipient_email": rec.partner_id.email or "",
+                "notes": _("Marcado como enviado manualmente."),
+            })
+
+    def message_post(self, **kwargs):
+        """Detectar envíos vía mail.compose para registrar bitácora y fecha."""
+        msg = super().message_post(**kwargs)
+        try:
+            if (kwargs.get("subtype_xmlid") == "mail.mt_comment"
+                    and kwargs.get("partner_ids")
+                    and self.state in ("generado", "enviado")):
+                if not self.date_sent:
+                    self.write({
+                        "date_sent": fields.Datetime.now(),
+                        "sent_by": self.env.user.id,
+                        "state": "enviado",
+                    })
+                self.env["quality.certificate.email.log"].create({
+                    "certificate_id": self.id,
+                    "user_id": self.env.user.id,
+                    "recipient_email": self.partner_id.email or "",
+                    "message_id": msg.id if msg else False,
+                    "notes": _("Envío registrado vía mensajería."),
+                })
+        except Exception:
+            # Nunca romper el envío por la bitácora
+            pass
+        return msg
+
+
+class QualityCertificateEmailLog(models.Model):
+    _name = "quality.certificate.email.log"
+    _description = "Bitácora de Envío de Certificados"
+    _order = "date desc, id desc"
+
+    certificate_id = fields.Many2one(
+        "quality.certificate", required=True, ondelete="cascade", index=True)
+    date = fields.Datetime(default=fields.Datetime.now, readonly=True)
+    user_id = fields.Many2one("res.users", "Enviado por")
+    recipient_email = fields.Char("Destinatario")
+    message_id = fields.Many2one("mail.message", "Mensaje", ondelete="set null")
+    notes = fields.Text("Notas")
 ```
 
 ## ./models/quality_change_history.py
@@ -2908,80 +2783,6 @@ class QualityCustomerReturnExtra(models.Model):
         return super().write(vals)
 ```
 
-## ./models/quality_customer_document_extra.py
-```py
-# -*- coding: utf-8 -*-
-"""
-Bloqueos adicionales para Documentos de Cliente:
-- write() bloqueado si no hay descripción ni documento cargado y se intenta
-  avanzar de borrador.
-- Fecha de entrega real al pasar a 'enviado'.
-- Actividades automáticas para Calidad al crear.
-- Notificación a Ventas al completar.
-"""
-from odoo import models, fields, api, _
-from odoo.exceptions import UserError
-from datetime import timedelta
-
-
-class QualityCustomerDocumentExtra(models.Model):
-    _inherit = "quality.customer.document"
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        records = super().create(vals_list)
-        for rec in records:
-            if rec.responsible_id:
-                rec.activity_schedule(
-                    "mail.mail_activity_data_todo",
-                    date_deadline=rec.date_due or (
-                        fields.Date.today() + timedelta(days=5)),
-                    summary=_("Atender solicitud de documento: %s") % rec.name,
-                    user_id=rec.responsible_id.id)
-        return records
-
-    def write(self, vals):
-        """Bloquea avance sin descripción ni documento."""
-        for rec in self:
-            target_state = vals.get("state", rec.state)
-            if target_state in ("en_proceso", "completado", "enviado"):
-                desc = vals.get("description", rec.description)
-                if not desc or not (desc or "").strip():
-                    raise UserError(_(
-                        "No se puede avanzar el documento '%s' sin descripción."
-                    ) % (rec.name or "Nuevo"))
-                has_doc = (
-                    vals.get("main_pdf", rec.main_pdf)
-                    or vals.get("main_image", rec.main_image)
-                    or rec.result_document_ids
-                    or rec.client_format_ids)
-                if not has_doc:
-                    raise UserError(_(
-                        "No se puede avanzar '%s' sin al menos un documento "
-                        "cargado (PDF, imagen o adjunto)."
-                    ) % (rec.name or "Nuevo"))
-        return super().write(vals)
-
-    def action_complete(self):
-        res = super().action_complete()
-        for rec in self:
-            # Notificar a Ventas (solicitante)
-            if rec.requested_by and rec.requested_by.partner_id:
-                rec.message_post(
-                    body=_("📄 Documento listo para envío al cliente."),
-                    partner_ids=[rec.requested_by.partner_id.id],
-                    subtype_xmlid="mail.mt_comment")
-        return res
-
-    def action_send(self):
-        res = super().action_send()
-        for rec in self:
-            # Fecha de entrega real
-            if not rec.date_completed:
-                rec.date_completed = fields.Date.today()
-        return res
-```
-
 ## ./models/quality_customer_document.py
 ```py
 # -*- coding: utf-8 -*-
@@ -3128,6 +2929,80 @@ class QualityCustomerDocument(models.Model):
         return self.env.ref(
             "quality_management.action_report_customer_document"
         ).report_action(self)
+```
+
+## ./models/quality_customer_document_extra.py
+```py
+# -*- coding: utf-8 -*-
+"""
+Bloqueos adicionales para Documentos de Cliente:
+- write() bloqueado si no hay descripción ni documento cargado y se intenta
+  avanzar de borrador.
+- Fecha de entrega real al pasar a 'enviado'.
+- Actividades automáticas para Calidad al crear.
+- Notificación a Ventas al completar.
+"""
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError
+from datetime import timedelta
+
+
+class QualityCustomerDocumentExtra(models.Model):
+    _inherit = "quality.customer.document"
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for rec in records:
+            if rec.responsible_id:
+                rec.activity_schedule(
+                    "mail.mail_activity_data_todo",
+                    date_deadline=rec.date_due or (
+                        fields.Date.today() + timedelta(days=5)),
+                    summary=_("Atender solicitud de documento: %s") % rec.name,
+                    user_id=rec.responsible_id.id)
+        return records
+
+    def write(self, vals):
+        """Bloquea avance sin descripción ni documento."""
+        for rec in self:
+            target_state = vals.get("state", rec.state)
+            if target_state in ("en_proceso", "completado", "enviado"):
+                desc = vals.get("description", rec.description)
+                if not desc or not (desc or "").strip():
+                    raise UserError(_(
+                        "No se puede avanzar el documento '%s' sin descripción."
+                    ) % (rec.name or "Nuevo"))
+                has_doc = (
+                    vals.get("main_pdf", rec.main_pdf)
+                    or vals.get("main_image", rec.main_image)
+                    or rec.result_document_ids
+                    or rec.client_format_ids)
+                if not has_doc:
+                    raise UserError(_(
+                        "No se puede avanzar '%s' sin al menos un documento "
+                        "cargado (PDF, imagen o adjunto)."
+                    ) % (rec.name or "Nuevo"))
+        return super().write(vals)
+
+    def action_complete(self):
+        res = super().action_complete()
+        for rec in self:
+            # Notificar a Ventas (solicitante)
+            if rec.requested_by and rec.requested_by.partner_id:
+                rec.message_post(
+                    body=_("📄 Documento listo para envío al cliente."),
+                    partner_ids=[rec.requested_by.partner_id.id],
+                    subtype_xmlid="mail.mt_comment")
+        return res
+
+    def action_send(self):
+        res = super().action_send()
+        for rec in self:
+            # Fecha de entrega real
+            if not rec.date_completed:
+                rec.date_completed = fields.Date.today()
+        return res
 ```
 
 ## ./models/quality_customer_return.py
@@ -4556,117 +4431,6 @@ class MrpProductionQuality(models.Model):
             'context': {'default_production_order_id': self.id},
         }```
 
-## ./models/quality_inspection_line.py
-```py
-from odoo import models, fields, api
-
-
-class QualityInspectionLine(models.Model):
-    _name = 'quality.inspection.line'
-    _description = 'Línea de Inspección'
-    _order = 'sequence, id'
-
-    inspection_id = fields.Many2one(
-        'quality.inspection', 'Inspección', ondelete='cascade'
-    )
-    sample_release_id = fields.Many2one(
-        'quality.sample.release', 'Liberación de Muestra', ondelete='cascade'
-    )
-    attribute_template_id = fields.Many2one(
-        'quality.attribute.template', 'Atributo'
-    )
-    sequence = fields.Integer('Secuencia', default=10)
-    name = fields.Char('Nombre del Atributo', required=True)
-    attribute_type = fields.Selection([
-        ('float', 'Numérico'),
-        ('selection', 'Selección'),
-        ('boolean', 'Cumple/No Cumple'),
-        ('char', 'Texto'),
-    ], string='Tipo de Dato', default='float')
-    value_float = fields.Float('Valor Numérico')
-    value_char = fields.Char('Valor Texto')
-    value_boolean = fields.Boolean('Valor Sí/No')  # legacy
-    value_cumple = fields.Selection([
-        ('cumple', 'Cumple'),
-        ('no_cumple', 'No Cumple'),
-    ], string='Valor Cumple/No Cumple')
-    value_selection = fields.Char('Valor Selección')
-    min_value = fields.Float('Mínimo')
-    max_value = fields.Float('Máximo')
-    unit = fields.Char('Unidad')
-    result = fields.Selection([
-        ('cumple', 'Cumple'),
-        ('no_cumple', 'No Cumple'),
-        ('na', 'N/A'),
-    ], string='Resultado', default='na')
-    notes = fields.Char('Notas')
-
-    @api.onchange('value_float', 'min_value', 'max_value', 'attribute_type')
-    def _onchange_evaluate_result(self):
-        for line in self:
-            if line.attribute_type == 'float' and (line.min_value or line.max_value):
-                if line.min_value and line.value_float < line.min_value:
-                    line.result = 'no_cumple'
-                elif line.max_value and line.value_float > line.max_value:
-                    line.result = 'no_cumple'
-                elif line.value_float:
-                    line.result = 'cumple'
-
-    @api.onchange('value_cumple', 'attribute_type')
-    def _onchange_value_cumple(self):
-        for line in self:
-            if line.attribute_type == 'boolean' and line.value_cumple:
-                line.result = line.value_cumple```
-
-## ./models/quality_inspection_ranurado.py
-```py
-from odoo import models, fields
-
-
-class QualityInspectionRanurado(models.Model):
-    _name = 'quality.inspection.ranurado'
-    _description = 'Captura de Ranurado'
-    _order = 'sequence, id'
-
-    inspection_id = fields.Many2one(
-        'quality.inspection', 'Inspección',
-        required=True, ondelete='cascade'
-    )
-    sequence = fields.Integer('N°', default=1)
-    medida = fields.Float('Medida', required=True)
-    unidad = fields.Selection([
-        ('mm', 'mm'),
-        ('in', 'in'),
-    ], string='Unidad', default='mm', required=True)
-    resultado = fields.Selection([
-        ('cumple', 'Cumple'),
-        ('no_cumple', 'No Cumple'),
-    ], string='Resultado', default='cumple')
-    notas = fields.Char('Notas')```
-
-## ./models/quality_inspection_troquelado.py
-```py
-from odoo import models, fields
-
-
-class QualityInspectionTroquelado(models.Model):
-    _name = 'quality.inspection.troquelado'
-    _description = 'Captura de Troquelado'
-    _order = 'sequence, id'
-
-    inspection_id = fields.Many2one(
-        'quality.inspection', 'Inspección',
-        required=True, ondelete='cascade'
-    )
-    sequence = fields.Integer('N°', default=1)
-    medida = fields.Float('Medida (mm)', required=True)
-    resultado = fields.Selection([
-        ('cumple', 'Cumple'),
-        ('no_cumple', 'No Cumple'),
-    ], string='Resultado', default='cumple')
-    notas = fields.Char('Notas')
-```
-
 ## ./models/quality_inspection.py
 ```py
 # -*- coding: utf-8 -*-
@@ -4868,13 +4632,6 @@ class QualityInspection(models.Model):
                                  default=lambda s: s.env.company)
 
     # ------------------------------------------------------------------ compute
-    def _check_previous_process(self):  # antes _check_previous_process_hardening
-        for rec in self:
-            route = rec.quality_route_id
-            if not route:
-                return super(QualityInspectionRoute, rec)._check_previous_process()
-            codes
-
     @api.depends("process_type_id", "process_type_id.code")
     def _compute_inspection_type(self):
         legacy = ("laminadora_remanejo", "octagono", "guillotina_pegado")
@@ -5143,7 +4900,117 @@ class QualityInspection(models.Model):
     def action_print_inspection(self):
         return self.env.ref(
             "quality_management.action_report_inspection_summary"
-        ).report_action(self)
+        ).report_action(self)```
+
+## ./models/quality_inspection_line.py
+```py
+from odoo import models, fields, api
+
+
+class QualityInspectionLine(models.Model):
+    _name = 'quality.inspection.line'
+    _description = 'Línea de Inspección'
+    _order = 'sequence, id'
+
+    inspection_id = fields.Many2one(
+        'quality.inspection', 'Inspección', ondelete='cascade'
+    )
+    sample_release_id = fields.Many2one(
+        'quality.sample.release', 'Liberación de Muestra', ondelete='cascade'
+    )
+    attribute_template_id = fields.Many2one(
+        'quality.attribute.template', 'Atributo'
+    )
+    sequence = fields.Integer('Secuencia', default=10)
+    name = fields.Char('Nombre del Atributo', required=True)
+    attribute_type = fields.Selection([
+        ('float', 'Numérico'),
+        ('selection', 'Selección'),
+        ('boolean', 'Cumple/No Cumple'),
+        ('char', 'Texto'),
+    ], string='Tipo de Dato', default='float')
+    value_float = fields.Float('Valor Numérico')
+    value_char = fields.Char('Valor Texto')
+    value_boolean = fields.Boolean('Valor Sí/No')  # legacy
+    value_cumple = fields.Selection([
+        ('cumple', 'Cumple'),
+        ('no_cumple', 'No Cumple'),
+    ], string='Valor Cumple/No Cumple')
+    value_selection = fields.Char('Valor Selección')
+    min_value = fields.Float('Mínimo')
+    max_value = fields.Float('Máximo')
+    unit = fields.Char('Unidad')
+    result = fields.Selection([
+        ('cumple', 'Cumple'),
+        ('no_cumple', 'No Cumple'),
+        ('na', 'N/A'),
+    ], string='Resultado', default='na')
+    notes = fields.Char('Notas')
+
+    @api.onchange('value_float', 'min_value', 'max_value', 'attribute_type')
+    def _onchange_evaluate_result(self):
+        for line in self:
+            if line.attribute_type == 'float' and (line.min_value or line.max_value):
+                if line.min_value and line.value_float < line.min_value:
+                    line.result = 'no_cumple'
+                elif line.max_value and line.value_float > line.max_value:
+                    line.result = 'no_cumple'
+                elif line.value_float:
+                    line.result = 'cumple'
+
+    @api.onchange('value_cumple', 'attribute_type')
+    def _onchange_value_cumple(self):
+        for line in self:
+            if line.attribute_type == 'boolean' and line.value_cumple:
+                line.result = line.value_cumple```
+
+## ./models/quality_inspection_ranurado.py
+```py
+from odoo import models, fields
+
+
+class QualityInspectionRanurado(models.Model):
+    _name = 'quality.inspection.ranurado'
+    _description = 'Captura de Ranurado'
+    _order = 'sequence, id'
+
+    inspection_id = fields.Many2one(
+        'quality.inspection', 'Inspección',
+        required=True, ondelete='cascade'
+    )
+    sequence = fields.Integer('N°', default=1)
+    medida = fields.Float('Medida', required=True)
+    unidad = fields.Selection([
+        ('mm', 'mm'),
+        ('in', 'in'),
+    ], string='Unidad', default='mm', required=True)
+    resultado = fields.Selection([
+        ('cumple', 'Cumple'),
+        ('no_cumple', 'No Cumple'),
+    ], string='Resultado', default='cumple')
+    notas = fields.Char('Notas')```
+
+## ./models/quality_inspection_troquelado.py
+```py
+from odoo import models, fields
+
+
+class QualityInspectionTroquelado(models.Model):
+    _name = 'quality.inspection.troquelado'
+    _description = 'Captura de Troquelado'
+    _order = 'sequence, id'
+
+    inspection_id = fields.Many2one(
+        'quality.inspection', 'Inspección',
+        required=True, ondelete='cascade'
+    )
+    sequence = fields.Integer('N°', default=1)
+    medida = fields.Float('Medida (mm)', required=True)
+    resultado = fields.Selection([
+        ('cumple', 'Cumple'),
+        ('no_cumple', 'No Cumple'),
+    ], string='Resultado', default='cumple')
+    notas = fields.Char('Notas')
 ```
 
 ## ./models/quality_ishikawa.py
@@ -5681,6 +5548,158 @@ class QualitySampleRelease(models.Model):
         ).report_action(self)
 ```
 
+## ./models/quality_troquel.py
+```py
+# -*- coding: utf-8 -*-
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError
+
+
+class QualityTroquel(models.Model):
+    _name = "quality.troquel"
+    _description = "Troquel"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "name asc"
+
+    name = fields.Char("Identificación del Troquel", required=True,
+                       tracking=True, copy=False)
+    partner_id = fields.Many2one("res.partner", "Cliente",
+                                 required=True, tracking=True)
+    part_number = fields.Char("Número de Parte", required=True, tracking=True)
+    visible_label = fields.Char("Etiqueta Visible (Cliente + No. Parte)",
+                                compute="_compute_visible_label", store=True)
+    state = fields.Selection([
+        ("recepcion", "En Recepción"),
+        ("validacion", "En Validación (Calidad/Producción)"),
+        ("activo", "Activo / En Producción"),
+        ("danado", "Con Daño - Fuera de Uso"),
+        ("reparacion_interna", "En Reparación Interna"),
+        ("reparacion_proveedor", "En Reparación con Proveedor"),
+        ("obsoleto", "Obsoleto"),
+    ], default="recepcion", required=True, tracking=True)
+    workflow_event_ids = fields.One2many(
+        "quality.troquel.event", "troquel_id", string="Bitácora")
+
+    # Recepción / nuevos troqueles (req. 10.1)
+    plano_herramental = fields.Binary("Plano de Herramental (PDF)",
+                                      attachment=True)
+    plano_herramental_name = fields.Char()
+    proveedor_id = fields.Many2one("res.partner", "Proveedor",
+                                   domain=[("supplier_rank", ">", 0)])
+
+    # Revisión (req. 10.2)
+    pieces_per_review = fields.Integer(
+        "Piezas para Revisión",
+        help="Cantidad de piezas troqueladas tras las cuales se hace revisión.")
+    last_review_date = fields.Date("Última Revisión")
+    next_review_date = fields.Date("Siguiente Revisión",
+                                   compute="_compute_next_review", store=True)
+
+    # Reparación (req. 10.3)
+    days_at_supplier = fields.Integer("Días Estimados Fuera de Planta")
+    repair_description = fields.Text("Desglose de Reparación")
+    rack_location = fields.Char("Ubicación en Rack")
+
+    company_id = fields.Many2one("res.company", "Compañía",
+                                 default=lambda s: s.env.company)
+
+    @api.depends("partner_id", "part_number")
+    def _compute_visible_label(self):
+        for rec in self:
+            rec.visible_label = (
+                f"{rec.partner_id.name or ''} - {rec.part_number or ''}"
+            ).strip(" -")
+
+    @api.depends("last_review_date")
+    def _compute_next_review(self):
+        from datetime import timedelta
+        for rec in self:
+            rec.next_review_date = (rec.last_review_date + timedelta(days=30)
+                                    if rec.last_review_date else False)
+
+    # ---------------------------------------------------------- workflow ALTA
+    def action_validate(self):
+        for rec in self:
+            if not rec.plano_herramental:
+                raise UserError(_(
+                    "Cargue el plano de herramental antes de convocar a "
+                    "validación."))
+            rec.state = "validacion"
+            rec._log_event("Convocatoria a validación de dimensiones y "
+                           "prueba funcional (Calidad y Producción).")
+
+    def action_activate(self):
+        for rec in self:
+            rec.state = "activo"
+            rec._log_event(
+                "Troquel registrado como ACTIVO y FUNCIONAL. "
+                "Etiqueta visible: %s." % rec.visible_label)
+
+    # ---------------------------------------------------------- workflow DAÑO
+    def action_report_damage(self):
+        for rec in self:
+            rec.state = "danado"
+            rec._log_event(
+                "Producción notifica daño en troquel — Diseño debe validar.")
+
+    def action_send_to_internal_repair(self):
+        for rec in self:
+            rec.state = "reparacion_interna"
+            rec._log_event("Reparación interna iniciada.")
+
+    def action_send_to_supplier(self):
+        for rec in self:
+            if not rec.days_at_supplier:
+                raise UserError(_(
+                    "Indique los días estimados fuera de planta."
+                ))
+            rec.state = "reparacion_proveedor"
+            rec._log_event(
+                "Enviado a proveedor (%s) — Días fuera: %d."
+                % (rec.proveedor_id.name or "—", rec.days_at_supplier))
+
+    def action_finish_repair(self):
+        for rec in self:
+            rec._log_event(
+                "Reparación finalizada: %s" % (rec.repair_description or "—"))
+            rec.state = "validacion"
+
+    def action_reject_repair(self):
+        for rec in self:
+            rec._log_event(
+                "Reparación NO cumple — se retorna al proveedor / re-trabajo.")
+            rec.state = "danado"
+
+    def action_set_obsolete(self):
+        for rec in self:
+            rec.state = "obsoleto"
+            rec._log_event("Troquel marcado como OBSOLETO.")
+
+    # ----- helpers -----------------------------------------------------------
+    def _log_event(self, msg):
+        self.ensure_one()
+        self.env["quality.troquel.event"].create({
+            "troquel_id": self.id,
+            "user_id": self.env.user.id,
+            "description": msg,
+            "state_after": self.state,
+        })
+        self.message_post(body=msg, subtype_xmlid="mail.mt_comment")
+
+
+class QualityTroquelEvent(models.Model):
+    _name = "quality.troquel.event"
+    _description = "Evento de Troquel"
+    _order = "date desc, id desc"
+
+    troquel_id = fields.Many2one("quality.troquel", required=True,
+                                 ondelete="cascade", index=True)
+    date = fields.Datetime(default=fields.Datetime.now, readonly=True)
+    user_id = fields.Many2one("res.users", "Registrado por")
+    description = fields.Text("Descripción", required=True)
+    state_after = fields.Char("Estado Resultante")
+```
+
 ## ./models/quality_troquel_validation.py
 ```py
 # -*- coding: utf-8 -*-
@@ -5896,158 +5915,6 @@ class QualityTroquelExtended(models.Model):
         }
 ```
 
-## ./models/quality_troquel.py
-```py
-# -*- coding: utf-8 -*-
-from odoo import models, fields, api, _
-from odoo.exceptions import UserError
-
-
-class QualityTroquel(models.Model):
-    _name = "quality.troquel"
-    _description = "Troquel"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
-    _order = "name asc"
-
-    name = fields.Char("Identificación del Troquel", required=True,
-                       tracking=True, copy=False)
-    partner_id = fields.Many2one("res.partner", "Cliente",
-                                 required=True, tracking=True)
-    part_number = fields.Char("Número de Parte", required=True, tracking=True)
-    visible_label = fields.Char("Etiqueta Visible (Cliente + No. Parte)",
-                                compute="_compute_visible_label", store=True)
-    state = fields.Selection([
-        ("recepcion", "En Recepción"),
-        ("validacion", "En Validación (Calidad/Producción)"),
-        ("activo", "Activo / En Producción"),
-        ("danado", "Con Daño - Fuera de Uso"),
-        ("reparacion_interna", "En Reparación Interna"),
-        ("reparacion_proveedor", "En Reparación con Proveedor"),
-        ("obsoleto", "Obsoleto"),
-    ], default="recepcion", required=True, tracking=True)
-    workflow_event_ids = fields.One2many(
-        "quality.troquel.event", "troquel_id", string="Bitácora")
-
-    # Recepción / nuevos troqueles (req. 10.1)
-    plano_herramental = fields.Binary("Plano de Herramental (PDF)",
-                                      attachment=True)
-    plano_herramental_name = fields.Char()
-    proveedor_id = fields.Many2one("res.partner", "Proveedor",
-                                   domain=[("supplier_rank", ">", 0)])
-
-    # Revisión (req. 10.2)
-    pieces_per_review = fields.Integer(
-        "Piezas para Revisión",
-        help="Cantidad de piezas troqueladas tras las cuales se hace revisión.")
-    last_review_date = fields.Date("Última Revisión")
-    next_review_date = fields.Date("Siguiente Revisión",
-                                   compute="_compute_next_review", store=True)
-
-    # Reparación (req. 10.3)
-    days_at_supplier = fields.Integer("Días Estimados Fuera de Planta")
-    repair_description = fields.Text("Desglose de Reparación")
-    rack_location = fields.Char("Ubicación en Rack")
-
-    company_id = fields.Many2one("res.company", "Compañía",
-                                 default=lambda s: s.env.company)
-
-    @api.depends("partner_id", "part_number")
-    def _compute_visible_label(self):
-        for rec in self:
-            rec.visible_label = (
-                f"{rec.partner_id.name or ''} - {rec.part_number or ''}"
-            ).strip(" -")
-
-    @api.depends("last_review_date")
-    def _compute_next_review(self):
-        from datetime import timedelta
-        for rec in self:
-            rec.next_review_date = (rec.last_review_date + timedelta(days=30)
-                                    if rec.last_review_date else False)
-
-    # ---------------------------------------------------------- workflow ALTA
-    def action_validate(self):
-        for rec in self:
-            if not rec.plano_herramental:
-                raise UserError(_(
-                    "Cargue el plano de herramental antes de convocar a "
-                    "validación."))
-            rec.state = "validacion"
-            rec._log_event("Convocatoria a validación de dimensiones y "
-                           "prueba funcional (Calidad y Producción).")
-
-    def action_activate(self):
-        for rec in self:
-            rec.state = "activo"
-            rec._log_event(
-                "Troquel registrado como ACTIVO y FUNCIONAL. "
-                "Etiqueta visible: %s." % rec.visible_label)
-
-    # ---------------------------------------------------------- workflow DAÑO
-    def action_report_damage(self):
-        for rec in self:
-            rec.state = "danado"
-            rec._log_event(
-                "Producción notifica daño en troquel — Diseño debe validar.")
-
-    def action_send_to_internal_repair(self):
-        for rec in self:
-            rec.state = "reparacion_interna"
-            rec._log_event("Reparación interna iniciada.")
-
-    def action_send_to_supplier(self):
-        for rec in self:
-            if not rec.days_at_supplier:
-                raise UserError(_(
-                    "Indique los días estimados fuera de planta."
-                ))
-            rec.state = "reparacion_proveedor"
-            rec._log_event(
-                "Enviado a proveedor (%s) — Días fuera: %d."
-                % (rec.proveedor_id.name or "—", rec.days_at_supplier))
-
-    def action_finish_repair(self):
-        for rec in self:
-            rec._log_event(
-                "Reparación finalizada: %s" % (rec.repair_description or "—"))
-            rec.state = "validacion"
-
-    def action_reject_repair(self):
-        for rec in self:
-            rec._log_event(
-                "Reparación NO cumple — se retorna al proveedor / re-trabajo.")
-            rec.state = "danado"
-
-    def action_set_obsolete(self):
-        for rec in self:
-            rec.state = "obsoleto"
-            rec._log_event("Troquel marcado como OBSOLETO.")
-
-    # ----- helpers -----------------------------------------------------------
-    def _log_event(self, msg):
-        self.ensure_one()
-        self.env["quality.troquel.event"].create({
-            "troquel_id": self.id,
-            "user_id": self.env.user.id,
-            "description": msg,
-            "state_after": self.state,
-        })
-        self.message_post(body=msg, subtype_xmlid="mail.mt_comment")
-
-
-class QualityTroquelEvent(models.Model):
-    _name = "quality.troquel.event"
-    _description = "Evento de Troquel"
-    _order = "date desc, id desc"
-
-    troquel_id = fields.Many2one("quality.troquel", required=True,
-                                 ondelete="cascade", index=True)
-    date = fields.Datetime(default=fields.Datetime.now, readonly=True)
-    user_id = fields.Many2one("res.users", "Registrado por")
-    description = fields.Text("Descripción", required=True)
-    state_after = fields.Char("Estado Resultante")
-```
-
 ## ./models/quality_work_team.py
 ```py
 # -*- coding: utf-8 -*-
@@ -6077,78 +5944,6 @@ class ResCompany(models.Model):
         'Sello de Calidad',
         help='Imagen del sello de la empresa que aparece en los certificados de calidad.'
     )```
-
-## ./reports/report_8d_extended.xml
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <template id="report_8d_document_extended"
-              inherit_id="quality_management.report_8d_document">
-        <xpath expr="//h4[contains(., 'D6 - Plan de Acciones')]" position="before">
-            <h4>D4 - 5 Por qué</h4>
-            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
-                <thead>
-                    <tr class="table-active">
-                        <th style="width: 10%;">N°</th>
-                        <th style="width: 35%;">Pregunta</th>
-                        <th>Respuesta</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr t-foreach="doc.why_ids" t-as="why">
-                        <td><span t-field="why.sequence"/></td>
-                        <td><span t-field="why.question"/></td>
-                        <td><span t-field="why.answer"/></td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h4>D5 - Análisis Causa-Efecto (Ishikawa)</h4>
-            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
-                <thead>
-                    <tr class="table-active">
-                        <th style="width: 25%;">Categoría</th>
-                        <th>Causa</th>
-                        <th style="width: 15%;" class="text-center">Causa Raíz</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr t-foreach="doc.ishikawa_ids" t-as="ish">
-                        <td><span t-field="ish.category"/></td>
-                        <td><span t-field="ish.cause"/></td>
-                        <td class="text-center">
-                            <t t-if="ish.is_root_cause">
-                                <strong style="color:#c00;">★ RAÍZ</strong>
-                            </t>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h4>D2 - Equipo de Trabajo</h4>
-            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
-                <thead>
-                    <tr class="table-active">
-                        <th>Miembro</th>
-                        <th>Rol</th>
-                        <th class="text-center">Notifica</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr t-foreach="doc.work_team_ids" t-as="m">
-                        <td><span t-field="m.user_id.name"/></td>
-                        <td><span t-field="m.role"/></td>
-                        <td class="text-center">
-                            <t t-if="m.notify_progress">Sí</t>
-                            <t t-else="">No</t>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </xpath>
-    </template>
-</odoo>
-```
 
 ## ./reports/report_8d.xml
 ```xml
@@ -6342,6 +6137,78 @@ class ResCompany(models.Model):
                 </t>
             </t>
         </t>
+    </template>
+</odoo>
+```
+
+## ./reports/report_8d_extended.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_8d_document_extended"
+              inherit_id="quality_management.report_8d_document">
+        <xpath expr="//h4[contains(., 'D6 - Plan de Acciones')]" position="before">
+            <h4>D4 - 5 Por qué</h4>
+            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                <thead>
+                    <tr class="table-active">
+                        <th style="width: 10%;">N°</th>
+                        <th style="width: 35%;">Pregunta</th>
+                        <th>Respuesta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="doc.why_ids" t-as="why">
+                        <td><span t-field="why.sequence"/></td>
+                        <td><span t-field="why.question"/></td>
+                        <td><span t-field="why.answer"/></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>D5 - Análisis Causa-Efecto (Ishikawa)</h4>
+            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                <thead>
+                    <tr class="table-active">
+                        <th style="width: 25%;">Categoría</th>
+                        <th>Causa</th>
+                        <th style="width: 15%;" class="text-center">Causa Raíz</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="doc.ishikawa_ids" t-as="ish">
+                        <td><span t-field="ish.category"/></td>
+                        <td><span t-field="ish.cause"/></td>
+                        <td class="text-center">
+                            <t t-if="ish.is_root_cause">
+                                <strong style="color:#c00;">★ RAÍZ</strong>
+                            </t>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>D2 - Equipo de Trabajo</h4>
+            <table class="table table-bordered table-sm" style="margin-bottom: 15px;">
+                <thead>
+                    <tr class="table-active">
+                        <th>Miembro</th>
+                        <th>Rol</th>
+                        <th class="text-center">Notifica</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="doc.work_team_ids" t-as="m">
+                        <td><span t-field="m.user_id.name"/></td>
+                        <td><span t-field="m.role"/></td>
+                        <td class="text-center">
+                            <t t-if="m.notify_progress">Sí</t>
+                            <t t-else="">No</t>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </xpath>
     </template>
 </odoo>
 ```
@@ -10263,6 +10130,109 @@ from . import certificate_wizard
 from . import certificate_wizard_hardening
 ```
 
+## ./wizards/certificate_wizard.py
+```py
+from odoo import models, fields, api, _
+
+
+class QualityCertificateWizard(models.TransientModel):
+    _name = 'quality.certificate.wizard'
+    _description = 'Asistente para Crear Certificado'
+
+    inspection_id = fields.Many2one(
+        'quality.inspection', 'Inspección',
+        required=True, readonly=True
+    )
+    partner_id = fields.Many2one(
+        'res.partner', 'Cliente', required=True
+    )
+    inspection_type = fields.Selection(
+        related='inspection_id.inspection_type'
+    )
+    process_type_id = fields.Many2one(
+        related='inspection_id.process_type_id'
+    )
+    # Checkboxes
+    include_largo = fields.Boolean('Incluir Largo', default=True)
+    include_ancho = fields.Boolean('Incluir Ancho', default=True)
+    include_espesor = fields.Boolean('Incluir Espesor', default=True)
+    include_hexagono = fields.Boolean('Incluir Hexágono', default=True)
+    include_resistencia = fields.Boolean('Incluir Resistencia', default=True)
+    include_apariencia = fields.Boolean('Incluir Apariencia')
+    include_humedad = fields.Boolean('Incluir % Humedad')
+    include_pegado = fields.Boolean('Incluir Pegado')
+    include_retiramiento = fields.Boolean('Incluir Retiramiento')
+    include_calibracion = fields.Boolean('Incluir Calibración')
+    include_engomado = fields.Boolean('Incluir Engomado')
+    # Incluir todos los atributos adicionales
+    include_all_attributes = fields.Boolean(
+        'Incluir Atributos Adicionales', default=True
+    )
+
+    def action_create_certificate(self):
+        self.ensure_one()
+        insp = self.inspection_id
+        vals = {
+            'inspection_id': insp.id,
+            'partner_id': self.partner_id.id,
+            'certified_by': self.env.user.id,
+        }
+        # Poblar según selección
+        if self.include_largo and insp.largo:
+            vals['certified_largo'] = insp.largo
+        if self.include_ancho:
+            vals['certified_ancho'] = insp.ancho or insp.oct_ancho
+        if self.include_espesor:
+            vals['certified_espesor'] = insp.espesor or insp.oct_espesor
+        if self.include_hexagono:
+            vals['certified_hexagono'] = insp.hexagono or insp.oct_hexagono
+        if self.include_resistencia and insp.resistencia:
+            vals['certified_resistencia'] = insp.resistencia
+        if self.include_apariencia and insp.apariencia:
+            vals['certified_apariencia'] = dict(
+                insp._fields['apariencia'].selection
+            ).get(insp.apariencia, '')
+        if self.include_humedad and insp.humedad_pct:
+            vals['certified_humedad'] = insp.humedad_pct
+        if self.include_pegado:
+            pegado_val = insp.pegado_result or insp.oct_pegado
+            if pegado_val:
+                source_field = 'pegado_result' if insp.pegado_result else 'oct_pegado'
+                vals['certified_pegado'] = dict(
+                    insp._fields[source_field].selection
+                ).get(pegado_val, '')
+        if self.include_retiramiento and insp.oct_retiramiento:
+            vals['certified_retiramiento'] = insp.oct_retiramiento
+        if self.include_calibracion and insp.calibracion:
+            vals['certified_calibracion'] = insp.calibracion
+        if self.include_engomado and insp.engomado:
+            vals['certified_engomado'] = dict(
+                insp._fields['engomado'].selection
+            ).get(insp.engomado, '')
+
+        cert = self.env['quality.certificate'].create(vals)
+
+        # Vincular atributos adicionales si se solicitó (con dedupe por nombre)
+        if self.include_all_attributes and insp.line_ids:
+            seen = set()
+            unique_ids = []
+            for line in insp.line_ids:
+                key = (line.name or "").strip().lower()
+                if key and key not in seen:
+                    seen.add(key)
+                    unique_ids.append(line.id)
+            cert.attribute_ids = [(6, 0, unique_ids)]
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Certificado'),
+            'res_model': 'quality.certificate',
+            'res_id': cert.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
+```
+
 ## ./wizards/certificate_wizard_hardening.py
 ```py
 # -*- coding: utf-8 -*-
@@ -10403,108 +10373,5 @@ class QualityCertificateWizardHardening(models.TransientModel):
         </field>
     </record>
 </odoo>
-```
-
-## ./wizards/certificate_wizard.py
-```py
-from odoo import models, fields, api, _
-
-
-class QualityCertificateWizard(models.TransientModel):
-    _name = 'quality.certificate.wizard'
-    _description = 'Asistente para Crear Certificado'
-
-    inspection_id = fields.Many2one(
-        'quality.inspection', 'Inspección',
-        required=True, readonly=True
-    )
-    partner_id = fields.Many2one(
-        'res.partner', 'Cliente', required=True
-    )
-    inspection_type = fields.Selection(
-        related='inspection_id.inspection_type'
-    )
-    process_type_id = fields.Many2one(
-        related='inspection_id.process_type_id'
-    )
-    # Checkboxes
-    include_largo = fields.Boolean('Incluir Largo', default=True)
-    include_ancho = fields.Boolean('Incluir Ancho', default=True)
-    include_espesor = fields.Boolean('Incluir Espesor', default=True)
-    include_hexagono = fields.Boolean('Incluir Hexágono', default=True)
-    include_resistencia = fields.Boolean('Incluir Resistencia', default=True)
-    include_apariencia = fields.Boolean('Incluir Apariencia')
-    include_humedad = fields.Boolean('Incluir % Humedad')
-    include_pegado = fields.Boolean('Incluir Pegado')
-    include_retiramiento = fields.Boolean('Incluir Retiramiento')
-    include_calibracion = fields.Boolean('Incluir Calibración')
-    include_engomado = fields.Boolean('Incluir Engomado')
-    # Incluir todos los atributos adicionales
-    include_all_attributes = fields.Boolean(
-        'Incluir Atributos Adicionales', default=True
-    )
-
-    def action_create_certificate(self):
-        self.ensure_one()
-        insp = self.inspection_id
-        vals = {
-            'inspection_id': insp.id,
-            'partner_id': self.partner_id.id,
-            'certified_by': self.env.user.id,
-        }
-        # Poblar según selección
-        if self.include_largo and insp.largo:
-            vals['certified_largo'] = insp.largo
-        if self.include_ancho:
-            vals['certified_ancho'] = insp.ancho or insp.oct_ancho
-        if self.include_espesor:
-            vals['certified_espesor'] = insp.espesor or insp.oct_espesor
-        if self.include_hexagono:
-            vals['certified_hexagono'] = insp.hexagono or insp.oct_hexagono
-        if self.include_resistencia and insp.resistencia:
-            vals['certified_resistencia'] = insp.resistencia
-        if self.include_apariencia and insp.apariencia:
-            vals['certified_apariencia'] = dict(
-                insp._fields['apariencia'].selection
-            ).get(insp.apariencia, '')
-        if self.include_humedad and insp.humedad_pct:
-            vals['certified_humedad'] = insp.humedad_pct
-        if self.include_pegado:
-            pegado_val = insp.pegado_result or insp.oct_pegado
-            if pegado_val:
-                source_field = 'pegado_result' if insp.pegado_result else 'oct_pegado'
-                vals['certified_pegado'] = dict(
-                    insp._fields[source_field].selection
-                ).get(pegado_val, '')
-        if self.include_retiramiento and insp.oct_retiramiento:
-            vals['certified_retiramiento'] = insp.oct_retiramiento
-        if self.include_calibracion and insp.calibracion:
-            vals['certified_calibracion'] = insp.calibracion
-        if self.include_engomado and insp.engomado:
-            vals['certified_engomado'] = dict(
-                insp._fields['engomado'].selection
-            ).get(insp.engomado, '')
-
-        cert = self.env['quality.certificate'].create(vals)
-
-        # Vincular atributos adicionales si se solicitó (con dedupe por nombre)
-        if self.include_all_attributes and insp.line_ids:
-            seen = set()
-            unique_ids = []
-            for line in insp.line_ids:
-                key = (line.name or "").strip().lower()
-                if key and key not in seen:
-                    seen.add(key)
-                    unique_ids.append(line.id)
-            cert.attribute_ids = [(6, 0, unique_ids)]
-
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Certificado'),
-            'res_model': 'quality.certificate',
-            'res_id': cert.id,
-            'view_mode': 'form',
-            'target': 'current',
-        }
 ```
 
