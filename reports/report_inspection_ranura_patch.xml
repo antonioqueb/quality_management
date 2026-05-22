@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_inspection_summary_ranura_qi024"
+              inherit_id="quality_management.report_inspection_summary_document">
+
+        <!-- FOLIO-QM-ODOO18-076: reporte con tolerancia y Corte Sierra separado. -->
+        <xpath expr="//t[@t-if='doc.ranurado_ids']" position="replace">
+            <t t-set="ranurado_lines"
+               t-value="doc.ranurado_ids.filtered(lambda r: r.tipo_operacion == 'ranurado')"/>
+            <t t-set="corte_sierra_lines"
+               t-value="doc.ranurado_ids.filtered(lambda r: r.tipo_operacion == 'corte_sierra')"/>
+
+            <t t-if="ranurado_lines">
+                <h5>Ranurado</h5>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr class="table-active">
+                            <th>N°</th>
+                            <th>Concepto</th>
+                            <th>Esperada</th>
+                            <th>Real</th>
+                            <th>Unidad</th>
+                            <th>Tolerancia</th>
+                            <th>Desviación</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="ranurado_lines" t-as="r">
+                            <td><span t-field="r.sequence"/></td>
+                            <td><span t-field="r.concepto"/></td>
+                            <td class="text-center"><span t-field="r.medida_esperada"/></td>
+                            <td class="text-center"><span t-field="r.medida"/></td>
+                            <td class="text-center"><span t-field="r.unidad"/></td>
+                            <td class="text-center">+/- <span t-field="r.tolerancia"/></td>
+                            <td class="text-center"><span t-field="r.desviacion"/></td>
+                            <td class="text-center"><span t-field="r.resultado"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </t>
+
+            <t t-if="corte_sierra_lines">
+                <h5>Corte Sierra</h5>
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr class="table-active">
+                            <th>N°</th>
+                            <th>Concepto</th>
+                            <th>Esperada</th>
+                            <th>Real</th>
+                            <th>Unidad</th>
+                            <th>Tolerancia</th>
+                            <th>Desviación</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="corte_sierra_lines" t-as="r">
+                            <td><span t-field="r.sequence"/></td>
+                            <td><span t-field="r.concepto"/></td>
+                            <td class="text-center"><span t-field="r.medida_esperada"/></td>
+                            <td class="text-center"><span t-field="r.medida"/></td>
+                            <td class="text-center"><span t-field="r.unidad"/></td>
+                            <td class="text-center">+/- <span t-field="r.tolerancia"/></td>
+                            <td class="text-center"><span t-field="r.desviacion"/></td>
+                            <td class="text-center"><span t-field="r.resultado"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </t>
+        </xpath>
+
+    </template>
+
+</odoo>
