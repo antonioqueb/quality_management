@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
         <record id="seq_quality_troquel_validation" model="ir.sequence">
             <field name="name">Validación de Troquel</field>
             <field name="code">quality.troquel.validation</field>
             <field name="prefix">TVAL-</field>
             <field name="padding">4</field>
         </record>
+
         <record id="seq_quality_troquel_repair" model="ir.sequence">
             <field name="name">Reparación de Troquel</field>
             <field name="code">quality.troquel.repair</field>
@@ -14,40 +15,62 @@
             <field name="padding">4</field>
         </record>
 
-        <!-- Ruta estándar Hexágonos -->
+        <!-- FOLIO-QM-ODOO18-074: ruta estándar corregida según flujo solicitado. -->
         <record id="quality_route_estandar" model="quality.process.route">
             <field name="name">Ruta Estándar Hexágonos</field>
             <field name="sequence">10</field>
+            <field name="active" eval="True"/>
         </record>
+
         <record id="quality_route_estandar_l1" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">10</field>
             <field name="process_type_id" ref="process_type_octagono"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l2" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">20</field>
             <field name="process_type_id" ref="process_type_guillotina"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l3" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">30</field>
             <field name="process_type_id" ref="process_type_pegado"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l4" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">40</field>
             <field name="process_type_id" ref="process_type_laminadora"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l5" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">50</field>
-            <field name="process_type_id" ref="process_type_sierras_ranuradoras"/>
+            <field name="process_type_id" ref="process_type_remanejo"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l6" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">60</field>
             <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="is_optional" eval="False"/>
+        </record>
+
+        <!-- Se conserva el proceso existente, pero ya no se usa como paso obligatorio entre Laminadora y Troquelado. -->
+        <record id="quality_route_estandar_l7" model="quality.process.route.line">
+            <field name="route_id" ref="quality_route_estandar"/>
+            <field name="sequence">70</field>
+            <field name="process_type_id" ref="process_type_sierras_ranuradoras"/>
+            <field name="is_optional" eval="True"/>
+            <field name="notes">Proceso conservado como opcional para no romper configuraciones previas.</field>
         </record>
     </data>
 </odoo>

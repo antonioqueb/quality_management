@@ -51,7 +51,20 @@ class QualityCertificateWizard(models.TransientModel):
         if self.include_espesor:
             vals['certified_espesor'] = insp.espesor or insp.oct_espesor
         if self.include_hexagono:
-            vals['certified_hexagono'] = insp.hexagono or insp.oct_hexagono
+            # FOLIO-QM-ODOO18-075:
+            # Hexágono es selección textual; no debe escribirse en certified_hexagono (Float).
+            hex_sources = [
+                ('hexagono', insp.hexagono),
+                ('oct_hexagono_tipo', getattr(insp, 'oct_hexagono_tipo', False)),
+                ('oct_hexagono', getattr(insp, 'oct_hexagono', False)),
+                ('tipo_hexagono', insp.tipo_hexagono),
+            ]
+            for field_name, hex_value in hex_sources:
+                if hex_value:
+                    vals['certified_hexagono_label'] = dict(
+                        insp._fields[field_name].selection
+                    ).get(hex_value, hex_value)
+                    break
         if self.include_resistencia and insp.resistencia:
             vals['certified_resistencia'] = insp.resistencia
         if self.include_apariencia and insp.apariencia:
@@ -67,10 +80,14 @@ class QualityCertificateWizard(models.TransientModel):
                 vals['certified_pegado'] = dict(
                     insp._fields[source_field].selection
                 ).get(pegado_val, '')
-        if self.include_retiramiento and insp.oct_retiramiento:
-            vals['certified_retiramiento'] = insp.oct_retiramiento
+        if (
+            self.include_retiramiento
+            and insp.process_code != 'octagono'
+            and (getattr(insp, 'reticula_extendida', 0.0) or insp.oct_retiramiento)
+        ):
+            vals['certified_retiramiento'] = getattr(insp, 'reticula_extendida', 0.0) or insp.oct_retiramiento
         if self.include_calibracion and insp.calibracion:
-            vals['certified_calibracion'] = insp.calibracion
+            vals['certified_calibracion'] = round(insp.calibracion, 4)
         if self.include_engomado and insp.engomado:
             vals['certified_engomado'] = dict(
                 insp._fields['engomado'].selection

@@ -115,11 +115,12 @@
                                 <tr t-if="doc.certified_retiramiento">
                                     <td>Retiramiento</td>
                                     <td class="text-center"><span t-field="doc.certified_retiramiento"/></td>
-                                    <td class="text-center">mm</td>
+                                    <td class="text-center">cm</td>
                                 </tr>
                                 <tr t-if="doc.certified_calibracion">
                                     <td>Calibración</td>
-                                    <td class="text-center"><span t-field="doc.certified_calibracion"/></td>
+                                    <!-- FOLIO-QM-ODOO18-075: preservar capturas como 0.0010. -->
+                                    <td class="text-center"><span t-esc="'%.4f' % doc.certified_calibracion"/></td>
                                     <td class="text-center">-</td>
                                 </tr>
                                 <tr t-if="doc.certified_engomado">

@@ -70,7 +70,86 @@
                             </tbody>
                         </table>
 
-                        <t t-if="doc.capture_mode != 'additional_only' and doc.process_code != 'acabado_empaque' and (doc.show_largo or doc.show_ancho or doc.show_espesor or doc.show_hexagono or doc.show_resistencia or doc.show_apariencia or doc.show_humedad or doc.show_pegado or doc.show_retiramiento or doc.show_calibracion or doc.show_engomado)">
+                        <!-- FOLIO-QM-ODOO18-075: reporte dedicado de Octágono, sin Espesor ni Retiramiento. -->
+                        <t t-if="doc.process_code == 'octagono'">
+                            <h4>Medidas y Producción - Octágono</h4>
+                            <table class="table table-bordered table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" style="width: 25%;">Ancho (mm):</td>
+                                        <td class="text-center">
+                                            <t t-if="doc.ancho">
+                                                <span t-field="doc.ancho"/>
+                                            </t>
+                                            <t t-elif="doc.oct_ancho">
+                                                <span t-field="doc.oct_ancho"/>
+                                            </t>
+                                        </td>
+                                        <td class="fw-bold" style="width: 25%;">Hexágono:</td>
+                                        <td class="text-center">
+                                            <t t-if="doc.hexagono">
+                                                <span t-field="doc.hexagono"/>
+                                            </t>
+                                            <t t-elif="doc.oct_hexagono_tipo">
+                                                <span t-field="doc.oct_hexagono_tipo"/>
+                                            </t>
+                                            <t t-elif="doc.oct_hexagono">
+                                                <span t-field="doc.oct_hexagono"/>
+                                            </t>
+                                            <t t-elif="doc.tipo_hexagono">
+                                                <span t-field="doc.tipo_hexagono"/>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Número de Corrida:</td>
+                                        <td><span t-field="doc.numero_corrida"/></td>
+                                        <td class="fw-bold">Calibración:</td>
+                                        <td class="text-center">
+                                            <t t-if="doc.calibracion">
+                                                <span t-esc="'%.4f' % doc.calibracion"/>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Engomado:</td>
+                                        <td class="text-center"><span t-field="doc.engomado"/></td>
+                                        <td class="fw-bold">Alineación:</td>
+                                        <td class="text-center"><span t-field="doc.oct_alineacion"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Corte de Guillotina:</td>
+                                        <td class="text-center"><span t-field="doc.corte_guillotina"/></td>
+                                        <td class="fw-bold">Espesor / Retiramiento:</td>
+                                        <td class="text-center">No aplica en Octágono</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h5>Materiales - Octágono</h5>
+                            <table class="table table-bordered table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" style="width: 25%;">Papel - Ancho:</td>
+                                        <td class="text-center"><span t-field="doc.papel_ancho"/></td>
+                                        <td class="fw-bold" style="width: 25%;">Papel - Gramaje:</td>
+                                        <td class="text-center"><span t-field="doc.papel_gramaje"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Proveedor de Rollos:</td>
+                                        <td colspan="3"><span t-field="doc.papel_proveedor_id.name"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Adhesivo Lote 1:</td>
+                                        <td><span t-field="doc.adhesivo_lote1"/></td>
+                                        <td class="fw-bold">Adhesivo Lote 2:</td>
+                                        <td><span t-field="doc.adhesivo_lote2"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="doc.capture_mode != 'additional_only' and doc.process_code not in ('acabado_empaque', 'octagono') and (doc.show_largo or doc.show_ancho or doc.show_espesor or doc.show_hexagono or doc.show_resistencia or doc.show_apariencia or doc.show_humedad or doc.show_pegado or doc.show_retiramiento or doc.show_calibracion or doc.show_engomado)">
                             <h4>Medidas - <span t-field="doc.process_type_id.name"/></h4>
                             <table class="table table-bordered table-sm">
                                 <thead>
@@ -83,7 +162,7 @@
                                         <th t-if="doc.show_apariencia">Apariencia</th>
                                         <th t-if="doc.show_humedad">% Humedad</th>
                                         <th t-if="doc.show_pegado">Pegado</th>
-                                        <th t-if="doc.show_retiramiento">Retiramiento</th>
+                                        <th t-if="doc.show_retiramiento">Retiramiento (cm)</th>
                                         <th t-if="doc.show_calibracion">Calibración</th>
                                         <th t-if="doc.show_engomado">Engomado</th>
                                     </tr>
@@ -103,15 +182,26 @@
                                         <td t-if="doc.show_apariencia" class="text-center"><span t-field="doc.apariencia"/></td>
                                         <td t-if="doc.show_humedad" class="text-center"><span t-field="doc.humedad_pct"/>%</td>
                                         <td t-if="doc.show_pegado" class="text-center"><span t-esc="doc.pegado_result or doc.oct_pegado or ''"/></td>
-                                        <td t-if="doc.show_retiramiento" class="text-center"><span t-field="doc.oct_retiramiento"/></td>
-                                        <td t-if="doc.show_calibracion" class="text-center"><span t-field="doc.calibracion"/></td>
+                                        <td t-if="doc.show_retiramiento" class="text-center">
+                                            <t t-if="doc.reticula_extendida">
+                                                <span t-field="doc.reticula_extendida"/>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-field="doc.oct_retiramiento"/>
+                                            </t>
+                                        </td>
+                                        <td t-if="doc.show_calibracion" class="text-center">
+                                            <t t-if="doc.calibracion">
+                                                <span t-esc="'%.4f' % doc.calibracion"/>
+                                            </t>
+                                        </td>
                                         <td t-if="doc.show_engomado" class="text-center"><span t-field="doc.engomado"/></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </t>
 
-                        <t t-if="doc.show_numero_corrida or doc.show_papel or doc.show_adhesivo">
+                        <t t-if="doc.process_code != 'octagono' and (doc.show_numero_corrida or doc.show_papel or doc.show_adhesivo)">
                             <h4>Datos de Producción</h4>
                             <table class="table table-bordered table-sm">
                                 <tbody>

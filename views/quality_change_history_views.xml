@@ -14,25 +14,20 @@
             </list>
         </field>
     </record>
+
     <record id="view_quality_inspection_form_history" model="ir.ui.view">
         <field name="name">quality.inspection.form.history</field>
         <field name="model">quality.inspection</field>
         <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//notebook" position="inside">
-                <page string="Historial de Cambios" name="history"
-                      invisible="state == 'borrador'">
-                    <field name="history_ids" readonly="1">
-                        <list>
-                            <field name="change_date"/>
-                            <field name="changed_by"/>
-                            <field name="field_label"/>
-                            <field name="old_value"/>
-                            <field name="new_value"/>
-                            <field name="inspection_state_at_change"/>
-                        </list>
-                    </field>
-                </page>
+            <!--
+                FOLIO-QM-ODOO18-073:
+                Ya no se agrega pestaña "Historial de Cambios".
+                Los movimientos detallados se publican en el chatter inicial.
+                Se deja history_count como campo técnico invisible.
+            -->
+            <xpath expr="//field[@name='process_code']" position="after">
+                <field name="history_count" invisible="1"/>
             </xpath>
         </field>
     </record>

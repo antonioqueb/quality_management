@@ -51,11 +51,26 @@
             <field name="show_humedad" eval="True"/>
         </record>
 
-        <!-- 5. Sierras y Ranuradoras -->
+        <!-- 5. Remanejo -->
+        <record id="process_type_remanejo" model="quality.process.type">
+            <field name="name">Remanejo</field>
+            <field name="code">remanejo</field>
+            <field name="sequence">50</field>
+            <!-- FOLIO-QM-ODOO18-072: Remanejo se separa de Laminadora como proceso independiente. -->
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_humedad" eval="True"/>
+        </record>
+
+        <!-- 6. Sierras y Ranuradoras -->
         <record id="process_type_sierras_ranuradoras" model="quality.process.type">
             <field name="name">Sierras y Ranuradoras</field>
             <field name="code">sierras_ranuradoras</field>
-            <field name="sequence">50</field>
+            <field name="sequence">55</field>
             <field name="show_largo" eval="True"/>
             <field name="show_ancho" eval="True"/>
             <field name="show_espesor" eval="True"/>
@@ -63,7 +78,7 @@
             <field name="show_ranurado" eval="True"/>
         </record>
 
-        <!-- 6. Troquelado Plano -->
+        <!-- 7. Troquelado Plano -->
         <record id="process_type_troquelado_plano" model="quality.process.type">
             <field name="name">Troquelado Plano</field>
             <field name="code">troquelado_plano</field>
@@ -75,7 +90,7 @@
             <field name="show_apariencia" eval="True"/>
         </record>
 
-        <!-- 7. Impresión -->
+        <!-- 8. Impresión -->
         <record id="process_type_impresion" model="quality.process.type">
             <field name="name">Impresión</field>
             <field name="code">impresion</field>
@@ -83,7 +98,7 @@
             <field name="show_apariencia" eval="True"/>
         </record>
 
-        <!-- 8. Esquinera -->
+        <!-- 9. Esquinera -->
         <record id="process_type_esquinera" model="quality.process.type">
             <field name="name">Esquinera</field>
             <field name="code">esquinera</field>
@@ -97,7 +112,7 @@
             <field name="show_numero_corrida" eval="True"/>
         </record>
 
-        <!-- 9. Acabado y Empaque -->
+        <!-- 10. Acabado y Empaque -->
         <record id="process_type_acabado" model="quality.process.type">
             <field name="name">Acabado y Empaque</field>
             <field name="code">acabado_empaque</field>

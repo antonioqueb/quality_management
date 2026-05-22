@@ -38,10 +38,19 @@ class QualityCertificateWizardHardening(models.TransientModel):
         if self.include_espesor and insp.espesor:
             vals["certified_espesor"] = insp.espesor
 
-        hex_value = insp.hexagono or getattr(insp, "oct_hexagono", False) or insp.tipo_hexagono
-        if self.include_hexagono and hex_value:
-            field_name = "hexagono" if insp.hexagono else "oct_hexagono" if getattr(insp, "oct_hexagono", False) else "tipo_hexagono"
-            vals["certified_hexagono_label"] = self._selection_label(insp, field_name, hex_value)
+        # FOLIO-QM-ODOO18-075:
+        # Octágono usa valores Selection para Hexágono. El certificado debe guardar
+        # la etiqueta textual, no escribir "tipo_1" en un campo Float legacy.
+        hex_sources = [
+            ("hexagono", insp.hexagono),
+            ("oct_hexagono_tipo", getattr(insp, "oct_hexagono_tipo", False)),
+            ("oct_hexagono", getattr(insp, "oct_hexagono", False)),
+            ("tipo_hexagono", insp.tipo_hexagono),
+        ]
+        for field_name, hex_value in hex_sources:
+            if self.include_hexagono and hex_value:
+                vals["certified_hexagono_label"] = self._selection_label(insp, field_name, hex_value)
+                break
 
         if self.include_resistencia and insp.resistencia:
             vals["certified_resistencia"] = insp.resistencia
@@ -56,10 +65,16 @@ class QualityCertificateWizardHardening(models.TransientModel):
                 field_name = "pegado_result" if insp.pegado_result else "oct_pegado"
                 vals["certified_pegado"] = self._selection_label(insp, field_name, pegado_value)
 
-        if self.include_retiramiento and (getattr(insp, "oct_retiramiento", 0.0) or getattr(insp, "reticula_extendida", 0.0)):
-            vals["certified_retiramiento"] = insp.oct_retiramiento or insp.reticula_extendida
+        if (
+            self.include_retiramiento
+            and insp.process_code != "octagono"
+            and (getattr(insp, "reticula_extendida", 0.0) or getattr(insp, "oct_retiramiento", 0.0))
+        ):
+            # FOLIO-QM-ODOO18-075: Retiramiento corresponde a Guillotina y se certifica en cm.
+            vals["certified_retiramiento"] = insp.reticula_extendida or insp.oct_retiramiento
         if self.include_calibracion and insp.calibracion:
-            vals["certified_calibracion"] = insp.calibracion
+            # FOLIO-QM-ODOO18-075: conservar precisión 0.0010 en certificado.
+            vals["certified_calibracion"] = round(insp.calibracion, 4)
         if self.include_engomado and insp.engomado:
             vals["certified_engomado"] = self._selection_label(insp, "engomado", insp.engomado)
 

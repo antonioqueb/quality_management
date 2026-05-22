@@ -3,16 +3,43 @@
     <data noupdate="0">
 
         <record id="process_type_octagono" model="quality.process.type">
+            <!-- FOLIO-QM-ODOO18-075:
+                 Octágono debe capturar Ancho, Hexágono, Número de Corrida,
+                 Papel, Adhesivo, Calibración, Engomado, Alineación y Corte de Guillotina.
+                 No aplica Espesor ni Retiramiento en este proceso. -->
+            <field name="name">Octágono</field>
+            <field name="code">octagono</field>
+            <field name="sequence">10</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
             <field name="zero_value_blocking" eval="True"/>
+
+            <field name="show_largo" eval="False"/>
+            <field name="show_ancho" eval="True"/>
             <field name="show_espesor" eval="False"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="False"/>
+            <field name="show_apariencia" eval="False"/>
+            <field name="show_humedad" eval="False"/>
+            <field name="show_pegado" eval="False"/>
+            <field name="show_retiramiento" eval="False"/>
+            <field name="show_calibracion" eval="True"/>
+            <field name="show_engomado" eval="True"/>
+            <field name="show_alineacion" eval="True"/>
+            <field name="show_ranurado" eval="False"/>
+            <field name="show_troquelado" eval="False"/>
+            <field name="show_papel" eval="True"/>
+            <field name="show_adhesivo" eval="True"/>
+            <field name="show_tipo_hexagono" eval="False"/>
+            <field name="show_corte_guillotina" eval="True"/>
+            <field name="show_numero_corrida" eval="True"/>
         </record>
 
         <record id="process_type_guillotina" model="quality.process.type">
             <field name="name">Guillotina</field>
             <field name="code">guillotina</field>
+            <field name="sequence">20</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
@@ -22,6 +49,7 @@
         <record id="process_type_pegado" model="quality.process.type">
             <field name="name">Pegado</field>
             <field name="code">pegado</field>
+            <field name="sequence">30</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
@@ -31,15 +59,43 @@
         <record id="process_type_laminadora" model="quality.process.type">
             <field name="name">Laminadora</field>
             <field name="code">laminadora</field>
+            <field name="sequence">40</field>
+            <!-- FOLIO-QM-ODOO18-072: Laminadora queda separada de Remanejo. -->
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
             <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_humedad" eval="True"/>
+        </record>
+
+        <record id="process_type_remanejo" model="quality.process.type">
+            <field name="name">Remanejo</field>
+            <field name="code">remanejo</field>
+            <field name="sequence">50</field>
+            <!-- FOLIO-QM-ODOO18-072: nuevo proceso independiente dentro del flujo estándar. -->
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_humedad" eval="True"/>
         </record>
 
         <record id="process_type_sierras_ranuradoras" model="quality.process.type">
             <field name="name">Sierras y Ranuradoras</field>
             <field name="code">sierras_ranuradoras</field>
+            <field name="sequence">55</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
@@ -49,6 +105,7 @@
         <record id="process_type_troquelado_plano" model="quality.process.type">
             <field name="name">Troquelado Plano</field>
             <field name="code">troquelado_plano</field>
+            <field name="sequence">60</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
@@ -58,10 +115,12 @@
         <record id="process_type_impresion" model="quality.process.type">
             <field name="name">Impresión</field>
             <field name="code">impresion</field>
+            <!-- FOLIO-QM-ODOO18-071: Impresión solo captura atributos adicionales Cumple/No Cumple; no permite OK/NO OK/N/A, selección ni numéricos. -->
             <field name="capture_mode">additional_only</field>
             <field name="require_measures" eval="False"/>
             <field name="require_additional_attributes" eval="True"/>
             <field name="zero_value_blocking" eval="True"/>
+
             <field name="show_largo" eval="False"/>
             <field name="show_ancho" eval="False"/>
             <field name="show_espesor" eval="False"/>
@@ -70,6 +129,17 @@
             <field name="show_apariencia" eval="False"/>
             <field name="show_humedad" eval="False"/>
             <field name="show_pegado" eval="False"/>
+            <field name="show_retiramiento" eval="False"/>
+            <field name="show_calibracion" eval="False"/>
+            <field name="show_engomado" eval="False"/>
+            <field name="show_alineacion" eval="False"/>
+            <field name="show_ranurado" eval="False"/>
+            <field name="show_troquelado" eval="False"/>
+            <field name="show_papel" eval="False"/>
+            <field name="show_adhesivo" eval="False"/>
+            <field name="show_tipo_hexagono" eval="False"/>
+            <field name="show_corte_guillotina" eval="False"/>
+            <field name="show_numero_corrida" eval="False"/>
         </record>
 
         <record id="process_type_esquinera" model="quality.process.type">
@@ -116,6 +186,35 @@
             <field name="show_tipo_hexagono" eval="False"/>
             <field name="show_corte_guillotina" eval="False"/>
             <field name="show_numero_corrida" eval="False"/>
+        </record>
+
+        <!-- FOLIO-QM-ODOO18-071: atributos de Impresión quedan forzados como booleanos Cumple/No Cumple. -->
+        <record id="attr_imp_color" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_imp_registro" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_imp_legibilidad" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_imp_uniformidad" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
         </record>
 
         <!-- FOLIO-QM-ODOO18-070: atributos de Acabado y Empaque quedan como booleanos Cumple/No Cumple. -->

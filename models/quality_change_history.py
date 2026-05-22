@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-Historial campo a campo en inspecciones y líneas (req. Laminadora).
+Historial campo a campo en inspecciones y líneas.
+
+FOLIO-QM-ODOO18-073:
+- Se conserva el modelo técnico de historial.
+- Ya no se muestra una pestaña duplicada al usuario.
+- Cada movimiento se publica también en el chatter inicial de la inspección,
+  que queda como única sección visible de movimientos.
 """
-from odoo import models, fields, api
+from collections import defaultdict
+
+from markupsafe import Markup, escape
+
+from odoo import models, fields, api, _
 
 
 TRACKED_INSPECTION_FIELDS = [
     "largo", "ancho", "espesor", "hexagono", "resistencia", "resistencia_na",
     "apariencia", "humedad_pct", "pegado_result", "oct_retiramiento",
     "calibracion", "engomado", "oct_ancho", "oct_espesor", "oct_hexagono",
-    "oct_alineacion", "oct_pegado", "reticula_extendida", "reticula_vueltas",
-    "lote_reticula", "gramaje_reticula", "numero_corrida", "tipo_hexagono",
+    "oct_hexagono_tipo", "oct_alineacion", "oct_pegado",
+    "reticula_extendida", "reticula_vueltas", "lote_reticula",
+    "gramaje_reticula", "numero_corrida", "tipo_hexagono",
     "corte_guillotina", "papel_ancho", "papel_gramaje", "papel_proveedor_id",
     "adhesivo_lote1", "adhesivo_lote2", "state", "retention_state",
 ]
@@ -47,15 +58,71 @@ class QualityInspectionHistory(models.Model):
 def _format_value(record, field_name):
     if field_name not in record._fields:
         return ""
+
     val = record[field_name]
     field = record._fields[field_name]
+
     if val is False or val is None:
         return ""
+
     if field.type == "many2one":
         return val.display_name or ""
+
     if field.type == "selection":
         return dict(field.selection).get(val, str(val))
+
+    if field.type == "boolean":
+        return _("Sí") if val else _("No")
+
     return str(val)
+
+
+def _safe_display(value):
+    value = value if value not in (False, None, "") else "—"
+    return escape(str(value))
+
+
+def _post_quality_history_to_chatter(inspection, changes):
+    """
+    Publica cambios detallados en el chatter inicial.
+    changes: list(dict(label, old, new, state))
+    """
+    if not inspection or not changes:
+        return
+
+    if inspection.env.context.get("skip_quality_history_chatter"):
+        return
+
+    items = []
+    for change in changes:
+        items.append(
+            "<li>"
+            "<b>%s</b>: "
+            "<span style='color:#6b7280;'>%s</span> "
+            "<span style='color:#9ca3af;'>→</span> "
+            "<span>%s</span>"
+            "<br/><small style='color:#6b7280;'>Estado: %s</small>"
+            "</li>"
+            % (
+                _safe_display(change.get("label")),
+                _safe_display(change.get("old")),
+                _safe_display(change.get("new")),
+                _safe_display(change.get("state")),
+            )
+        )
+
+    body = Markup(
+        "<p><b>%s</b></p><ul>%s</ul>"
+        % (
+            escape(_("Movimiento registrado en captura de calidad")),
+            "".join(items),
+        )
+    )
+
+    inspection.message_post(
+        body=body,
+        subtype_xmlid="mail.mt_comment",
+    )
 
 
 class QualityInspectionTracked(models.Model):
@@ -74,27 +141,45 @@ class QualityInspectionTracked(models.Model):
         History = self.env["quality.inspection.history"]
         snapshots = {}
         tracked_keys = [k for k in vals.keys() if k in TRACKED_INSPECTION_FIELDS]
+
         if tracked_keys:
             for rec in self:
                 snapshots[rec.id] = {
                     k: _format_value(rec, k) for k in tracked_keys
                 }
+
         res = super().write(vals)
+
         if tracked_keys:
             for rec in self:
                 old = snapshots.get(rec.id, {})
+                changes_for_chatter = []
+
                 for fname in tracked_keys:
                     new_val = _format_value(rec, fname)
-                    if old.get(fname, "") != new_val:
-                        label = rec._fields[fname].string or fname
-                        History.create({
-                            "inspection_id": rec.id,
-                            "field_name": fname,
-                            "field_label": label,
-                            "old_value": old.get(fname, ""),
-                            "new_value": new_val,
-                            "inspection_state_at_change": rec.state,
-                        })
+                    old_val = old.get(fname, "")
+
+                    if old_val == new_val:
+                        continue
+
+                    label = rec._fields[fname].string or fname
+                    History.create({
+                        "inspection_id": rec.id,
+                        "field_name": fname,
+                        "field_label": label,
+                        "old_value": old_val,
+                        "new_value": new_val,
+                        "inspection_state_at_change": rec.state,
+                    })
+                    changes_for_chatter.append({
+                        "label": label,
+                        "old": old_val,
+                        "new": new_val,
+                        "state": rec.state,
+                    })
+
+                _post_quality_history_to_chatter(rec, changes_for_chatter)
+
         return res
 
 
@@ -105,28 +190,55 @@ class QualityInspectionLineTracked(models.Model):
         History = self.env["quality.inspection.history"]
         snapshots = {}
         tracked_keys = [k for k in vals.keys() if k in TRACKED_LINE_FIELDS]
+
         if tracked_keys:
             for line in self:
                 snapshots[line.id] = {
                     k: _format_value(line, k) for k in tracked_keys
                 }
+
         res = super().write(vals)
+
         if tracked_keys:
+            changes_by_inspection = defaultdict(list)
+
             for line in self:
                 if not line.inspection_id:
                     continue
+
                 old = snapshots.get(line.id, {})
                 for fname in tracked_keys:
                     new_val = _format_value(line, fname)
-                    if old.get(fname, "") != new_val:
-                        label = line._fields[fname].string or fname
-                        History.create({
-                            "inspection_id": line.inspection_id.id,
-                            "line_id": line.id,
-                            "field_name": "%s.%s" % (line.name or "Atributo", fname),
-                            "field_label": "%s — %s" % (line.name or "", label),
-                            "old_value": old.get(fname, ""),
-                            "new_value": new_val,
-                            "inspection_state_at_change": line.inspection_id.state,
-                        })
+                    old_val = old.get(fname, "")
+
+                    if old_val == new_val:
+                        continue
+
+                    label = line._fields[fname].string or fname
+                    full_label = "%s — %s" % (line.name or "", label)
+
+                    History.create({
+                        "inspection_id": line.inspection_id.id,
+                        "line_id": line.id,
+                        "field_name": "%s.%s" % (line.name or "Atributo", fname),
+                        "field_label": full_label,
+                        "old_value": old_val,
+                        "new_value": new_val,
+                        "inspection_state_at_change": line.inspection_id.state,
+                    })
+
+                    changes_by_inspection[line.inspection_id.id].append({
+                        "label": full_label,
+                        "old": old_val,
+                        "new": new_val,
+                        "state": line.inspection_id.state,
+                    })
+
+            Inspection = self.env["quality.inspection"]
+            for inspection_id, changes in changes_by_inspection.items():
+                _post_quality_history_to_chatter(
+                    Inspection.browse(inspection_id),
+                    changes,
+                )
+
         return res

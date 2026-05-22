@@ -2,7 +2,16 @@
 {
     "name": "Gestión de Calidad - Hexágonos Mexicanos",
     # FOLIO-QM-ODOO18-070: Acabado y Empaque queda limitado a atributos adicionales Cumple/No Cumple.
-    "version": "18.0.3.4.0",
+    # FOLIO-QM-ODOO18-071: Impresión queda limitado a atributos adicionales Cumple/No Cumple.
+    # FOLIO-QM-ODOO18-072: Laminadora y Remanejo quedan como procesos separados.
+    # FOLIO-QM-ODOO18-073: El historial detallado se unifica en el chatter inicial; se elimina pestaña duplicada.
+    # FOLIO-QM-ODOO18-074: Se refuerza el enlace secuencial Octágono -> Guillotina -> Pegado -> Laminadora -> Sierras y Ranuradoras -> Troquelado Plano.
+    # FOLIO-QM-ODOO18-075: Octágono se endurece con campos obligatorios, sin espesor/retiramiento, precisión de calibración y certificados.
+    # FOLIO-QM-ODOO18-076: Ranurado/Corte Sierra deja de precargar Cumple y usa tolerancia configurable +/-3 mm o 1/8".
+    # FOLIO-QM-ODOO18-077: Sierras y Ranuradoras sustituye a Remanejo en la ruta obligatoria posterior a Laminadora.
+    # FOLIO-QM-ODOO18-078: Retención suscribe al contacto real del supervisor, no al usuario equivocado ligado al empleado.
+    # FOLIO-QM-ODOO18-079: Búsqueda de OP reforzada para referencias HMP1/HMPx desde inspecciones.
+    "version": "18.0.3.8.0",
     "category": "Manufacturing/Quality",
     "summary": "Gestión integral de calidad - Hexágonos (req. Feb-26)",
     "author": "Alphaqueb Consulting SAS",
@@ -31,6 +40,7 @@
         "data/quality_attribute_preset_data.xml",
         "data/quality_hardening_data.xml",
         "data/quality_routes_data.xml",
+        "data/quality_ranura_data.xml",
         "data/cron_data.xml",
         "wizards/certificate_wizard_views.xml",
         "views/quality_process_type_views.xml",
@@ -50,6 +60,7 @@
         "views/project_task_quality_views.xml",
         "views/quality_process_route_views.xml",
         "views/quality_retention_views.xml",
+        "views/quality_ranura_fix_views.xml",
         "views/quality_change_history_views.xml",
         "views/quality_troquel_validation_views.xml",
         "views/quality_certificate_email_views.xml",
@@ -59,6 +70,7 @@
         "reports/report_8d.xml",
         "reports/report_8d_extended.xml",
         "reports/report_inspection_summary.xml",
+        "reports/report_inspection_ranura_patch.xml",
         "reports/report_sample_release.xml",
         "reports/report_drawing_release.xml",
         "reports/report_customer_return.xml",

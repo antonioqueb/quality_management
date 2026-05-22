@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <!--
+            FOLIO-QM-ODOO18-077:
+            En QI-024 el proceso operativo solicitado queda como
+            "Sierras y Ranuradoras"; Remanejo se conserva solo como legacy
+            para no romper inspecciones históricas, pero ya no forma parte
+            de la ruta estándar obligatoria.
+        -->
+        <record id="process_type_remanejo" model="quality.process.type">
+            <field name="name">Remanejo (Legacy)</field>
+            <field name="sequence">51</field>
+            <field name="active" eval="False"/>
+            <field name="description">Proceso legado conservado para inspecciones históricas. Usar Sierras y Ranuradoras para nuevas capturas.</field>
+        </record>
+
+        <record id="process_type_sierras_ranuradoras" model="quality.process.type">
+            <field name="name">Sierras y Ranuradoras</field>
+            <field name="code">sierras_ranuradoras</field>
+            <field name="sequence">50</field>
+            <field name="active" eval="True"/>
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="False"/>
+            <field name="zero_value_blocking" eval="True"/>
+
+            <!-- Medidas y Propiedades no aplican en este apartado; la captura va en Ranurado / Corte Sierra. -->
+            <field name="show_largo" eval="False"/>
+            <field name="show_ancho" eval="False"/>
+            <field name="show_espesor" eval="False"/>
+            <field name="show_hexagono" eval="False"/>
+            <field name="show_resistencia" eval="False"/>
+            <field name="show_apariencia" eval="False"/>
+            <field name="show_humedad" eval="False"/>
+            <field name="show_pegado" eval="False"/>
+            <field name="show_retiramiento" eval="False"/>
+            <field name="show_calibracion" eval="False"/>
+            <field name="show_engomado" eval="False"/>
+            <field name="show_alineacion" eval="False"/>
+            <field name="show_troquelado" eval="False"/>
+            <field name="show_papel" eval="False"/>
+            <field name="show_adhesivo" eval="False"/>
+            <field name="show_tipo_hexagono" eval="False"/>
+            <field name="show_corte_guillotina" eval="False"/>
+            <field name="show_numero_corrida" eval="False"/>
+            <field name="show_ranurado" eval="True"/>
+        </record>
+
+        <!-- Ruta estándar: Laminadora -> Sierras y Ranuradoras -> Troquelado Plano. -->
+        <record id="quality_route_estandar_l5" model="quality.process.route.line">
+            <field name="route_id" ref="quality_route_estandar"/>
+            <field name="sequence">50</field>
+            <field name="process_type_id" ref="process_type_sierras_ranuradoras"/>
+            <field name="is_optional" eval="False"/>
+            <field name="notes">Paso obligatorio para Ranurado / Corte Sierra.</field>
+        </record>
+
+        <record id="quality_route_estandar_l6" model="quality.process.route.line">
+            <field name="route_id" ref="quality_route_estandar"/>
+            <field name="sequence">60</field>
+            <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="is_optional" eval="False"/>
+        </record>
+
+        <record id="quality_route_estandar_l7" model="quality.process.route.line">
+            <field name="route_id" ref="quality_route_estandar"/>
+            <field name="sequence">70</field>
+            <field name="process_type_id" ref="process_type_remanejo"/>
+            <field name="is_optional" eval="True"/>
+            <field name="notes">Paso legacy inactivo; no bloquea el flujo nuevo.</field>
+        </record>
+
+    </data>
+</odoo>

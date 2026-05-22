@@ -33,7 +33,7 @@
                 <header>
                     <button name="action_start" string="INICIAR INSPECCIÓN"
                             type="object" class="btn-primary"
-                            invisible="state != 'borrador'"/>
+                            invisible="state != 'borrador' or not process_gate_open"/>
                     <button name="action_accept" string="Aceptar (Liberar)"
                             type="object" class="btn-primary"
                             invisible="state != 'en_proceso'"
@@ -71,15 +71,41 @@
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
+
                     <div class="alert alert-info" role="alert"
                          invisible="state != 'borrador'">
                         <i class="fa fa-info-circle"/>
                         <b>Captura bloqueada hasta presionar "INICIAR INSPECCIÓN".</b>
                     </div>
 
+                    <!-- FOLIO-QM-ODOO18-075: leyenda visible para Octágono; evita depender de íconos de ayuda. -->
+                    <div class="alert alert-info" role="alert"
+                         invisible="process_code != 'octagono'">
+                        <i class="fa fa-info-circle"/>
+                        <b>Octágono:</b>
+                        seleccione primero la Orden de Producción. El sistema toma de ahí
+                        Producto, Lote, Código y Cliente cuando existan. El Folio de Producción
+                        debe coincidir con el folio físico/documental del lote. En este proceso
+                        <b>no aplica Espesor ni Retiramiento</b>; Retiramiento se captura en Guillotina
+                        en centímetros. Hexágono se captura como Tipo 1, 2, 3 o 4 según el catálogo
+                        interno vigente de Calidad.
+                    </div>
+
+                    <div class="alert alert-warning" role="alert"
+                         invisible="process_gate_open or state != 'borrador'">
+                        <i class="fa fa-lock"/>
+                        <strong>Flujo de proceso bloqueado:</strong>
+                        <field name="process_gate_message" nolabel="1" readonly="1"/>
+                    </div>
+
                     <!-- FOLIO-QM-ODOO18-040: campos técnicos necesarios para expresiones de Odoo 18. -->
                     <field name="process_code" invisible="1"/>
+                    <field name="history_count" invisible="1"/>
                     <field name="capture_mode" invisible="1"/>
+                    <field name="process_gate_open" invisible="1"/>
+                    <field name="process_gate_message" invisible="1"/>
+                    <field name="previous_process_type_id" invisible="1"/>
+                    <field name="previous_process_inspection_id" invisible="1"/>
                     <field name="show_largo" invisible="1"/>
                     <field name="show_ancho" invisible="1"/>
                     <field name="show_espesor" invisible="1"/>
@@ -104,18 +130,29 @@
 
                     <group>
                         <group string="Datos Generales">
-                            <field name="process_type_id"/>
+                            <field name="process_type_id" readonly="state != 'borrador'"/>
                             <field name="pp_pt" widget="radio"
                                    readonly="state != 'borrador'"/>
-                            <field name="product_id"
-                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="production_order_id"
+                                   readonly="state != 'borrador'"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                            <field name="product_id"
+                                   readonly="state != 'borrador' or production_order_id"
                                    options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="lot_id"
+                                   readonly="state != 'borrador' or (production_order_id and lot_id)"
                                    options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"
                                    domain="[('product_id', '=', product_id)]"/>
-                            <field name="folio"/>
-                            <field name="code"/>
+                            <field name="folio"
+                                   placeholder="Ej. folio físico de producción / lote impreso"/>
+                            <field name="code"
+                                   placeholder="Código interno del producto; se llena desde Producto/OP si existe"/>
+                            <field name="previous_process_type_id"
+                                   readonly="1"
+                                   invisible="process_gate_open"/>
+                            <field name="previous_process_inspection_id"
+                                   readonly="1"
+                                   invisible="not previous_process_inspection_id"/>
                         </group>
                         <group string="Personal y Ubicación">
                             <field name="operator_id"
@@ -126,7 +163,7 @@
                                    widget="many2one_avatar_user" readonly="1"/>
                             <field name="partner_id"
                                    context="{'show_vat': True, 'show_email': True}"
-                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                                   placeholder="Cliente; si no existe, créelo desde Contactos o desde este selector según permisos."/>
                             <field name="shift"/>
                             <field name="plant"/>
                             <field name="date_inspection" readonly="1"/>
@@ -135,7 +172,7 @@
 
                     <notebook>
                         <page string="Medidas y Propiedades"
-                              invisible="state == 'borrador' or capture_mode == 'additional_only' or process_code == 'acabado_empaque' or (not show_largo and not show_ancho and not show_espesor and not show_hexagono and not show_resistencia and not show_apariencia and not show_humedad and not show_pegado and not show_retiramiento and not show_calibracion and not show_engomado)"
+                              invisible="state == 'borrador' or process_code == 'octagono' or capture_mode == 'additional_only' or (not show_largo and not show_ancho and not show_espesor and not show_hexagono and not show_resistencia and not show_apariencia and not show_humedad and not show_pegado and not show_retiramiento and not show_calibracion and not show_engomado)"
                               name="medidas">
                             <group>
                                 <group string="Medidas Dimensionales">
@@ -186,15 +223,51 @@
                             </group>
                         </page>
 
-                        <page string="Octágono (Extras)"
-                              invisible="process_code != 'octagono'"
+                        <page string="Octágono"
+                              invisible="state == 'borrador' or process_code != 'octagono'"
                               name="oct">
+                            <!-- FOLIO-QM-ODOO18-075: matriz dedicada de Octágono. -->
+                            <div class="alert alert-warning" role="alert">
+                                <i class="fa fa-ban"/>
+                                En Octágono no se captura <b>Espesor</b> ni <b>Retiramiento</b>.
+                                Retiramiento corresponde a Guillotina y se expresa en cm.
+                            </div>
+
                             <group>
-                                <group>
-                                    <field name="oct_ancho"/>
-                                    <field name="oct_alineacion" widget="radio"
-                                           invisible="not show_alineacion"/>
-                                    <field name="oct_pegado" widget="radio"/>
+                                <group string="Medidas">
+                                    <field name="ancho" string="Ancho (mm)"/>
+                                    <field name="hexagono" string="Hexágono" widget="radio"/>
+                                    <field name="calibracion"
+                                           string="Calibración"
+                                           placeholder="Ej. 0.0010"/>
+                                    <field name="engomado" widget="radio"/>
+                                    <field name="oct_alineacion" string="Alineación" widget="radio"/>
+                                    <field name="corte_guillotina"
+                                           string="Corte de Guillotina"
+                                           widget="radio"/>
+                                </group>
+
+                                <group string="Producción">
+                                    <field name="numero_corrida"/>
+                                    <field name="folio"
+                                           placeholder="Folio físico/documental del lote"/>
+                                    <field name="code"
+                                           placeholder="Código interno del producto"/>
+                                </group>
+                            </group>
+
+                            <group>
+                                <group string="Papel">
+                                    <field name="papel_ancho" string="Ancho"/>
+                                    <field name="papel_gramaje" string="Gramaje"/>
+                                    <field name="papel_proveedor_id"
+                                           string="Proveedor de Rollos"
+                                           context="{'default_supplier_rank': 1}"/>
+                                </group>
+
+                                <group string="Adhesivo">
+                                    <field name="adhesivo_lote1" string="Lote 1"/>
+                                    <field name="adhesivo_lote2" string="Lote 2"/>
                                 </group>
                             </group>
                         </page>
@@ -252,7 +325,7 @@
                         </page>
 
                         <page string="Datos de Producción"
-                              invisible="state == 'borrador' or (not show_papel and not show_adhesivo and not show_tipo_hexagono and not show_numero_corrida and not show_corte_guillotina)"
+                              invisible="state == 'borrador' or process_code == 'octagono' or (not show_papel and not show_adhesivo and not show_tipo_hexagono and not show_numero_corrida and not show_corte_guillotina)"
                               name="prod">
                             <group>
                                 <group string="Producción"
@@ -283,14 +356,16 @@
                         <page string="Atributos Adicionales"
                               invisible="state == 'borrador'" name="attrs">
                             <div class="alert alert-warning" role="alert"
-                                 invisible="process_code != 'acabado_empaque'">
+                                 invisible="process_code not in ('acabado_empaque', 'impresion')">
                                 <i class="fa fa-exclamation-triangle"/>
-                                <strong>Acabado y Empaque:</strong>
+                                <strong>
+                                    <field name="process_type_id" nolabel="1" readonly="1"/>:
+                                </strong>
                                 este proceso solo permite atributos adicionales con resultado
                                 <b>Cumple</b> o <b>No Cumple</b>. No se permite N/A ni valores numéricos.
                             </div>
 
-                            <p class="text-muted" invisible="process_code == 'acabado_empaque'">
+                            <p class="text-muted" invisible="process_code in ('acabado_empaque', 'impresion')">
                                 <i class="fa fa-info-circle"/>
                                 CUMPLE / NO CUMPLE / N/A u OK / NO OK / N/A — sin duplicados con Medidas y Propiedades.
                             </p>
@@ -316,7 +391,6 @@
                                            decoration-success="value_ok == 'ok'"
                                            decoration-danger="value_ok == 'no_ok'"/>
 
-                                    <!-- FOLIO-QM-ODOO18-070: en Acabado y Empaque este campo se usa como resultado final Cumple/No Cumple. -->
                                     <field name="value_cumple"
                                            string="Cumple/NC"
                                            invisible="attribute_type != 'boolean' or result_mode != 'cumple'"
@@ -335,7 +409,7 @@
 
                                     <field name="result"
                                            widget="badge"
-                                           column_invisible="parent.process_code == 'acabado_empaque'"
+                                           column_invisible="parent.process_code in ('acabado_empaque', 'impresion')"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
                                     <field name="notes"/>

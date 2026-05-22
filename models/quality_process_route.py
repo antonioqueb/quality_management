@@ -3,6 +3,19 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 
+# FOLIO-QM-ODOO18-074:
+# Secuencia estándar obligatoria. Aunque exista una ruta vieja sin Remanejo,
+# estos procesos no pueden saltarse.
+MANDATORY_STANDARD_SEQUENCE = [
+    "octagono",
+    "guillotina",
+    "pegado",
+    "laminadora",
+    "remanejo",
+    "troquelado_plano",
+]
+
+
 class QualityProcessRoute(models.Model):
     _name = "quality.process.route"
     _description = "Ruta de Proceso de Calidad"
@@ -90,6 +103,11 @@ class QualityInspectionRoute(models.Model):
     )
     def _compute_quality_route(self):
         Route = self.env["quality.process.route"]
+        default_route = self.env.ref(
+            "quality_management.quality_route_estandar",
+            raise_if_not_found=False,
+        )
+
         for rec in self:
             template = rec.product_id.product_tmpl_id
             route = template.quality_route_id if template else False
@@ -103,18 +121,29 @@ class QualityInspectionRoute(models.Model):
                     limit=1,
                 )
 
-            rec.quality_route_id = route or False
+            # FOLIO-QM-ODOO18-074:
+            # Si no hay ruta específica por producto/categoría, se usa la ruta estándar.
+            rec.quality_route_id = route or default_route or False
 
     def _check_previous_process_hardening(self):
-        """Usa ruta configurada si existe; si no existe, cae a la secuencia base."""
-        # FOLIO-QM-ODOO18-026: el método anterior hacía return dentro del loop;
-        # con múltiples inspecciones podía dejar registros sin validar.
-        fallback_records = self.browse()
+        """
+        1) Siempre respeta la secuencia estándar obligatoria:
+           Octágono -> Guillotina -> Pegado -> Laminadora -> Remanejo -> Troquelado Plano.
+        2) Para procesos fuera de esa secuencia, usa la ruta configurable si aplica.
+        """
+        # FOLIO-QM-ODOO18-074: primero se ejecuta la validación estándar del hardening.
+        super()._check_previous_process_hardening()
 
         for rec in self:
+            current_code = rec.process_code
+
+            # Los procesos estándar ya fueron validados por super() para evitar
+            # que una ruta vieja sin Remanejo permita saltarse el flujo.
+            if current_code in MANDATORY_STANDARD_SEQUENCE:
+                continue
+
             route = rec.quality_route_id
             if not route:
-                fallback_records |= rec
                 continue
 
             route_lines = route.line_ids.sorted("sequence")
@@ -123,7 +152,6 @@ class QualityInspectionRoute(models.Model):
                 for line in route_lines
                 if line.process_type_id.code
             ]
-            current_code = rec.process_code
 
             if current_code not in codes:
                 continue
@@ -142,29 +170,20 @@ class QualityInspectionRoute(models.Model):
             if not previous_code:
                 continue
 
-            previous_inspection = self.search(
-                [
-                    ("lot_id", "=", rec.lot_id.id),
-                    ("process_code", "=", previous_code),
-                    ("state", "=", "aceptado"),
-                ],
-                limit=1,
-            )
-            if not previous_inspection:
-                raise UserError(
-                    _(
-                        "Ruta '%s': antes de liberar '%s' debe estar liberado "
-                        "el proceso previo '%s' para el lote %s."
-                    )
-                    % (
-                        route.name,
-                        rec.process_type_id.name,
-                        previous_code.replace("_", " ").title(),
-                        rec.lot_id.name or "—",
-                    )
-                )
+            previous_inspection = rec._find_previous_inspection_hardening(previous_code)
+            if previous_inspection:
+                continue
 
-        if fallback_records:
-            return super(QualityInspectionRoute, fallback_records)._check_previous_process_hardening()
+            raise UserError(
+                _(
+                    "Ruta '%s': antes de liberar '%s' debe estar liberado "
+                    "el proceso previo '%s'."
+                )
+                % (
+                    route.name,
+                    rec.process_type_id.name,
+                    previous_code.replace("_", " ").title(),
+                )
+            )
 
         return True

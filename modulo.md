@@ -9,8 +9,13 @@ from . import wizards
 # -*- coding: utf-8 -*-
 {
     "name": "Gestión de Calidad - Hexágonos Mexicanos",
-    # FOLIO-QM-ODOO18-001: se actualiza la serie del manifiesto para Odoo 18.
-    "version": "18.0.3.2.0",
+    # FOLIO-QM-ODOO18-070: Acabado y Empaque queda limitado a atributos adicionales Cumple/No Cumple.
+    # FOLIO-QM-ODOO18-071: Impresión queda limitado a atributos adicionales Cumple/No Cumple.
+    # FOLIO-QM-ODOO18-072: Laminadora y Remanejo quedan como procesos separados.
+    # FOLIO-QM-ODOO18-073: El historial detallado se unifica en el chatter inicial; se elimina pestaña duplicada.
+    # FOLIO-QM-ODOO18-074: Se refuerza el enlace secuencial Octágono -> Guillotina -> Pegado -> Laminadora -> Remanejo -> Troquelado Plano.
+    # FOLIO-QM-ODOO18-075: Octágono se endurece con campos obligatorios, sin espesor/retiramiento, precisión de calibración y certificados.
+    "version": "18.0.3.7.0",
     "category": "Manufacturing/Quality",
     "summary": "Gestión integral de calidad - Hexágonos (req. Feb-26)",
     "author": "Alphaqueb Consulting SAS",
@@ -31,7 +36,6 @@ from . import wizards
     ],
     "data": [
         "security/quality_groups.xml",
-        # FOLIO-QM-ODOO18-002: el CSV estaba referenciado pero no incluido en el módulo cargado.
         "security/ir.model.access.csv",
         "security/quality_rules.xml",
         "security/quality_strict_acl.xml",
@@ -48,7 +52,6 @@ from . import wizards
         "views/quality_drawing_release_views.xml",
         "views/quality_inspection_views.xml",
         "views/quality_certificate_views.xml",
-        # FOLIO-QM-ODOO18-003: las vistas heredadas de hardening se cargan después de sus vistas base.
         "views/quality_hardening_views.xml",
         "views/quality_corrective_action_views.xml",
         "views/quality_customer_return_views.xml",
@@ -58,7 +61,6 @@ from . import wizards
         "views/res_company_views.xml",
         "views/product_views.xml",
         "views/project_task_quality_views.xml",
-        # FOLIO-QM-ODOO18-004: la vista de rutas hereda la pestaña Calidad creada en product_views.
         "views/quality_process_route_views.xml",
         "views/quality_retention_views.xml",
         "views/quality_change_history_views.xml",
@@ -147,7 +149,7 @@ from . import wizards
             <field name="show_pegado" eval="True"/>
         </record>
 
-        <!-- 4. Laminadora (separada de Remanejo) -->
+        <!-- 4. Laminadora -->
         <record id="process_type_laminadora" model="quality.process.type">
             <field name="name">Laminadora</field>
             <field name="code">laminadora</field>
@@ -161,11 +163,26 @@ from . import wizards
             <field name="show_humedad" eval="True"/>
         </record>
 
-        <!-- 5. Sierras y Ranuradoras (antes "Remanejo") -->
+        <!-- 5. Remanejo -->
+        <record id="process_type_remanejo" model="quality.process.type">
+            <field name="name">Remanejo</field>
+            <field name="code">remanejo</field>
+            <field name="sequence">50</field>
+            <!-- FOLIO-QM-ODOO18-072: Remanejo se separa de Laminadora como proceso independiente. -->
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_humedad" eval="True"/>
+        </record>
+
+        <!-- 6. Sierras y Ranuradoras -->
         <record id="process_type_sierras_ranuradoras" model="quality.process.type">
             <field name="name">Sierras y Ranuradoras</field>
             <field name="code">sierras_ranuradoras</field>
-            <field name="sequence">50</field>
+            <field name="sequence">55</field>
             <field name="show_largo" eval="True"/>
             <field name="show_ancho" eval="True"/>
             <field name="show_espesor" eval="True"/>
@@ -173,7 +190,7 @@ from . import wizards
             <field name="show_ranurado" eval="True"/>
         </record>
 
-        <!-- 6. Troquelado Plano -->
+        <!-- 7. Troquelado Plano -->
         <record id="process_type_troquelado_plano" model="quality.process.type">
             <field name="name">Troquelado Plano</field>
             <field name="code">troquelado_plano</field>
@@ -185,7 +202,7 @@ from . import wizards
             <field name="show_apariencia" eval="True"/>
         </record>
 
-        <!-- 7. Impresión (solo atributos adicionales) -->
+        <!-- 8. Impresión -->
         <record id="process_type_impresion" model="quality.process.type">
             <field name="name">Impresión</field>
             <field name="code">impresion</field>
@@ -193,7 +210,21 @@ from . import wizards
             <field name="show_apariencia" eval="True"/>
         </record>
 
-        <!-- 8. Acabado y Empaque (solo atributos adicionales) -->
+        <!-- 9. Esquinera -->
+        <record id="process_type_esquinera" model="quality.process.type">
+            <field name="name">Esquinera</field>
+            <field name="code">esquinera</field>
+            <field name="sequence">75</field>
+            <!-- FOLIO-QM-ODOO18-068: proceso solicitado por Calidad/Producción para Planta 2. -->
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_pegado" eval="True"/>
+            <field name="show_numero_corrida" eval="True"/>
+        </record>
+
+        <!-- 10. Acabado y Empaque -->
         <record id="process_type_acabado" model="quality.process.type">
             <field name="name">Acabado y Empaque</field>
             <field name="code">acabado_empaque</field>
@@ -201,8 +232,7 @@ from . import wizards
             <field name="show_apariencia" eval="True"/>
         </record>
     </data>
-</odoo>
-```
+</odoo>```
 
 ## ./data/quality_attribute_preset_data.xml
 ```xml
@@ -402,6 +432,43 @@ from . import wizards
             <field name="is_required" eval="True"/>
         </record>
 
+                <!-- ═══════════════ ESQUINERA ═══════════════ -->
+        <record id="attr_esquinera_medidas" model="quality.attribute.template">
+            <field name="name">Medidas correctas</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">10</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_esquinera_escuadra" model="quality.attribute.template">
+            <field name="name">Escuadra / Esquinado correcto</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">20</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_esquinera_pegado" model="quality.attribute.template">
+            <field name="name">Pegado correcto</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">30</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_esquinera_apariencia" model="quality.attribute.template">
+            <field name="name">Apariencia general</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">40</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_esquinera_etiquetado" model="quality.attribute.template">
+            <field name="name">Etiquetado</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">50</field>
+            <field name="is_required" eval="True"/>
+        </record>
+
     </data>
 </odoo>
 ```
@@ -413,16 +480,43 @@ from . import wizards
     <data noupdate="0">
 
         <record id="process_type_octagono" model="quality.process.type">
+            <!-- FOLIO-QM-ODOO18-075:
+                 Octágono debe capturar Ancho, Hexágono, Número de Corrida,
+                 Papel, Adhesivo, Calibración, Engomado, Alineación y Corte de Guillotina.
+                 No aplica Espesor ni Retiramiento en este proceso. -->
+            <field name="name">Octágono</field>
+            <field name="code">octagono</field>
+            <field name="sequence">10</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
             <field name="zero_value_blocking" eval="True"/>
+
+            <field name="show_largo" eval="False"/>
+            <field name="show_ancho" eval="True"/>
             <field name="show_espesor" eval="False"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="False"/>
+            <field name="show_apariencia" eval="False"/>
+            <field name="show_humedad" eval="False"/>
+            <field name="show_pegado" eval="False"/>
+            <field name="show_retiramiento" eval="False"/>
+            <field name="show_calibracion" eval="True"/>
+            <field name="show_engomado" eval="True"/>
+            <field name="show_alineacion" eval="True"/>
+            <field name="show_ranurado" eval="False"/>
+            <field name="show_troquelado" eval="False"/>
+            <field name="show_papel" eval="True"/>
+            <field name="show_adhesivo" eval="True"/>
+            <field name="show_tipo_hexagono" eval="False"/>
+            <field name="show_corte_guillotina" eval="True"/>
+            <field name="show_numero_corrida" eval="True"/>
         </record>
 
         <record id="process_type_guillotina" model="quality.process.type">
             <field name="name">Guillotina</field>
             <field name="code">guillotina</field>
+            <field name="sequence">20</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
@@ -432,6 +526,7 @@ from . import wizards
         <record id="process_type_pegado" model="quality.process.type">
             <field name="name">Pegado</field>
             <field name="code">pegado</field>
+            <field name="sequence">30</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
@@ -441,15 +536,43 @@ from . import wizards
         <record id="process_type_laminadora" model="quality.process.type">
             <field name="name">Laminadora</field>
             <field name="code">laminadora</field>
+            <field name="sequence">40</field>
+            <!-- FOLIO-QM-ODOO18-072: Laminadora queda separada de Remanejo. -->
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
             <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_humedad" eval="True"/>
+        </record>
+
+        <record id="process_type_remanejo" model="quality.process.type">
+            <field name="name">Remanejo</field>
+            <field name="code">remanejo</field>
+            <field name="sequence">50</field>
+            <!-- FOLIO-QM-ODOO18-072: nuevo proceso independiente dentro del flujo estándar. -->
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_hexagono" eval="True"/>
+            <field name="show_resistencia" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_humedad" eval="True"/>
         </record>
 
         <record id="process_type_sierras_ranuradoras" model="quality.process.type">
             <field name="name">Sierras y Ranuradoras</field>
             <field name="code">sierras_ranuradoras</field>
+            <field name="sequence">55</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
@@ -459,6 +582,7 @@ from . import wizards
         <record id="process_type_troquelado_plano" model="quality.process.type">
             <field name="name">Troquelado Plano</field>
             <field name="code">troquelado_plano</field>
+            <field name="sequence">60</field>
             <field name="capture_mode">full</field>
             <field name="require_measures" eval="True"/>
             <field name="require_additional_attributes" eval="True"/>
@@ -468,10 +592,12 @@ from . import wizards
         <record id="process_type_impresion" model="quality.process.type">
             <field name="name">Impresión</field>
             <field name="code">impresion</field>
+            <!-- FOLIO-QM-ODOO18-071: Impresión solo captura atributos adicionales Cumple/No Cumple; no permite OK/NO OK/N/A, selección ni numéricos. -->
             <field name="capture_mode">additional_only</field>
             <field name="require_measures" eval="False"/>
             <field name="require_additional_attributes" eval="True"/>
             <field name="zero_value_blocking" eval="True"/>
+
             <field name="show_largo" eval="False"/>
             <field name="show_ancho" eval="False"/>
             <field name="show_espesor" eval="False"/>
@@ -480,15 +606,44 @@ from . import wizards
             <field name="show_apariencia" eval="False"/>
             <field name="show_humedad" eval="False"/>
             <field name="show_pegado" eval="False"/>
+            <field name="show_retiramiento" eval="False"/>
+            <field name="show_calibracion" eval="False"/>
+            <field name="show_engomado" eval="False"/>
+            <field name="show_alineacion" eval="False"/>
+            <field name="show_ranurado" eval="False"/>
+            <field name="show_troquelado" eval="False"/>
+            <field name="show_papel" eval="False"/>
+            <field name="show_adhesivo" eval="False"/>
+            <field name="show_tipo_hexagono" eval="False"/>
+            <field name="show_corte_guillotina" eval="False"/>
+            <field name="show_numero_corrida" eval="False"/>
+        </record>
+
+        <record id="process_type_esquinera" model="quality.process.type">
+            <field name="name">Esquinera</field>
+            <field name="code">esquinera</field>
+            <!-- FOLIO-QM-ODOO18-068: endurecimiento del proceso Esquinera sin hacerlo parte de la secuencia obligatoria global. -->
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_pegado" eval="True"/>
+            <field name="show_numero_corrida" eval="True"/>
         </record>
 
         <record id="process_type_acabado" model="quality.process.type">
             <field name="name">Acabado y Empaque</field>
             <field name="code">acabado_empaque</field>
+            <!-- FOLIO-QM-ODOO18-070: Acabado y Empaque solo captura atributos Cumple/No Cumple; no medidas numéricas. -->
             <field name="capture_mode">additional_only</field>
             <field name="require_measures" eval="False"/>
             <field name="require_additional_attributes" eval="True"/>
             <field name="zero_value_blocking" eval="True"/>
+
             <field name="show_largo" eval="False"/>
             <field name="show_ancho" eval="False"/>
             <field name="show_espesor" eval="False"/>
@@ -497,23 +652,99 @@ from . import wizards
             <field name="show_apariencia" eval="False"/>
             <field name="show_humedad" eval="False"/>
             <field name="show_pegado" eval="False"/>
+            <field name="show_retiramiento" eval="False"/>
+            <field name="show_calibracion" eval="False"/>
+            <field name="show_engomado" eval="False"/>
+            <field name="show_alineacion" eval="False"/>
+            <field name="show_ranurado" eval="False"/>
+            <field name="show_troquelado" eval="False"/>
+            <field name="show_papel" eval="False"/>
+            <field name="show_adhesivo" eval="False"/>
+            <field name="show_tipo_hexagono" eval="False"/>
+            <field name="show_corte_guillotina" eval="False"/>
+            <field name="show_numero_corrida" eval="False"/>
+        </record>
+
+        <!-- FOLIO-QM-ODOO18-071: atributos de Impresión quedan forzados como booleanos Cumple/No Cumple. -->
+        <record id="attr_imp_color" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_imp_registro" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_imp_legibilidad" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_imp_uniformidad" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <!-- FOLIO-QM-ODOO18-070: atributos de Acabado y Empaque quedan como booleanos Cumple/No Cumple. -->
+        <record id="attr_aca_amarre" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_aca_etiquetado" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_aca_emplayado" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_aca_apariencia" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_aca_cantidad" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
         </record>
 
     </data>
-</odoo>
-```
+</odoo>```
 
 ## ./data/quality_routes_data.xml
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
         <record id="seq_quality_troquel_validation" model="ir.sequence">
             <field name="name">Validación de Troquel</field>
             <field name="code">quality.troquel.validation</field>
             <field name="prefix">TVAL-</field>
             <field name="padding">4</field>
         </record>
+
         <record id="seq_quality_troquel_repair" model="ir.sequence">
             <field name="name">Reparación de Troquel</field>
             <field name="code">quality.troquel.repair</field>
@@ -521,44 +752,65 @@ from . import wizards
             <field name="padding">4</field>
         </record>
 
-        <!-- Ruta estándar Hexágonos -->
+        <!-- FOLIO-QM-ODOO18-074: ruta estándar corregida según flujo solicitado. -->
         <record id="quality_route_estandar" model="quality.process.route">
             <field name="name">Ruta Estándar Hexágonos</field>
             <field name="sequence">10</field>
+            <field name="active" eval="True"/>
         </record>
+
         <record id="quality_route_estandar_l1" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">10</field>
             <field name="process_type_id" ref="process_type_octagono"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l2" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">20</field>
             <field name="process_type_id" ref="process_type_guillotina"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l3" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">30</field>
             <field name="process_type_id" ref="process_type_pegado"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l4" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">40</field>
             <field name="process_type_id" ref="process_type_laminadora"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l5" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">50</field>
-            <field name="process_type_id" ref="process_type_sierras_ranuradoras"/>
+            <field name="process_type_id" ref="process_type_remanejo"/>
+            <field name="is_optional" eval="False"/>
         </record>
+
         <record id="quality_route_estandar_l6" model="quality.process.route.line">
             <field name="route_id" ref="quality_route_estandar"/>
             <field name="sequence">60</field>
             <field name="process_type_id" ref="process_type_troquelado_plano"/>
+            <field name="is_optional" eval="False"/>
+        </record>
+
+        <!-- Se conserva el proceso existente, pero ya no se usa como paso obligatorio entre Laminadora y Troquelado. -->
+        <record id="quality_route_estandar_l7" model="quality.process.route.line">
+            <field name="route_id" ref="quality_route_estandar"/>
+            <field name="sequence">70</field>
+            <field name="process_type_id" ref="process_type_sierras_ranuradoras"/>
+            <field name="is_optional" eval="True"/>
+            <field name="notes">Proceso conservado como opcional para no romper configuraciones previas.</field>
         </record>
     </data>
-</odoo>
-```
+</odoo>```
 
 ## ./data/sequence_data.xml
 ```xml
@@ -1250,17 +1502,28 @@ class QualityCertificate(models.Model):
 ```py
 # -*- coding: utf-8 -*-
 """
-Historial campo a campo en inspecciones y líneas (req. Laminadora).
+Historial campo a campo en inspecciones y líneas.
+
+FOLIO-QM-ODOO18-073:
+- Se conserva el modelo técnico de historial.
+- Ya no se muestra una pestaña duplicada al usuario.
+- Cada movimiento se publica también en el chatter inicial de la inspección,
+  que queda como única sección visible de movimientos.
 """
-from odoo import models, fields, api
+from collections import defaultdict
+
+from markupsafe import Markup, escape
+
+from odoo import models, fields, api, _
 
 
 TRACKED_INSPECTION_FIELDS = [
     "largo", "ancho", "espesor", "hexagono", "resistencia", "resistencia_na",
     "apariencia", "humedad_pct", "pegado_result", "oct_retiramiento",
     "calibracion", "engomado", "oct_ancho", "oct_espesor", "oct_hexagono",
-    "oct_alineacion", "oct_pegado", "reticula_extendida", "reticula_vueltas",
-    "lote_reticula", "gramaje_reticula", "numero_corrida", "tipo_hexagono",
+    "oct_hexagono_tipo", "oct_alineacion", "oct_pegado",
+    "reticula_extendida", "reticula_vueltas", "lote_reticula",
+    "gramaje_reticula", "numero_corrida", "tipo_hexagono",
     "corte_guillotina", "papel_ancho", "papel_gramaje", "papel_proveedor_id",
     "adhesivo_lote1", "adhesivo_lote2", "state", "retention_state",
 ]
@@ -1297,15 +1560,71 @@ class QualityInspectionHistory(models.Model):
 def _format_value(record, field_name):
     if field_name not in record._fields:
         return ""
+
     val = record[field_name]
     field = record._fields[field_name]
+
     if val is False or val is None:
         return ""
+
     if field.type == "many2one":
         return val.display_name or ""
+
     if field.type == "selection":
         return dict(field.selection).get(val, str(val))
+
+    if field.type == "boolean":
+        return _("Sí") if val else _("No")
+
     return str(val)
+
+
+def _safe_display(value):
+    value = value if value not in (False, None, "") else "—"
+    return escape(str(value))
+
+
+def _post_quality_history_to_chatter(inspection, changes):
+    """
+    Publica cambios detallados en el chatter inicial.
+    changes: list(dict(label, old, new, state))
+    """
+    if not inspection or not changes:
+        return
+
+    if inspection.env.context.get("skip_quality_history_chatter"):
+        return
+
+    items = []
+    for change in changes:
+        items.append(
+            "<li>"
+            "<b>%s</b>: "
+            "<span style='color:#6b7280;'>%s</span> "
+            "<span style='color:#9ca3af;'>→</span> "
+            "<span>%s</span>"
+            "<br/><small style='color:#6b7280;'>Estado: %s</small>"
+            "</li>"
+            % (
+                _safe_display(change.get("label")),
+                _safe_display(change.get("old")),
+                _safe_display(change.get("new")),
+                _safe_display(change.get("state")),
+            )
+        )
+
+    body = Markup(
+        "<p><b>%s</b></p><ul>%s</ul>"
+        % (
+            escape(_("Movimiento registrado en captura de calidad")),
+            "".join(items),
+        )
+    )
+
+    inspection.message_post(
+        body=body,
+        subtype_xmlid="mail.mt_comment",
+    )
 
 
 class QualityInspectionTracked(models.Model):
@@ -1324,27 +1643,45 @@ class QualityInspectionTracked(models.Model):
         History = self.env["quality.inspection.history"]
         snapshots = {}
         tracked_keys = [k for k in vals.keys() if k in TRACKED_INSPECTION_FIELDS]
+
         if tracked_keys:
             for rec in self:
                 snapshots[rec.id] = {
                     k: _format_value(rec, k) for k in tracked_keys
                 }
+
         res = super().write(vals)
+
         if tracked_keys:
             for rec in self:
                 old = snapshots.get(rec.id, {})
+                changes_for_chatter = []
+
                 for fname in tracked_keys:
                     new_val = _format_value(rec, fname)
-                    if old.get(fname, "") != new_val:
-                        label = rec._fields[fname].string or fname
-                        History.create({
-                            "inspection_id": rec.id,
-                            "field_name": fname,
-                            "field_label": label,
-                            "old_value": old.get(fname, ""),
-                            "new_value": new_val,
-                            "inspection_state_at_change": rec.state,
-                        })
+                    old_val = old.get(fname, "")
+
+                    if old_val == new_val:
+                        continue
+
+                    label = rec._fields[fname].string or fname
+                    History.create({
+                        "inspection_id": rec.id,
+                        "field_name": fname,
+                        "field_label": label,
+                        "old_value": old_val,
+                        "new_value": new_val,
+                        "inspection_state_at_change": rec.state,
+                    })
+                    changes_for_chatter.append({
+                        "label": label,
+                        "old": old_val,
+                        "new": new_val,
+                        "state": rec.state,
+                    })
+
+                _post_quality_history_to_chatter(rec, changes_for_chatter)
+
         return res
 
 
@@ -1355,32 +1692,58 @@ class QualityInspectionLineTracked(models.Model):
         History = self.env["quality.inspection.history"]
         snapshots = {}
         tracked_keys = [k for k in vals.keys() if k in TRACKED_LINE_FIELDS]
+
         if tracked_keys:
             for line in self:
                 snapshots[line.id] = {
                     k: _format_value(line, k) for k in tracked_keys
                 }
+
         res = super().write(vals)
+
         if tracked_keys:
+            changes_by_inspection = defaultdict(list)
+
             for line in self:
                 if not line.inspection_id:
                     continue
+
                 old = snapshots.get(line.id, {})
                 for fname in tracked_keys:
                     new_val = _format_value(line, fname)
-                    if old.get(fname, "") != new_val:
-                        label = line._fields[fname].string or fname
-                        History.create({
-                            "inspection_id": line.inspection_id.id,
-                            "line_id": line.id,
-                            "field_name": "%s.%s" % (line.name or "Atributo", fname),
-                            "field_label": "%s — %s" % (line.name or "", label),
-                            "old_value": old.get(fname, ""),
-                            "new_value": new_val,
-                            "inspection_state_at_change": line.inspection_id.state,
-                        })
-        return res
-```
+                    old_val = old.get(fname, "")
+
+                    if old_val == new_val:
+                        continue
+
+                    label = line._fields[fname].string or fname
+                    full_label = "%s — %s" % (line.name or "", label)
+
+                    History.create({
+                        "inspection_id": line.inspection_id.id,
+                        "line_id": line.id,
+                        "field_name": "%s.%s" % (line.name or "Atributo", fname),
+                        "field_label": full_label,
+                        "old_value": old_val,
+                        "new_value": new_val,
+                        "inspection_state_at_change": line.inspection_id.state,
+                    })
+
+                    changes_by_inspection[line.inspection_id.id].append({
+                        "label": full_label,
+                        "old": old_val,
+                        "new": new_val,
+                        "state": line.inspection_id.state,
+                    })
+
+            Inspection = self.env["quality.inspection"]
+            for inspection_id, changes in changes_by_inspection.items():
+                _post_quality_history_to_chatter(
+                    Inspection.browse(inspection_id),
+                    changes,
+                )
+
+        return res```
 
 ## ./models/quality_corrective_action.py
 ```py
@@ -2709,36 +3072,102 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
 
+# FOLIO-QM-ODOO18-074:
+# Secuencia obligatoria solicitada para impedir saltos de flujo.
 PROCESS_SEQUENCE = [
     "octagono",
     "guillotina",
     "pegado",
     "laminadora",
-    "sierras_ranuradoras",
+    "remanejo",
     "troquelado_plano",
 ]
 
-RESERVED_MEASURE_ATTRS = {
-    "largo",
-    "ancho",
-    "espesor",
-    "hexagono",
-    "hexágono",
-    "resistencia",
-    "apariencia",
-    "humedad",
-    "pegado",
-    "retiramiento",
-    "restiramiento",
-    "reticula",
-    "retícula",
-    "reticula_extendida",
-    "retícula_extendida",
-    "calibracion",
-    "calibración",
-    "engomado",
-    "alineacion",
-    "alineación",
+# FOLIO-QM-ODOO18-072 / 074:
+# Alias exactos que no se pueden capturar como atributos adicionales
+# cuando el proceso ya los captura en Medidas y Propiedades.
+RESERVED_MEASURE_FIELD_ALIASES = {
+    "largo": ("Largo", ("show_largo",)),
+    "largo_mm": ("Largo", ("show_largo",)),
+    "ancho": ("Ancho", ("show_ancho",)),
+    "ancho_mm": ("Ancho", ("show_ancho",)),
+    "espesor": ("Espesor", ("show_espesor",)),
+    "espesor_mm": ("Espesor", ("show_espesor",)),
+    "espesor_in": ("Espesor", ("show_espesor",)),
+    "hexagono": ("Hexágono", ("show_hexagono", "show_tipo_hexagono")),
+    "hexagono_tipo": ("Hexágono", ("show_hexagono", "show_tipo_hexagono")),
+    "tipo_hexagono": ("Tipo de Hexágono", ("show_hexagono", "show_tipo_hexagono")),
+    "tipo_de_hexagono": ("Tipo de Hexágono", ("show_hexagono", "show_tipo_hexagono")),
+    "resistencia": ("Resistencia", ("show_resistencia",)),
+    "resistencia_lbf": ("Resistencia", ("show_resistencia",)),
+    "apariencia": ("Apariencia", ("show_apariencia",)),
+    "humedad": ("Humedad", ("show_humedad",)),
+    "humedad_pct": ("Humedad", ("show_humedad",)),
+    "porcentaje_humedad": ("Humedad", ("show_humedad",)),
+    "pegado": ("Resultado de Pegado", ("show_pegado",)),
+    "resultado_pegado": ("Resultado de Pegado", ("show_pegado",)),
+    "resultado_de_pegado": ("Resultado de Pegado", ("show_pegado",)),
+    "retiramiento": ("Retiramiento", ("show_retiramiento",)),
+    "restiramiento": ("Retiramiento", ("show_retiramiento",)),
+    "reticula": ("Retícula", ("show_retiramiento",)),
+    "reticula_extendida": ("Retícula Extendida", ("show_retiramiento",)),
+    "calibracion": ("Calibración", ("show_calibracion",)),
+    "engomado": ("Engomado", ("show_engomado",)),
+    "alineacion": ("Alineación", ("show_alineacion",)),
+}
+
+# Compatibilidad con código anterior.
+RESERVED_MEASURE_ATTRS = set(RESERVED_MEASURE_FIELD_ALIASES)
+
+# FOLIO-QM-ODOO18-070 / FOLIO-QM-ODOO18-071:
+# Procesos que solo aceptan atributos adicionales binarios Cumple/No Cumple.
+# No permiten N/A, OK/NO OK/N/A, atributos de selección ni atributos numéricos.
+STRICT_BINARY_RESULT_PROCESS_CODES = {
+    "acabado_empaque",
+    "impresion",
+}
+
+# FOLIO-QM-ODOO18-075:
+# En Octágono estos conceptos son campos nativos obligatorios o no aplican
+# en el proceso; no deben duplicarse como atributos adicionales.
+OCTAGONO_RESERVED_FIELD_ALIASES = {
+    "ancho": "Ancho",
+    "ancho_mm": "Ancho",
+    "hexagono": "Hexágono",
+    "hexagono_tipo": "Hexágono",
+    "tipo_hexagono": "Hexágono",
+    "tipo_de_hexagono": "Hexágono",
+    "numero_corrida": "Número de Corrida",
+    "numero_de_corrida": "Número de Corrida",
+    "corrida": "Número de Corrida",
+    "papel": "Papel",
+    "ancho_papel": "Ancho de Papel",
+    "papel_ancho": "Ancho de Papel",
+    "gramaje": "Gramaje de Papel",
+    "gramaje_papel": "Gramaje de Papel",
+    "papel_gramaje": "Gramaje de Papel",
+    "proveedor": "Proveedor de Papel",
+    "proveedor_papel": "Proveedor de Papel",
+    "proveedor_de_rollos": "Proveedor de Rollos",
+    "adhesivo": "Adhesivo",
+    "lote_1": "Lote 1 Adhesivo",
+    "lote1": "Lote 1 Adhesivo",
+    "adhesivo_lote1": "Lote 1 Adhesivo",
+    "lote_2": "Lote 2 Adhesivo",
+    "lote2": "Lote 2 Adhesivo",
+    "adhesivo_lote2": "Lote 2 Adhesivo",
+    "calibracion": "Calibración",
+    "engomado": "Engomado",
+    "alineacion": "Alineación",
+    "corte_guillotina": "Corte de Guillotina",
+    "corte_de_guillotina": "Corte de Guillotina",
+    "retiramiento": "Retiramiento no aplica en Octágono",
+    "restiramiento": "Retiramiento no aplica en Octágono",
+    "reticula": "Retiramiento no aplica en Octágono",
+    "reticula_extendida": "Retiramiento no aplica en Octágono",
+    "espesor": "Espesor no aplica en Octágono",
+    "espesor_mm": "Espesor no aplica en Octágono",
+    "espesor_in": "Espesor no aplica en Octágono",
 }
 
 
@@ -2747,6 +3176,30 @@ def _slug(value):
     value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
     value = re.sub(r"[^a-zA-Z0-9]+", "_", value.lower()).strip("_")
     return value
+
+
+def _reserved_measure_label_for_inspection(inspection, normalized_key):
+    if not inspection or not normalized_key:
+        return False
+
+    # FOLIO-QM-ODOO18-075:
+    # Octágono tiene una matriz fija de captura. Estos conceptos no deben
+    # aparecer como atributos adicionales, aunque la configuración legacy
+    # del proceso aún no haya sido actualizada en la base.
+    if inspection.process_code == "octagono":
+        oct_label = OCTAGONO_RESERVED_FIELD_ALIASES.get(normalized_key)
+        if oct_label:
+            return oct_label
+
+    alias = RESERVED_MEASURE_FIELD_ALIASES.get(normalized_key)
+    if not alias:
+        return False
+
+    label, flag_names = alias
+    if any(getattr(inspection, flag_name, False) for flag_name in flag_names):
+        return label
+
+    return False
 
 
 class QualityProcessTypeHardening(models.Model):
@@ -2776,6 +3229,10 @@ class QualityProcessTypeHardening(models.Model):
 
 class QualityAttributeTemplateHardening(models.Model):
     _inherit = "quality.attribute.template"
+
+    # FOLIO-QM-ODOO18-075: soporta rangos finos como 0.0010 en plantillas numéricas.
+    min_value = fields.Float("Valor Mínimo", digits=(16, 4))
+    max_value = fields.Float("Valor Máximo", digits=(16, 4))
 
     normalized_name = fields.Char(
         "Nombre Normalizado",
@@ -2809,9 +3266,95 @@ class QualityAttributeTemplateHardening(models.Model):
         for rec in self:
             rec.normalized_name = _slug(rec.name)
 
+    def _target_process_is_strict_binary(self, vals=None):
+        self.ensure_one()
+        vals = vals or {}
+
+        if "process_type_id" in vals:
+            process = (
+                self.env["quality.process.type"].browse(vals["process_type_id"])
+                if vals.get("process_type_id")
+                else False
+            )
+        else:
+            process = self.process_type_id
+
+        return bool(process and process.code in STRICT_BINARY_RESULT_PROCESS_CODES)
+
+    def _normalize_template_vals_for_strict_binary(self, vals):
+        vals = dict(vals or {})
+        vals.update({
+            "attribute_type": "boolean",
+            "capture_zone": "additional",
+            "result_mode": "cumple",
+            "allow_zero": False,
+            "min_value": 0.0,
+            "max_value": 0.0,
+            "unit": False,
+            "selection_options": False,
+        })
+        return vals
+
+    @api.onchange("process_type_id", "attribute_type", "result_mode")
+    def _onchange_strict_binary_template(self):
+        for rec in self:
+            if rec.process_type_id and rec.process_type_id.code in STRICT_BINARY_RESULT_PROCESS_CODES:
+                # FOLIO-QM-ODOO18-071: Impresión y Acabado no permiten configurar OK/NO OK/N/A, selección ni numéricos.
+                rec.attribute_type = "boolean"
+                rec.capture_zone = "additional"
+                rec.result_mode = "cumple"
+                rec.allow_zero = False
+                rec.min_value = 0.0
+                rec.max_value = 0.0
+                rec.unit = False
+                rec.selection_options = False
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        clean_vals_list = []
+        Process = self.env["quality.process.type"]
+
+        for vals in vals_list:
+            vals = dict(vals or {})
+            process = (
+                Process.browse(vals["process_type_id"])
+                if vals.get("process_type_id")
+                else False
+            )
+            if process and process.code in STRICT_BINARY_RESULT_PROCESS_CODES:
+                vals = self._normalize_template_vals_for_strict_binary(vals)
+            clean_vals_list.append(vals)
+
+        return super().create(clean_vals_list)
+
+    def write(self, vals):
+        vals = dict(vals or {})
+        if not vals:
+            return super().write(vals)
+
+        strict_records = self.filtered(lambda rec: rec._target_process_is_strict_binary(vals))
+        other_records = self - strict_records
+
+        result = True
+        if other_records:
+            result = super(QualityAttributeTemplateHardening, other_records).write(vals) and result
+
+        if strict_records:
+            strict_vals = self._normalize_template_vals_for_strict_binary(vals)
+            result = super(QualityAttributeTemplateHardening, strict_records).write(strict_vals) and result
+
+        return result
+
 
 class QualityInspectionLineHardening(models.Model):
     _inherit = "quality.inspection.line"
+
+    # FOLIO-QM-ODOO18-075:
+    # Permite capturas finas como 0.0010 en calibración sin que la lista
+    # editable ni los reportes redondeen visualmente a cero.
+    value_float = fields.Float("Valor Numérico", digits=(16, 4))
+    min_value = fields.Float("Mínimo", digits=(16, 4))
+    max_value = fields.Float("Máximo", digits=(16, 4))
 
     normalized_name = fields.Char(
         "Nombre Normalizado",
@@ -2867,10 +3410,262 @@ class QualityInspectionLineHardening(models.Model):
     )
     allow_zero = fields.Boolean("Permitir cero")
 
+    # FOLIO-QM-ODOO18-070 / FOLIO-QM-ODOO18-071:
+    # Permite que vistas, validaciones y reportes identifiquen líneas pertenecientes
+    # a procesos estrictamente Cumple/No Cumple.
+    process_code = fields.Char(
+        related="inspection_id.process_code",
+        store=True,
+        readonly=True,
+    )
+    strict_binary_result = fields.Boolean(
+        compute="_compute_strict_binary_result",
+        store=False,
+    )
+
+    def init(self):
+        """
+        FOLIO-QM-ODOO18-071:
+        Normaliza líneas existentes de Impresión y Acabado/Empaque durante upgrade.
+        Esto corrige capturas previas donde las líneas quedaron como OK/NO OK/N/A,
+        numéricas o con Resultado = N/A.
+        """
+        super().init()
+        cr = self.env.cr
+
+        cr.execute("""
+            SELECT EXISTS (
+                SELECT 1
+                  FROM information_schema.tables
+                 WHERE table_name = 'quality_inspection_line'
+            )
+        """)
+        line_table_exists = cr.fetchone()[0]
+
+        cr.execute("""
+            SELECT EXISTS (
+                SELECT 1
+                  FROM information_schema.tables
+                 WHERE table_name = 'quality_inspection'
+            )
+        """)
+        inspection_table_exists = cr.fetchone()[0]
+
+        if not line_table_exists or not inspection_table_exists:
+            return
+
+        cr.execute("""
+            SELECT column_name
+              FROM information_schema.columns
+             WHERE table_name = 'quality_inspection_line'
+        """)
+        line_columns = {row[0] for row in cr.fetchall()}
+
+        required_line_columns = {
+            "inspection_id",
+            "attribute_type",
+            "capture_zone",
+            "result_mode",
+            "value_float",
+            "value_char",
+            "value_cumple",
+            "value_ok",
+            "result",
+            "min_value",
+            "max_value",
+            "unit",
+            "allow_zero",
+        }
+        if not required_line_columns.issubset(line_columns):
+            return
+
+        cr.execute("""
+            SELECT column_name
+              FROM information_schema.columns
+             WHERE table_name = 'quality_inspection'
+        """)
+        inspection_columns = {row[0] for row in cr.fetchall()}
+
+        if "process_code" not in inspection_columns:
+            return
+
+        cr.execute("""
+            UPDATE quality_inspection_line AS line
+               SET attribute_type = 'boolean',
+                   capture_zone = 'additional',
+                   result_mode = 'cumple',
+                   value_float = 0,
+                   value_char = NULL,
+                   value_ok = NULL,
+                   min_value = 0,
+                   max_value = 0,
+                   unit = NULL,
+                   allow_zero = FALSE,
+                   value_cumple = CASE
+                       WHEN line.value_cumple IN ('cumple', 'no_cumple') THEN line.value_cumple
+                       WHEN line.result IN ('cumple', 'no_cumple') THEN line.result
+                       ELSE NULL
+                   END,
+                   result = CASE
+                       WHEN line.value_cumple IN ('cumple', 'no_cumple') THEN line.value_cumple
+                       WHEN line.result IN ('cumple', 'no_cumple') THEN line.result
+                       ELSE NULL
+                   END
+              FROM quality_inspection AS inspection
+             WHERE line.inspection_id = inspection.id
+               AND inspection.process_code IN ('acabado_empaque', 'impresion')
+        """)
+
+    @api.depends("inspection_id.process_code")
+    def _compute_strict_binary_result(self):
+        for line in self:
+            line.strict_binary_result = (
+                line.inspection_id.process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+                if line.inspection_id
+                else False
+            )
+
+    def _is_strict_binary_result_line(self):
+        self.ensure_one()
+        return bool(
+            self.inspection_id
+            and self.inspection_id.process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+        )
+
+    def _strict_binary_process_display_name(self):
+        self.ensure_one()
+        if self.inspection_id and self.inspection_id.process_type_id:
+            return self.inspection_id.process_type_id.display_name
+        return _("Este proceso")
+
+    def _normalize_vals_for_strict_binary_line(self, vals, reset_missing=False):
+        vals = dict(vals or {})
+
+        vals.update({
+            "attribute_type": "boolean",
+            "capture_zone": "additional",
+            "result_mode": "cumple",
+            "value_ok": False,
+            "value_float": 0.0,
+            "value_char": False,
+            "min_value": 0.0,
+            "max_value": 0.0,
+            "unit": False,
+            "allow_zero": False,
+        })
+
+        if reset_missing or "value_cumple" in vals:
+            if vals.get("value_cumple") not in ("cumple", "no_cumple"):
+                vals["value_cumple"] = False
+
+        if reset_missing or "result" in vals:
+            if vals.get("result") not in ("cumple", "no_cumple"):
+                vals["result"] = False
+
+        if vals.get("value_cumple") in ("cumple", "no_cumple"):
+            vals["result"] = vals["value_cumple"]
+        elif vals.get("result") in ("cumple", "no_cumple"):
+            vals["value_cumple"] = vals["result"]
+
+        return vals
+
+    def _clear_strict_na_values_hardening(self):
+        for line in self:
+            if not line._is_strict_binary_result_line():
+                continue
+
+            vals = {}
+            if line.attribute_type != "boolean":
+                vals["attribute_type"] = "boolean"
+            if line.capture_zone != "additional":
+                vals["capture_zone"] = "additional"
+            if line.result_mode != "cumple":
+                vals["result_mode"] = "cumple"
+            if line.value_ok:
+                vals["value_ok"] = False
+            if line.value_float:
+                vals["value_float"] = 0.0
+            if line.value_char:
+                vals["value_char"] = False
+            if line.min_value:
+                vals["min_value"] = 0.0
+            if line.max_value:
+                vals["max_value"] = 0.0
+            if line.unit:
+                vals["unit"] = False
+            if line.allow_zero:
+                vals["allow_zero"] = False
+
+            if line.value_cumple == "na":
+                vals["value_cumple"] = False
+            if line.result == "na":
+                vals["result"] = False
+
+            if line.value_cumple in ("cumple", "no_cumple") and line.result != line.value_cumple:
+                vals["result"] = line.value_cumple
+            elif line.result in ("cumple", "no_cumple") and line.value_cumple != line.result:
+                vals["value_cumple"] = line.result
+
+            if vals:
+                line.with_context(skip_strict_binary_cleanup=True).write(vals)
+
     @api.depends("name")
     def _compute_normalized_name(self):
         for line in self:
             line.normalized_name = _slug(line.name)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        clean_vals_list = []
+        Inspection = self.env["quality.inspection"]
+
+        for vals in vals_list:
+            vals = dict(vals or {})
+            inspection = (
+                Inspection.browse(vals["inspection_id"])
+                if vals.get("inspection_id")
+                else False
+            )
+            if inspection and inspection.process_code in STRICT_BINARY_RESULT_PROCESS_CODES:
+                vals = self._normalize_vals_for_strict_binary_line(vals, reset_missing=True)
+            clean_vals_list.append(vals)
+
+        records = super().create(clean_vals_list)
+        records._clear_strict_na_values_hardening()
+        return records
+
+    def write(self, vals):
+        vals = dict(vals or {})
+        if not vals:
+            return super().write(vals)
+
+        if not self.env.context.get("skip_strict_binary_cleanup"):
+            writes_na = any(
+                vals.get(field_name) == "na"
+                for field_name in ("value_cumple", "value_ok", "result")
+            )
+            if writes_na:
+                for line in self:
+                    if line._is_strict_binary_result_line():
+                        raise ValidationError(_(
+                            "%s no permite N/A. Seleccione únicamente Cumple o No Cumple."
+                        ) % line._strict_binary_process_display_name())
+
+        strict_lines = self.filtered(lambda line: line._is_strict_binary_result_line())
+        other_lines = self - strict_lines
+
+        res = True
+        if other_lines:
+            res = super(QualityInspectionLineHardening, other_lines).write(vals) and res
+
+        if strict_lines:
+            strict_vals = self._normalize_vals_for_strict_binary_line(vals, reset_missing=False)
+            res = super(QualityInspectionLineHardening, strict_lines).write(strict_vals) and res
+
+        if not self.env.context.get("skip_strict_binary_cleanup"):
+            self._clear_strict_na_values_hardening()
+
+        return res
 
     @api.onchange("attribute_template_id")
     def _onchange_template_hardening(self):
@@ -2888,9 +3683,73 @@ class QualityInspectionLineHardening(models.Model):
             line.unit = template.unit
             line.allow_zero = template.allow_zero
 
+            if line._is_strict_binary_result_line():
+                # FOLIO-QM-ODOO18-071: Impresión y Acabado se fuerzan a Cumple/No Cumple.
+                line.attribute_type = "boolean"
+                line.capture_zone = "additional"
+                line.result_mode = "cumple"
+                line.value_ok = False
+                line.value_float = 0.0
+                line.value_char = False
+                line.min_value = 0.0
+                line.max_value = 0.0
+                line.unit = False
+                line.allow_zero = False
+                if line.value_cumple == "na":
+                    line.value_cumple = False
+                if line.result == "na":
+                    line.result = False
+
+    @api.onchange("attribute_type", "result_mode")
+    def _onchange_strict_binary_attribute_config(self):
+        for line in self:
+            if not line._is_strict_binary_result_line():
+                continue
+
+            warning = False
+            if line.attribute_type != "boolean" or line.result_mode != "cumple":
+                warning = True
+
+            line.attribute_type = "boolean"
+            line.capture_zone = "additional"
+            line.result_mode = "cumple"
+            line.value_ok = False
+            line.value_float = 0.0
+            line.value_char = False
+            line.min_value = 0.0
+            line.max_value = 0.0
+            line.unit = False
+            line.allow_zero = False
+            if line.value_cumple == "na":
+                line.value_cumple = False
+            if line.result == "na":
+                line.result = False
+
+            if warning:
+                return {
+                    "warning": {
+                        "title": _("Configuración no permitida"),
+                        "message": _(
+                            "%s solo permite atributos adicionales de tipo Cumple/No Cumple."
+                        ) % line._strict_binary_process_display_name(),
+                    }
+                }
+
     @api.onchange("value_float", "min_value", "max_value", "attribute_type")
     def _onchange_evaluate_result_hardening(self):
         for line in self:
+            if line._is_strict_binary_result_line():
+                if line.attribute_type != "boolean":
+                    line.attribute_type = "boolean"
+                    line.capture_zone = "additional"
+                    line.result_mode = "cumple"
+                    line.value_float = 0.0
+                    line.min_value = 0.0
+                    line.max_value = 0.0
+                    line.unit = False
+                    line.result = line.value_cumple if line.value_cumple in ("cumple", "no_cumple") else False
+                continue
+
             if line.attribute_type != "float":
                 continue
 
@@ -2909,11 +3768,40 @@ class QualityInspectionLineHardening(models.Model):
     def _onchange_value_cumple_hardening(self):
         for line in self:
             if line.attribute_type == "boolean" and line.result_mode == "cumple":
-                line.result = line.value_cumple or "na"
+                if line._is_strict_binary_result_line():
+                    if line.value_cumple == "na":
+                        line.value_cumple = False
+                        line.result = False
+                        return {
+                            "warning": {
+                                "title": _("Valor no permitido"),
+                                "message": _(
+                                    "%s no permite N/A. Seleccione Cumple o No Cumple."
+                                ) % line._strict_binary_process_display_name(),
+                            }
+                        }
+                    line.result = line.value_cumple or False
+                else:
+                    line.result = line.value_cumple or "na"
 
     @api.onchange("value_ok", "attribute_type", "result_mode")
     def _onchange_value_ok_hardening(self):
         for line in self:
+            if line._is_strict_binary_result_line():
+                if line.value_ok:
+                    line.value_ok = False
+                    line.result_mode = "cumple"
+                    line.attribute_type = "boolean"
+                    return {
+                        "warning": {
+                            "title": _("Modo no permitido"),
+                            "message": _(
+                                "%s no permite OK/NO OK/N/A. Use únicamente Cumple o No Cumple."
+                            ) % line._strict_binary_process_display_name(),
+                        }
+                    }
+                continue
+
             if line.attribute_type == "boolean" and line.result_mode == "ok":
                 line.result = line.value_ok or "na"
 
@@ -2947,9 +3835,49 @@ class QualityInspectionLineHardening(models.Model):
                     % line.name
                 )
 
+    @api.constrains("name", "normalized_name", "capture_zone", "inspection_id")
+    def _check_reserved_measure_attribute_line_hardening(self):
+        """
+        FOLIO-QM-ODOO18-072:
+        Evita capturar en Atributos Adicionales conceptos que ya existen
+        en Medidas y Propiedades del proceso actual.
+        """
+        for line in self:
+            if not line.inspection_id or line.capture_zone != "additional":
+                continue
+
+            key = line.normalized_name or _slug(line.name)
+            duplicated_label = _reserved_measure_label_for_inspection(
+                line.inspection_id,
+                key,
+            )
+            if duplicated_label:
+                raise ValidationError(_(
+                    "No puede capturar '%s' como Atributo Adicional porque "
+                    "ya existe como campo nativo del proceso o no aplica en este proceso."
+                ) % duplicated_label)
+
+    @api.constrains("attribute_type", "result_mode", "capture_zone", "inspection_id")
+    def _check_strict_binary_attribute_config(self):
+        for line in self:
+            if not line._is_strict_binary_result_line():
+                continue
+
+            if (
+                line.attribute_type != "boolean"
+                or line.result_mode != "cumple"
+                or line.capture_zone != "additional"
+            ):
+                raise ValidationError(_(
+                    "%s solo permite atributos adicionales de tipo Cumple/No Cumple."
+                ) % line._strict_binary_process_display_name())
+
     @api.constrains("value_float", "attribute_type", "allow_zero", "result")
     def _check_zero_numeric_hardening(self):
         for line in self:
+            if line._is_strict_binary_result_line():
+                continue
+
             parent_state = (
                 line.inspection_id.state
                 if line.inspection_id
@@ -3026,6 +3954,27 @@ class QualityInspectionTroqueladoHardening(models.Model):
 class QualityInspectionHardening(models.Model):
     _inherit = "quality.inspection"
 
+    # FOLIO-QM-ODOO18-075:
+    # Leyendas se trasladan a la vista para evitar los íconos de interrogación
+    # que no aportaban acción al usuario final.
+    folio = fields.Char("Folio de Producción", required=True, help="")
+    code = fields.Char("Código de Producto", required=True, help="")
+
+    # FOLIO-QM-ODOO18-072 / 075:
+    # Espesor no aplica en Octágono; se conserva para otros procesos.
+    espesor = fields.Float("Espesor", digits=(16, 2))
+    oct_espesor = fields.Float("Espesor Octágono (mm)", digits=(16, 2))
+
+    # FOLIO-QM-ODOO18-075:
+    # Octágono requiere precisión visual y de persistencia en calibración.
+    ancho = fields.Float("Ancho (mm)", digits=(16, 2))
+    oct_ancho = fields.Float("Ancho Octágono (mm)", digits=(16, 2))
+    calibracion = fields.Float("Calibración", digits=(16, 4))
+    papel_ancho = fields.Float("Ancho del Papel", digits=(16, 2))
+    papel_gramaje = fields.Float("Gramaje del Papel", digits=(16, 2))
+    oct_retiramiento = fields.Float("Retiramiento (cm) - Legacy", digits=(16, 2))
+    reticula_extendida = fields.Float("Retiramiento / Retícula Extendida (cm)", digits=(16, 2))
+
     # FOLIO-QM-ODOO18-019: se evita redeclarar campos base con otro tipo
     # en hardening; solo se agregan campos nuevos o relacionados.
     capture_mode = fields.Selection(
@@ -3035,6 +3984,138 @@ class QualityInspectionHardening(models.Model):
     )
     date_started = fields.Datetime("Fecha de Inicio", readonly=True)
     date_closed = fields.Datetime("Fecha de Cierre", readonly=True)
+
+    # FOLIO-QM-ODOO18-074: campos informativos para bloquear/habilitar captura por flujo.
+    previous_process_type_id = fields.Many2one(
+        "quality.process.type",
+        string="Proceso Previo Requerido",
+        compute="_compute_process_gate_hardening",
+        store=False,
+    )
+    previous_process_inspection_id = fields.Many2one(
+        "quality.inspection",
+        string="Inspección Previa Liberada",
+        compute="_compute_process_gate_hardening",
+        store=False,
+    )
+    process_gate_open = fields.Boolean(
+        "Ruta Habilitada",
+        compute="_compute_process_gate_hardening",
+        store=False,
+    )
+    process_gate_message = fields.Char(
+        "Mensaje de Bloqueo de Ruta",
+        compute="_compute_process_gate_hardening",
+        store=False,
+    )
+
+    def _normalize_inspection_vals_hardening(self, vals):
+        vals = dict(vals or {})
+        if "espesor" in vals and vals.get("espesor") not in (False, None, ""):
+            vals["espesor"] = round(float(vals["espesor"]), 2)
+        if "calibracion" in vals and vals.get("calibracion") not in (False, None, ""):
+            vals["calibracion"] = round(float(vals["calibracion"]), 4)
+        return vals
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        clean_vals_list = [
+            self._normalize_inspection_vals_hardening(vals)
+            for vals in vals_list
+        ]
+        records = super().create(clean_vals_list)
+        records._cleanup_octagono_not_applicable_hardening()
+        return records
+
+    def write(self, vals):
+        vals = self._normalize_inspection_vals_hardening(vals)
+        res = super().write(vals)
+        if not self.env.context.get("skip_octagono_cleanup"):
+            self._cleanup_octagono_not_applicable_hardening()
+        return res
+
+    def _cleanup_octagono_not_applicable_hardening(self):
+        """
+        FOLIO-QM-ODOO18-075:
+        Octágono no debe conservar Espesor ni Retiramiento. Si quedaron valores
+        legacy por capturas previas o por una configuración antigua, se limpian.
+        """
+        for rec in self.filtered(lambda item: item.process_code == "octagono"):
+            vals = {}
+            if rec.espesor:
+                vals["espesor"] = 0.0
+            if getattr(rec, "oct_espesor", 0.0):
+                vals["oct_espesor"] = 0.0
+            if getattr(rec, "oct_retiramiento", 0.0):
+                vals["oct_retiramiento"] = 0.0
+            if getattr(rec, "reticula_extendida", 0.0):
+                vals["reticula_extendida"] = 0.0
+            if vals:
+                super(QualityInspectionHardening, rec.with_context(skip_octagono_cleanup=True)).write(vals)
+
+    @api.onchange("espesor")
+    def _onchange_round_espesor_hardening(self):
+        for rec in self:
+            if rec.espesor not in (False, None):
+                rec.espesor = round(rec.espesor, 2)
+
+    @api.onchange("calibracion")
+    def _onchange_round_calibracion_hardening(self):
+        for rec in self:
+            if rec.calibracion not in (False, None):
+                rec.calibracion = round(rec.calibracion, 4)
+
+    @api.onchange("process_type_id")
+    def _onchange_process_type_octagono_hardening(self):
+        for rec in self:
+            if rec.process_type_id and rec.process_type_id.code == "octagono":
+                # FOLIO-QM-ODOO18-075: Espesor y Retiramiento no aplican en Octágono.
+                rec.espesor = 0.0
+                rec.oct_espesor = 0.0
+                rec.oct_retiramiento = 0.0
+                rec.reticula_extendida = 0.0
+
+    @api.onchange("product_id")
+    def _onchange_product_code_hardening(self):
+        for rec in self:
+            if rec.product_id and rec.product_id.default_code:
+                rec.code = rec.product_id.default_code
+
+    @api.depends(
+        "process_type_id",
+        "production_order_id",
+        "lot_id",
+        "folio",
+        "product_id",
+    )
+    def _compute_process_gate_hardening(self):
+        Process = self.env["quality.process.type"].sudo()
+        for rec in self:
+            previous_code = rec._get_previous_process_code_hardening()
+            rec.previous_process_type_id = False
+            rec.previous_process_inspection_id = False
+            rec.process_gate_open = True
+            rec.process_gate_message = False
+
+            if not previous_code:
+                continue
+
+            previous_process = Process.search([
+                ("code", "=", previous_code),
+                "|",
+                ("company_id", "=", rec.company_id.id),
+                ("company_id", "=", False),
+            ], limit=1)
+            rec.previous_process_type_id = previous_process
+
+            previous_inspection = rec._find_previous_inspection_hardening(previous_code)
+            if previous_inspection:
+                rec.previous_process_inspection_id = previous_inspection
+                rec.process_gate_open = True
+                continue
+
+            rec.process_gate_open = False
+            rec.process_gate_message = rec._build_previous_process_block_message_hardening(previous_code)
 
     @api.constrains("sin_supervisor", "supervisor_id")
     def _check_supervisor_or_no_supervisor(self):
@@ -3051,8 +4132,9 @@ class QualityInspectionHardening(models.Model):
 
     @api.onchange("production_order_id")
     def _onchange_production_order(self):
-        # FOLIO-QM-ODOO18-020: se consolida el onchange para no duplicar lógica
-        # con el archivo base y asegurar producto, lote y cliente desde la OP.
+        # FOLIO-QM-ODOO18-020 / 075:
+        # Se consolida el enlace OP -> Producto/Lote/Cliente/Código para que
+        # Octágono no dependa de seleccionar productos al azar.
         if not self.production_order_id:
             return
 
@@ -3060,6 +4142,9 @@ class QualityInspectionHardening(models.Model):
         if production.product_id:
             self.product_id = production.product_id
             self.code = production.product_id.default_code or self.code
+
+        if not self.folio and production.name:
+            self.folio = production.name
 
         if getattr(production, "lot_producing_id", False):
             self.lot_id = production.lot_producing_id
@@ -3074,10 +4159,14 @@ class QualityInspectionHardening(models.Model):
 
     @api.onchange("process_type_id", "product_id")
     def _onchange_load_attribute_templates(self):
-        # FOLIO-QM-ODOO18-021: se consolida la carga de atributos para evitar
-        # que dos onchanges generen líneas duplicadas o incompletas.
+        # FOLIO-QM-ODOO18-070 / FOLIO-QM-ODOO18-071:
+        # Acabado y Empaque e Impresión solo cargan atributos booleanos Cumple/No Cumple
+        # y nunca inicializan líneas con N/A.
         if not self.process_type_id and not self.product_id:
             return
+
+        process_code = self.process_type_id.code or self.process_code
+        strict_binary = process_code in STRICT_BINARY_RESULT_PROCESS_CODES
 
         templates = self.env["quality.attribute.template"]
         if self.process_type_id:
@@ -3093,6 +4182,9 @@ class QualityInspectionHardening(models.Model):
                 ]
             )
 
+        if strict_binary:
+            templates = templates.filtered(lambda template: template.attribute_type == "boolean")
+
         if not templates:
             return
 
@@ -3104,6 +4196,30 @@ class QualityInspectionHardening(models.Model):
                 continue
 
             seen.add(key)
+
+            if strict_binary:
+                value_cumple = False
+                value_ok = False
+                result = False
+                attribute_type = "boolean"
+                result_mode = "cumple"
+                capture_zone = "additional"
+                min_value = 0.0
+                max_value = 0.0
+                unit = False
+                allow_zero = False
+            else:
+                value_cumple = "na"
+                value_ok = "na"
+                result = "na"
+                attribute_type = template.attribute_type
+                result_mode = template.result_mode
+                capture_zone = template.capture_zone
+                min_value = template.min_value
+                max_value = template.max_value
+                unit = template.unit
+                allow_zero = template.allow_zero
+
             lines.append(
                 (
                     0,
@@ -3111,69 +4227,172 @@ class QualityInspectionHardening(models.Model):
                     {
                         "attribute_template_id": template.id,
                         "name": template.name,
-                        "attribute_type": template.attribute_type,
-                        "capture_zone": template.capture_zone,
-                        "result_mode": template.result_mode,
-                        "min_value": template.min_value,
-                        "max_value": template.max_value,
-                        "unit": template.unit,
-                        "allow_zero": template.allow_zero,
+                        "attribute_type": attribute_type,
+                        "capture_zone": capture_zone,
+                        "result_mode": result_mode,
+                        "min_value": min_value,
+                        "max_value": max_value,
+                        "unit": unit,
+                        "allow_zero": allow_zero,
                         "sequence": template.sequence,
-                        "value_cumple": "na",
-                        "value_ok": "na",
-                        "result": "na",
+                        "value_cumple": value_cumple,
+                        "value_ok": value_ok,
+                        "result": result,
                     },
                 )
             )
 
         self.line_ids = lines
 
-    def _check_previous_process_hardening(self):
-        for rec in self:
-            code = rec.process_code
-            if code not in PROCESS_SEQUENCE:
-                continue
+    def _get_previous_process_code_hardening(self):
+        self.ensure_one()
+        code = self.process_code
+        if code not in PROCESS_SEQUENCE:
+            return False
 
-            index = PROCESS_SEQUENCE.index(code)
-            if index == 0:
-                continue
+        index = PROCESS_SEQUENCE.index(code)
+        if index <= 0:
+            return False
 
-            previous = PROCESS_SEQUENCE[index - 1]
-            previous_inspection = self.search(
+        return PROCESS_SEQUENCE[index - 1]
+
+    def _get_process_context_domains_hardening(self):
+        self.ensure_one()
+        domains = []
+
+        if self.production_order_id:
+            domains.append((
+                [("production_order_id", "=", self.production_order_id.id)],
+                _("orden de producción %s") % self.production_order_id.display_name,
+            ))
+
+        if self.lot_id:
+            domains.append((
+                [("lot_id", "=", self.lot_id.id)],
+                _("lote %s") % (self.lot_id.display_name or "—"),
+            ))
+
+        if self.folio and self.product_id:
+            domains.append((
                 [
-                    ("lot_id", "=", rec.lot_id.id),
-                    ("process_code", "=", previous),
-                    ("state", "=", "aceptado"),
+                    ("folio", "=", self.folio),
+                    ("product_id", "=", self.product_id.id),
                 ],
+                _("folio %s y producto %s") % (
+                    self.folio,
+                    self.product_id.display_name,
+                ),
+            ))
+
+        return domains
+
+    def _find_previous_inspection_hardening(self, previous_code, states=("aceptado",)):
+        self.ensure_one()
+        Inspection = self.env["quality.inspection"].sudo()
+
+        base_domain = [
+            ("id", "!=", self.id),
+            ("process_code", "=", previous_code),
+            ("state", "in", list(states)),
+        ]
+
+        for context_domain, _context_label in self._get_process_context_domains_hardening():
+            found = Inspection.search(
+                base_domain + context_domain,
+                order="date_inspection desc, id desc",
                 limit=1,
             )
+            if found:
+                return found
 
-            if not previous_inspection:
-                raise UserError(
-                    _(
-                        "Secuencia bloqueada: antes de liberar '%s' debe estar "
-                        "liberado el proceso previo '%s' para el lote %s."
-                    )
-                    % (
-                        rec.process_type_id.name,
-                        previous.replace("_", " ").title(),
-                        rec.lot_id.name or "—",
-                    )
+        return Inspection.browse()
+
+    def _build_previous_process_block_message_hardening(self, previous_code):
+        self.ensure_one()
+
+        Process = self.env["quality.process.type"].sudo()
+        previous_process = Process.search([
+            ("code", "=", previous_code),
+            "|",
+            ("company_id", "=", self.company_id.id),
+            ("company_id", "=", False),
+        ], limit=1)
+
+        previous_name = previous_process.display_name or previous_code.replace("_", " ").title()
+        current_name = self.process_type_id.display_name or self.process_code or _("este proceso")
+
+        blocking_previous = self._find_previous_inspection_hardening(
+            previous_code,
+            states=("borrador", "en_proceso", "retenido", "rechazado"),
+        )
+
+        if blocking_previous:
+            state_label = dict(blocking_previous._fields["state"].selection).get(
+                blocking_previous.state,
+                blocking_previous.state,
+            )
+            if blocking_previous.state in ("retenido", "rechazado"):
+                return _(
+                    "Secuencia bloqueada: el proceso previo '%s' existe como %s "
+                    "pero está en estado '%s'. No se permite movimiento ni captura "
+                    "hasta que Producción marque la corrección como hecha y Calidad "
+                    "lo libere."
+                ) % (
+                    previous_name,
+                    blocking_previous.name,
+                    state_label,
                 )
+
+            return _(
+                "Secuencia bloqueada: el proceso previo '%s' existe como %s, "
+                "pero aún no está liberado. Debe quedar Aceptado/Liberado antes "
+                "de iniciar o liberar '%s'."
+            ) % (
+                previous_name,
+                blocking_previous.name,
+                current_name,
+            )
+
+        context_labels = [
+            label for _domain, label in self._get_process_context_domains_hardening()
+        ]
+        context_text = ", ".join(context_labels) if context_labels else _("la misma orden/lote/folio")
+
+        return _(
+            "Secuencia bloqueada: antes de iniciar o liberar '%s' debe existir "
+            "una inspección aceptada/liberada del proceso previo '%s' para %s."
+        ) % (
+            current_name,
+            previous_name,
+            context_text,
+        )
+
+    def _check_previous_process_hardening(self):
+        for rec in self:
+            previous_code = rec._get_previous_process_code_hardening()
+            if not previous_code:
+                continue
+
+            previous_inspection = rec._find_previous_inspection_hardening(previous_code)
+            if not previous_inspection:
+                raise UserError(rec._build_previous_process_block_message_hardening(previous_code))
+
+        return True
 
     def _check_reserved_duplicate_attributes_hardening(self):
         for rec in self:
             duplicates = []
-            for line in rec.line_ids:
+            for line in rec.line_ids.filtered(lambda item: item.capture_zone == "additional"):
                 key = line.normalized_name or _slug(line.name)
-                if key in RESERVED_MEASURE_ATTRS:
-                    duplicates.append(line.name)
+                duplicated_label = _reserved_measure_label_for_inspection(rec, key)
+                if duplicated_label:
+                    duplicates.append(duplicated_label)
 
             if duplicates:
                 raise UserError(
                     _(
                         "Estos atributos no deben capturarse como adicionales porque "
-                        "ya pertenecen a Medidas y Propiedades: %s"
+                        "ya pertenecen al formulario del proceso o no aplican aquí: %s"
                     )
                     % ", ".join(sorted(set(duplicates)))
                 )
@@ -3190,6 +4409,44 @@ class QualityInspectionHardening(models.Model):
             )
             if not required_lines:
                 raise UserError(_("Debe capturar los atributos adicionales del proceso."))
+
+            strict_binary = rec.process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+
+            if strict_binary:
+                invalid_type = required_lines.filtered(
+                    lambda line: (
+                        line.attribute_type != "boolean"
+                        or line.result_mode != "cumple"
+                        or line.capture_zone != "additional"
+                    )
+                )
+                if invalid_type:
+                    raise UserError(_(
+                        "%s solo permite atributos adicionales de tipo Cumple/No Cumple. Revise: %s"
+                    ) % (
+                        rec.process_type_id.display_name,
+                        ", ".join(invalid_type.mapped("name")),
+                    ))
+
+                for line in required_lines:
+                    if line.value_cumple in ("cumple", "no_cumple") and line.result != line.value_cumple:
+                        line.result = line.value_cumple
+
+                missing_binary = required_lines.filtered(
+                    lambda line: (
+                        line.value_cumple not in ("cumple", "no_cumple")
+                        or line.result not in ("cumple", "no_cumple")
+                    )
+                )
+                if missing_binary:
+                    raise UserError(_(
+                        "%s no permite N/A ni resultados vacíos. Seleccione Cumple o No Cumple en: %s"
+                    ) % (
+                        rec.process_type_id.display_name,
+                        ", ".join(missing_binary.mapped("name")),
+                    ))
+
+                continue
 
             missing_result = required_lines.filtered(
                 lambda line: not line.result
@@ -3216,9 +4473,54 @@ class QualityInspectionHardening(models.Model):
 
     def _check_measures_captured_hardening(self):
         for rec in self:
-            if rec.capture_mode == "additional_only":
+            # FOLIO-QM-ODOO18-070 / FOLIO-QM-ODOO18-071:
+            # Procesos solo adicionales no deben validar medidas, aunque la base conserve banderas show_* antiguas.
+            if rec.capture_mode == "additional_only" or rec.process_code in STRICT_BINARY_RESULT_PROCESS_CODES:
                 continue
+
             if not rec.process_type_id.require_measures:
+                continue
+
+            # FOLIO-QM-ODOO18-075:
+            # Octágono se valida por su matriz propia, sin Espesor ni Retiramiento.
+            if rec.process_code == "octagono":
+                missing = []
+
+                if not (rec.ancho or getattr(rec, "oct_ancho", 0.0)):
+                    missing.append("Ancho")
+                if not (
+                    rec.hexagono
+                    or getattr(rec, "oct_hexagono_tipo", False)
+                    or getattr(rec, "oct_hexagono", False)
+                    or rec.tipo_hexagono
+                ):
+                    missing.append("Hexágono")
+                if not rec.numero_corrida:
+                    missing.append("Número de Corrida")
+                if not rec.papel_ancho:
+                    missing.append("Ancho de Papel")
+                if not rec.papel_gramaje:
+                    missing.append("Gramaje de Papel")
+                if not rec.papel_proveedor_id:
+                    missing.append("Proveedor de Rollos")
+                if not rec.adhesivo_lote1:
+                    missing.append("Lote 1 Adhesivo")
+                if not rec.adhesivo_lote2:
+                    missing.append("Lote 2 Adhesivo")
+                if not rec.calibracion:
+                    missing.append("Calibración")
+                if not rec.engomado:
+                    missing.append("Engomado")
+                if not rec.oct_alineacion:
+                    missing.append("Alineación")
+                if rec.corte_guillotina not in ("si", "no"):
+                    missing.append("Corte de Guillotina (Sí/No)")
+
+                if missing:
+                    raise UserError(
+                        _("Capture la información obligatoria de Octágono antes de liberar. Faltan: %s")
+                        % ", ".join(missing)
+                    )
                 continue
 
             missing = []
@@ -3227,9 +4529,14 @@ class QualityInspectionHardening(models.Model):
                 missing.append("Largo")
             if rec.show_ancho and not (rec.ancho or getattr(rec, "oct_ancho", 0.0)):
                 missing.append("Ancho")
-            if rec.show_espesor and not rec.espesor:
+            if rec.show_espesor and not (rec.espesor or getattr(rec, "oct_espesor", 0.0)):
                 missing.append("Espesor")
-            if rec.show_hexagono and not rec.hexagono:
+            if rec.show_hexagono and not (
+                rec.hexagono
+                or getattr(rec, "tipo_hexagono", False)
+                or getattr(rec, "oct_hexagono_tipo", False)
+                or getattr(rec, "oct_hexagono", False)
+            ):
                 missing.append("Hexágono")
             if rec.show_resistencia and not rec.resistencia_na and not rec.resistencia:
                 missing.append("Resistencia")
@@ -3248,6 +4555,8 @@ class QualityInspectionHardening(models.Model):
                 missing.append("Calibración")
             if rec.show_engomado and not rec.engomado:
                 missing.append("Engomado")
+            if rec.show_alineacion and not rec.oct_alineacion:
+                missing.append("Alineación")
             if rec.show_numero_corrida and not rec.numero_corrida:
                 missing.append("Número de Corrida")
             if rec.show_tipo_hexagono and not rec.tipo_hexagono:
@@ -3293,10 +4602,54 @@ class QualityInspectionHardening(models.Model):
             rec._check_required_additional_attributes_hardening()
             rec._check_previous_process_hardening()
 
+    def _sync_strict_binary_lines_hardening(self):
+        for rec in self.filtered(lambda item: item.process_code in STRICT_BINARY_RESULT_PROCESS_CODES):
+            for line in rec.line_ids:
+                vals = {}
+
+                if line.attribute_type != "boolean":
+                    vals["attribute_type"] = "boolean"
+                if line.capture_zone != "additional":
+                    vals["capture_zone"] = "additional"
+                if line.result_mode != "cumple":
+                    vals["result_mode"] = "cumple"
+                if line.value_ok:
+                    vals["value_ok"] = False
+                if line.value_float:
+                    vals["value_float"] = 0.0
+                if line.value_char:
+                    vals["value_char"] = False
+                if line.min_value:
+                    vals["min_value"] = 0.0
+                if line.max_value:
+                    vals["max_value"] = 0.0
+                if line.unit:
+                    vals["unit"] = False
+                if line.allow_zero:
+                    vals["allow_zero"] = False
+
+                if line.value_cumple == "na":
+                    vals["value_cumple"] = False
+                if line.value_ok == "na":
+                    vals["value_ok"] = False
+                if line.result == "na":
+                    vals["result"] = False
+
+                if line.value_cumple in ("cumple", "no_cumple") and line.result != line.value_cumple:
+                    vals["result"] = line.value_cumple
+                elif line.result in ("cumple", "no_cumple") and line.value_cumple != line.result:
+                    vals["value_cumple"] = line.result
+
+                if vals:
+                    line.write(vals)
+
     def action_start(self):
         for rec in self:
+            # FOLIO-QM-ODOO18-074: no se permite iniciar captura si el proceso previo no está liberado.
+            rec._check_previous_process_hardening()
             rec.date_started = fields.Datetime.now()
             rec.state = "en_proceso"
+            rec._sync_strict_binary_lines_hardening()
             rec.message_post(
                 body=_("Inspección iniciada."),
                 subtype_xmlid="mail.mt_comment",
@@ -3368,6 +4721,8 @@ class QualityCertificateHardening(models.Model):
     _inherit = "quality.certificate"
 
     certified_hexagono_label = fields.Char("Hexágono")
+    certified_retiramiento = fields.Float("Retiramiento", digits=(16, 2))
+    certified_calibracion = fields.Float("Calibración", digits=(16, 4))
 
     @api.constrains("inspection_id")
     def _check_inspection_accepted_hardening(self):
@@ -4603,6 +5958,19 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 
+# FOLIO-QM-ODOO18-074:
+# Secuencia estándar obligatoria. Aunque exista una ruta vieja sin Remanejo,
+# estos procesos no pueden saltarse.
+MANDATORY_STANDARD_SEQUENCE = [
+    "octagono",
+    "guillotina",
+    "pegado",
+    "laminadora",
+    "remanejo",
+    "troquelado_plano",
+]
+
+
 class QualityProcessRoute(models.Model):
     _name = "quality.process.route"
     _description = "Ruta de Proceso de Calidad"
@@ -4690,6 +6058,11 @@ class QualityInspectionRoute(models.Model):
     )
     def _compute_quality_route(self):
         Route = self.env["quality.process.route"]
+        default_route = self.env.ref(
+            "quality_management.quality_route_estandar",
+            raise_if_not_found=False,
+        )
+
         for rec in self:
             template = rec.product_id.product_tmpl_id
             route = template.quality_route_id if template else False
@@ -4703,18 +6076,29 @@ class QualityInspectionRoute(models.Model):
                     limit=1,
                 )
 
-            rec.quality_route_id = route or False
+            # FOLIO-QM-ODOO18-074:
+            # Si no hay ruta específica por producto/categoría, se usa la ruta estándar.
+            rec.quality_route_id = route or default_route or False
 
     def _check_previous_process_hardening(self):
-        """Usa ruta configurada si existe; si no existe, cae a la secuencia base."""
-        # FOLIO-QM-ODOO18-026: el método anterior hacía return dentro del loop;
-        # con múltiples inspecciones podía dejar registros sin validar.
-        fallback_records = self.browse()
+        """
+        1) Siempre respeta la secuencia estándar obligatoria:
+           Octágono -> Guillotina -> Pegado -> Laminadora -> Remanejo -> Troquelado Plano.
+        2) Para procesos fuera de esa secuencia, usa la ruta configurable si aplica.
+        """
+        # FOLIO-QM-ODOO18-074: primero se ejecuta la validación estándar del hardening.
+        super()._check_previous_process_hardening()
 
         for rec in self:
+            current_code = rec.process_code
+
+            # Los procesos estándar ya fueron validados por super() para evitar
+            # que una ruta vieja sin Remanejo permita saltarse el flujo.
+            if current_code in MANDATORY_STANDARD_SEQUENCE:
+                continue
+
             route = rec.quality_route_id
             if not route:
-                fallback_records |= rec
                 continue
 
             route_lines = route.line_ids.sorted("sequence")
@@ -4723,7 +6107,6 @@ class QualityInspectionRoute(models.Model):
                 for line in route_lines
                 if line.process_type_id.code
             ]
-            current_code = rec.process_code
 
             if current_code not in codes:
                 continue
@@ -4742,30 +6125,21 @@ class QualityInspectionRoute(models.Model):
             if not previous_code:
                 continue
 
-            previous_inspection = self.search(
-                [
-                    ("lot_id", "=", rec.lot_id.id),
-                    ("process_code", "=", previous_code),
-                    ("state", "=", "aceptado"),
-                ],
-                limit=1,
-            )
-            if not previous_inspection:
-                raise UserError(
-                    _(
-                        "Ruta '%s': antes de liberar '%s' debe estar liberado "
-                        "el proceso previo '%s' para el lote %s."
-                    )
-                    % (
-                        route.name,
-                        rec.process_type_id.name,
-                        previous_code.replace("_", " ").title(),
-                        rec.lot_id.name or "—",
-                    )
-                )
+            previous_inspection = rec._find_previous_inspection_hardening(previous_code)
+            if previous_inspection:
+                continue
 
-        if fallback_records:
-            return super(QualityInspectionRoute, fallback_records)._check_previous_process_hardening()
+            raise UserError(
+                _(
+                    "Ruta '%s': antes de liberar '%s' debe estar liberado "
+                    "el proceso previo '%s'."
+                )
+                % (
+                    route.name,
+                    rec.process_type_id.name,
+                    previous_code.replace("_", " ").title(),
+                )
+            )
 
         return True```
 
@@ -6581,7 +7955,86 @@ class ResCompany(models.Model):
                             </tbody>
                         </table>
 
-                        <t t-if="doc.show_largo or doc.show_ancho or doc.show_espesor or doc.show_hexagono or doc.show_resistencia or doc.show_apariencia or doc.show_humedad or doc.show_pegado or doc.show_retiramiento or doc.show_calibracion or doc.show_engomado">
+                        <!-- FOLIO-QM-ODOO18-075: reporte dedicado de Octágono, sin Espesor ni Retiramiento. -->
+                        <t t-if="doc.process_code == 'octagono'">
+                            <h4>Medidas y Producción - Octágono</h4>
+                            <table class="table table-bordered table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" style="width: 25%;">Ancho (mm):</td>
+                                        <td class="text-center">
+                                            <t t-if="doc.ancho">
+                                                <span t-field="doc.ancho"/>
+                                            </t>
+                                            <t t-elif="doc.oct_ancho">
+                                                <span t-field="doc.oct_ancho"/>
+                                            </t>
+                                        </td>
+                                        <td class="fw-bold" style="width: 25%;">Hexágono:</td>
+                                        <td class="text-center">
+                                            <t t-if="doc.hexagono">
+                                                <span t-field="doc.hexagono"/>
+                                            </t>
+                                            <t t-elif="doc.oct_hexagono_tipo">
+                                                <span t-field="doc.oct_hexagono_tipo"/>
+                                            </t>
+                                            <t t-elif="doc.oct_hexagono">
+                                                <span t-field="doc.oct_hexagono"/>
+                                            </t>
+                                            <t t-elif="doc.tipo_hexagono">
+                                                <span t-field="doc.tipo_hexagono"/>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Número de Corrida:</td>
+                                        <td><span t-field="doc.numero_corrida"/></td>
+                                        <td class="fw-bold">Calibración:</td>
+                                        <td class="text-center">
+                                            <t t-if="doc.calibracion">
+                                                <span t-esc="'%.4f' % doc.calibracion"/>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Engomado:</td>
+                                        <td class="text-center"><span t-field="doc.engomado"/></td>
+                                        <td class="fw-bold">Alineación:</td>
+                                        <td class="text-center"><span t-field="doc.oct_alineacion"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Corte de Guillotina:</td>
+                                        <td class="text-center"><span t-field="doc.corte_guillotina"/></td>
+                                        <td class="fw-bold">Espesor / Retiramiento:</td>
+                                        <td class="text-center">No aplica en Octágono</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h5>Materiales - Octágono</h5>
+                            <table class="table table-bordered table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-bold" style="width: 25%;">Papel - Ancho:</td>
+                                        <td class="text-center"><span t-field="doc.papel_ancho"/></td>
+                                        <td class="fw-bold" style="width: 25%;">Papel - Gramaje:</td>
+                                        <td class="text-center"><span t-field="doc.papel_gramaje"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Proveedor de Rollos:</td>
+                                        <td colspan="3"><span t-field="doc.papel_proveedor_id.name"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold">Adhesivo Lote 1:</td>
+                                        <td><span t-field="doc.adhesivo_lote1"/></td>
+                                        <td class="fw-bold">Adhesivo Lote 2:</td>
+                                        <td><span t-field="doc.adhesivo_lote2"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <t t-if="doc.capture_mode != 'additional_only' and doc.process_code not in ('acabado_empaque', 'octagono') and (doc.show_largo or doc.show_ancho or doc.show_espesor or doc.show_hexagono or doc.show_resistencia or doc.show_apariencia or doc.show_humedad or doc.show_pegado or doc.show_retiramiento or doc.show_calibracion or doc.show_engomado)">
                             <h4>Medidas - <span t-field="doc.process_type_id.name"/></h4>
                             <table class="table table-bordered table-sm">
                                 <thead>
@@ -6594,7 +8047,7 @@ class ResCompany(models.Model):
                                         <th t-if="doc.show_apariencia">Apariencia</th>
                                         <th t-if="doc.show_humedad">% Humedad</th>
                                         <th t-if="doc.show_pegado">Pegado</th>
-                                        <th t-if="doc.show_retiramiento">Retiramiento</th>
+                                        <th t-if="doc.show_retiramiento">Retiramiento (cm)</th>
                                         <th t-if="doc.show_calibracion">Calibración</th>
                                         <th t-if="doc.show_engomado">Engomado</th>
                                     </tr>
@@ -6614,15 +8067,26 @@ class ResCompany(models.Model):
                                         <td t-if="doc.show_apariencia" class="text-center"><span t-field="doc.apariencia"/></td>
                                         <td t-if="doc.show_humedad" class="text-center"><span t-field="doc.humedad_pct"/>%</td>
                                         <td t-if="doc.show_pegado" class="text-center"><span t-esc="doc.pegado_result or doc.oct_pegado or ''"/></td>
-                                        <td t-if="doc.show_retiramiento" class="text-center"><span t-field="doc.oct_retiramiento"/></td>
-                                        <td t-if="doc.show_calibracion" class="text-center"><span t-field="doc.calibracion"/></td>
+                                        <td t-if="doc.show_retiramiento" class="text-center">
+                                            <t t-if="doc.reticula_extendida">
+                                                <span t-field="doc.reticula_extendida"/>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-field="doc.oct_retiramiento"/>
+                                            </t>
+                                        </td>
+                                        <td t-if="doc.show_calibracion" class="text-center">
+                                            <t t-if="doc.calibracion">
+                                                <span t-esc="'%.4f' % doc.calibracion"/>
+                                            </t>
+                                        </td>
                                         <td t-if="doc.show_engomado" class="text-center"><span t-field="doc.engomado"/></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </t>
 
-                        <t t-if="doc.show_numero_corrida or doc.show_papel or doc.show_adhesivo">
+                        <t t-if="doc.process_code != 'octagono' and (doc.show_numero_corrida or doc.show_papel or doc.show_adhesivo)">
                             <h4>Datos de Producción</h4>
                             <table class="table table-bordered table-sm">
                                 <tbody>
@@ -6713,18 +8177,32 @@ class ResCompany(models.Model):
                                     <tr t-foreach="doc.line_ids" t-as="attr">
                                         <td><span t-field="attr.name"/></td>
                                         <td class="text-center">
-                                            <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
-                                            <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
-                                            <!-- FOLIO-QM-ODOO18-045: el resumen impreso soporta Cumple/NC y OK/NO OK. -->
-                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple"/>
-                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok"/>
+                                            <t t-if="doc.process_code == 'acabado_empaque'">
+                                                <t t-if="attr.value_cumple == 'cumple' or (not attr.value_cumple and attr.result == 'cumple')">Cumple</t>
+                                                <t t-elif="attr.value_cumple == 'no_cumple' or (not attr.value_cumple and attr.result == 'no_cumple')">No Cumple</t>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
+                                                <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
+                                                <!-- FOLIO-QM-ODOO18-045: el resumen impreso soporta Cumple/NC y OK/NO OK. -->
+                                                <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple"/>
+                                                <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok"/>
+                                            </t>
                                         </td>
                                         <td class="text-center">
-                                            <t t-if="attr.min_value or attr.max_value">
+                                            <t t-if="doc.process_code != 'acabado_empaque' and (attr.min_value or attr.max_value)">
                                                 <span t-field="attr.min_value"/> - <span t-field="attr.max_value"/> <span t-field="attr.unit"/>
                                             </t>
                                         </td>
-                                        <td class="text-center"><span t-field="attr.result"/></td>
+                                        <td class="text-center">
+                                            <t t-if="doc.process_code == 'acabado_empaque'">
+                                                <t t-if="attr.result == 'cumple' or attr.value_cumple == 'cumple'">Cumple</t>
+                                                <t t-elif="attr.result == 'no_cumple' or attr.value_cumple == 'no_cumple'">No Cumple</t>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-field="attr.result"/>
+                                            </t>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -6872,11 +8350,12 @@ class ResCompany(models.Model):
                                 <tr t-if="doc.certified_retiramiento">
                                     <td>Retiramiento</td>
                                     <td class="text-center"><span t-field="doc.certified_retiramiento"/></td>
-                                    <td class="text-center">mm</td>
+                                    <td class="text-center">cm</td>
                                 </tr>
                                 <tr t-if="doc.certified_calibracion">
                                     <td>Calibración</td>
-                                    <td class="text-center"><span t-field="doc.certified_calibracion"/></td>
+                                    <!-- FOLIO-QM-ODOO18-075: preservar capturas como 0.0010. -->
+                                    <td class="text-center"><span t-esc="'%.4f' % doc.certified_calibracion"/></td>
                                     <td class="text-center">-</td>
                                 </tr>
                                 <tr t-if="doc.certified_engomado">
@@ -7877,30 +9356,24 @@ registry.category("fields").add("evidence_viewer", {
             </list>
         </field>
     </record>
+
     <record id="view_quality_inspection_form_history" model="ir.ui.view">
         <field name="name">quality.inspection.form.history</field>
         <field name="model">quality.inspection</field>
         <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//notebook" position="inside">
-                <page string="Historial de Cambios" name="history"
-                      invisible="state == 'borrador'">
-                    <field name="history_ids" readonly="1">
-                        <list>
-                            <field name="change_date"/>
-                            <field name="changed_by"/>
-                            <field name="field_label"/>
-                            <field name="old_value"/>
-                            <field name="new_value"/>
-                            <field name="inspection_state_at_change"/>
-                        </list>
-                    </field>
-                </page>
+            <!--
+                FOLIO-QM-ODOO18-073:
+                Ya no se agrega pestaña "Historial de Cambios".
+                Los movimientos detallados se publican en el chatter inicial.
+                Se deja history_count como campo técnico invisible.
+            -->
+            <xpath expr="//field[@name='process_code']" position="after">
+                <field name="history_count" invisible="1"/>
             </xpath>
         </field>
     </record>
-</odoo>
-```
+</odoo>```
 
 ## ./views/quality_corrective_action_views.xml
 ```xml
@@ -8926,7 +10399,7 @@ registry.category("fields").add("evidence_viewer", {
                 <header>
                     <button name="action_start" string="INICIAR INSPECCIÓN"
                             type="object" class="btn-primary"
-                            invisible="state != 'borrador'"/>
+                            invisible="state != 'borrador' or not process_gate_open"/>
                     <button name="action_accept" string="Aceptar (Liberar)"
                             type="object" class="btn-primary"
                             invisible="state != 'en_proceso'"
@@ -8964,15 +10437,41 @@ registry.category("fields").add("evidence_viewer", {
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
+
                     <div class="alert alert-info" role="alert"
                          invisible="state != 'borrador'">
                         <i class="fa fa-info-circle"/>
                         <b>Captura bloqueada hasta presionar "INICIAR INSPECCIÓN".</b>
                     </div>
 
+                    <!-- FOLIO-QM-ODOO18-075: leyenda visible para Octágono; evita depender de íconos de ayuda. -->
+                    <div class="alert alert-info" role="alert"
+                         invisible="process_code != 'octagono'">
+                        <i class="fa fa-info-circle"/>
+                        <b>Octágono:</b>
+                        seleccione primero la Orden de Producción. El sistema toma de ahí
+                        Producto, Lote, Código y Cliente cuando existan. El Folio de Producción
+                        debe coincidir con el folio físico/documental del lote. En este proceso
+                        <b>no aplica Espesor ni Retiramiento</b>; Retiramiento se captura en Guillotina
+                        en centímetros. Hexágono se captura como Tipo 1, 2, 3 o 4 según el catálogo
+                        interno vigente de Calidad.
+                    </div>
+
+                    <div class="alert alert-warning" role="alert"
+                         invisible="process_gate_open or state != 'borrador'">
+                        <i class="fa fa-lock"/>
+                        <strong>Flujo de proceso bloqueado:</strong>
+                        <field name="process_gate_message" nolabel="1" readonly="1"/>
+                    </div>
+
                     <!-- FOLIO-QM-ODOO18-040: campos técnicos necesarios para expresiones de Odoo 18. -->
                     <field name="process_code" invisible="1"/>
+                    <field name="history_count" invisible="1"/>
                     <field name="capture_mode" invisible="1"/>
+                    <field name="process_gate_open" invisible="1"/>
+                    <field name="process_gate_message" invisible="1"/>
+                    <field name="previous_process_type_id" invisible="1"/>
+                    <field name="previous_process_inspection_id" invisible="1"/>
                     <field name="show_largo" invisible="1"/>
                     <field name="show_ancho" invisible="1"/>
                     <field name="show_espesor" invisible="1"/>
@@ -8997,18 +10496,29 @@ registry.category("fields").add("evidence_viewer", {
 
                     <group>
                         <group string="Datos Generales">
-                            <field name="process_type_id"/>
+                            <field name="process_type_id" readonly="state != 'borrador'"/>
                             <field name="pp_pt" widget="radio"
                                    readonly="state != 'borrador'"/>
-                            <field name="product_id"
-                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="production_order_id"
+                                   readonly="state != 'borrador'"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+                            <field name="product_id"
+                                   readonly="state != 'borrador' or production_order_id"
                                    options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="lot_id"
+                                   readonly="state != 'borrador' or (production_order_id and lot_id)"
                                    options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"
                                    domain="[('product_id', '=', product_id)]"/>
-                            <field name="folio"/>
-                            <field name="code"/>
+                            <field name="folio"
+                                   placeholder="Ej. folio físico de producción / lote impreso"/>
+                            <field name="code"
+                                   placeholder="Código interno del producto; se llena desde Producto/OP si existe"/>
+                            <field name="previous_process_type_id"
+                                   readonly="1"
+                                   invisible="process_gate_open"/>
+                            <field name="previous_process_inspection_id"
+                                   readonly="1"
+                                   invisible="not previous_process_inspection_id"/>
                         </group>
                         <group string="Personal y Ubicación">
                             <field name="operator_id"
@@ -9019,7 +10529,7 @@ registry.category("fields").add("evidence_viewer", {
                                    widget="many2one_avatar_user" readonly="1"/>
                             <field name="partner_id"
                                    context="{'show_vat': True, 'show_email': True}"
-                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                                   placeholder="Cliente; si no existe, créelo desde Contactos o desde este selector según permisos."/>
                             <field name="shift"/>
                             <field name="plant"/>
                             <field name="date_inspection" readonly="1"/>
@@ -9028,7 +10538,7 @@ registry.category("fields").add("evidence_viewer", {
 
                     <notebook>
                         <page string="Medidas y Propiedades"
-                              invisible="state == 'borrador' or (not show_largo and not show_ancho and not show_espesor and not show_hexagono and not show_resistencia and not show_apariencia and not show_humedad and not show_pegado and not show_retiramiento and not show_calibracion and not show_engomado)"
+                              invisible="state == 'borrador' or process_code == 'octagono' or capture_mode == 'additional_only' or (not show_largo and not show_ancho and not show_espesor and not show_hexagono and not show_resistencia and not show_apariencia and not show_humedad and not show_pegado and not show_retiramiento and not show_calibracion and not show_engomado)"
                               name="medidas">
                             <group>
                                 <group string="Medidas Dimensionales">
@@ -9079,15 +10589,51 @@ registry.category("fields").add("evidence_viewer", {
                             </group>
                         </page>
 
-                        <page string="Octágono (Extras)"
-                              invisible="process_code != 'octagono'"
+                        <page string="Octágono"
+                              invisible="state == 'borrador' or process_code != 'octagono'"
                               name="oct">
+                            <!-- FOLIO-QM-ODOO18-075: matriz dedicada de Octágono. -->
+                            <div class="alert alert-warning" role="alert">
+                                <i class="fa fa-ban"/>
+                                En Octágono no se captura <b>Espesor</b> ni <b>Retiramiento</b>.
+                                Retiramiento corresponde a Guillotina y se expresa en cm.
+                            </div>
+
                             <group>
-                                <group>
-                                    <field name="oct_ancho"/>
-                                    <field name="oct_alineacion" widget="radio"
-                                           invisible="not show_alineacion"/>
-                                    <field name="oct_pegado" widget="radio"/>
+                                <group string="Medidas">
+                                    <field name="ancho" string="Ancho (mm)"/>
+                                    <field name="hexagono" string="Hexágono" widget="radio"/>
+                                    <field name="calibracion"
+                                           string="Calibración"
+                                           placeholder="Ej. 0.0010"/>
+                                    <field name="engomado" widget="radio"/>
+                                    <field name="oct_alineacion" string="Alineación" widget="radio"/>
+                                    <field name="corte_guillotina"
+                                           string="Corte de Guillotina"
+                                           widget="radio"/>
+                                </group>
+
+                                <group string="Producción">
+                                    <field name="numero_corrida"/>
+                                    <field name="folio"
+                                           placeholder="Folio físico/documental del lote"/>
+                                    <field name="code"
+                                           placeholder="Código interno del producto"/>
+                                </group>
+                            </group>
+
+                            <group>
+                                <group string="Papel">
+                                    <field name="papel_ancho" string="Ancho"/>
+                                    <field name="papel_gramaje" string="Gramaje"/>
+                                    <field name="papel_proveedor_id"
+                                           string="Proveedor de Rollos"
+                                           context="{'default_supplier_rank': 1}"/>
+                                </group>
+
+                                <group string="Adhesivo">
+                                    <field name="adhesivo_lote1" string="Lote 1"/>
+                                    <field name="adhesivo_lote2" string="Lote 2"/>
                                 </group>
                             </group>
                         </page>
@@ -9145,7 +10691,7 @@ registry.category("fields").add("evidence_viewer", {
                         </page>
 
                         <page string="Datos de Producción"
-                              invisible="state == 'borrador' or (not show_papel and not show_adhesivo and not show_tipo_hexagono and not show_numero_corrida and not show_corte_guillotina)"
+                              invisible="state == 'borrador' or process_code == 'octagono' or (not show_papel and not show_adhesivo and not show_tipo_hexagono and not show_numero_corrida and not show_corte_guillotina)"
                               name="prod">
                             <group>
                                 <group string="Producción"
@@ -9175,40 +10721,61 @@ registry.category("fields").add("evidence_viewer", {
 
                         <page string="Atributos Adicionales"
                               invisible="state == 'borrador'" name="attrs">
-                            <p class="text-muted">
+                            <div class="alert alert-warning" role="alert"
+                                 invisible="process_code not in ('acabado_empaque', 'impresion')">
+                                <i class="fa fa-exclamation-triangle"/>
+                                <strong>
+                                    <field name="process_type_id" nolabel="1" readonly="1"/>:
+                                </strong>
+                                este proceso solo permite atributos adicionales con resultado
+                                <b>Cumple</b> o <b>No Cumple</b>. No se permite N/A ni valores numéricos.
+                            </div>
+
+                            <p class="text-muted" invisible="process_code in ('acabado_empaque', 'impresion')">
                                 <i class="fa fa-info-circle"/>
                                 CUMPLE / NO CUMPLE / N/A u OK / NO OK / N/A — sin duplicados con Medidas y Propiedades.
                             </p>
+
                             <field name="line_ids">
                                 <list editable="bottom">
+                                    <field name="process_code" column_invisible="1"/>
+                                    <field name="strict_binary_result" column_invisible="1"/>
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
                                     <field name="result_mode"/>
+
                                     <field name="value_float"
-                                           invisible="attribute_type != 'float'"/>
+                                           invisible="attribute_type != 'float' or strict_binary_result"/>
                                     <field name="value_char"
-                                           invisible="attribute_type not in ('char','selection')"/>
+                                           invisible="attribute_type not in ('char','selection') or strict_binary_result"/>
+
                                     <field name="value_ok"
                                            string="OK/NO OK/N/A"
-                                           invisible="attribute_type != 'boolean' or result_mode != 'ok'"
+                                           invisible="attribute_type != 'boolean' or result_mode != 'ok' or strict_binary_result"
                                            widget="badge"
                                            decoration-success="value_ok == 'ok'"
                                            decoration-danger="value_ok == 'no_ok'"/>
-                                    <!-- FOLIO-QM-ODOO18-041: evita mostrar Cumple/NC cuando el atributo opera con OK/NO OK. -->
+
                                     <field name="value_cumple"
-                                           string="Cumple/NC/N/A"
+                                           string="Cumple/NC"
                                            invisible="attribute_type != 'boolean' or result_mode != 'cumple'"
                                            widget="badge"
                                            decoration-success="value_cumple == 'cumple'"
                                            decoration-danger="value_cumple == 'no_cumple'"/>
+
                                     <field name="min_value"
-                                           invisible="attribute_type != 'float'"/>
+                                           invisible="attribute_type != 'float' or strict_binary_result"/>
                                     <field name="max_value"
-                                           invisible="attribute_type != 'float'"/>
-                                    <field name="unit"/>
-                                    <field name="allow_zero"/>
-                                    <field name="result" widget="badge"
+                                           invisible="attribute_type != 'float' or strict_binary_result"/>
+                                    <field name="unit"
+                                           invisible="strict_binary_result"/>
+                                    <field name="allow_zero"
+                                           invisible="attribute_type != 'float' or strict_binary_result"/>
+
+                                    <field name="result"
+                                           widget="badge"
+                                           column_invisible="parent.process_code in ('acabado_empaque', 'impresion')"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
                                     <field name="notes"/>
@@ -9342,6 +10909,14 @@ registry.category("fields").add("evidence_viewer", {
               action="action_quality_drawing_release"
               sequence="20"/>
 
+    <!-- FOLIO-QM-ODOO18-069: Troqueles se mueve de la raíz del módulo a Liberaciones. -->
+    <menuitem id="menu_quality_troquel"
+              name="Troqueles"
+              parent="menu_quality_releases"
+              action="action_quality_troquel"
+              sequence="30"
+              groups="quality_management.group_quality_manager"/>
+
     <menuitem id="menu_quality_certificate"
               name="Certificados"
               parent="menu_quality_root"
@@ -9361,14 +10936,6 @@ registry.category("fields").add("evidence_viewer", {
               parent="menu_quality_root"
               action="action_quality_customer_return"
               sequence="50"/>
-
-    <!-- FOLIO-QM-ODOO18-051: el menú de Troqueles se centraliza aquí y se elimina duplicidad con vistas de troquel. -->
-    <menuitem id="menu_quality_troquel"
-              name="Troqueles"
-              parent="menu_quality_root"
-              action="action_quality_troquel"
-              sequence="55"
-              groups="quality_management.group_quality_manager"/>
 
     <menuitem id="menu_quality_customer_document"
               name="Documentos de Cliente"
@@ -10270,10 +11837,19 @@ class QualityCertificateWizardHardening(models.TransientModel):
         if self.include_espesor and insp.espesor:
             vals["certified_espesor"] = insp.espesor
 
-        hex_value = insp.hexagono or getattr(insp, "oct_hexagono", False) or insp.tipo_hexagono
-        if self.include_hexagono and hex_value:
-            field_name = "hexagono" if insp.hexagono else "oct_hexagono" if getattr(insp, "oct_hexagono", False) else "tipo_hexagono"
-            vals["certified_hexagono_label"] = self._selection_label(insp, field_name, hex_value)
+        # FOLIO-QM-ODOO18-075:
+        # Octágono usa valores Selection para Hexágono. El certificado debe guardar
+        # la etiqueta textual, no escribir "tipo_1" en un campo Float legacy.
+        hex_sources = [
+            ("hexagono", insp.hexagono),
+            ("oct_hexagono_tipo", getattr(insp, "oct_hexagono_tipo", False)),
+            ("oct_hexagono", getattr(insp, "oct_hexagono", False)),
+            ("tipo_hexagono", insp.tipo_hexagono),
+        ]
+        for field_name, hex_value in hex_sources:
+            if self.include_hexagono and hex_value:
+                vals["certified_hexagono_label"] = self._selection_label(insp, field_name, hex_value)
+                break
 
         if self.include_resistencia and insp.resistencia:
             vals["certified_resistencia"] = insp.resistencia
@@ -10288,10 +11864,16 @@ class QualityCertificateWizardHardening(models.TransientModel):
                 field_name = "pegado_result" if insp.pegado_result else "oct_pegado"
                 vals["certified_pegado"] = self._selection_label(insp, field_name, pegado_value)
 
-        if self.include_retiramiento and (getattr(insp, "oct_retiramiento", 0.0) or getattr(insp, "reticula_extendida", 0.0)):
-            vals["certified_retiramiento"] = insp.oct_retiramiento or insp.reticula_extendida
+        if (
+            self.include_retiramiento
+            and insp.process_code != "octagono"
+            and (getattr(insp, "reticula_extendida", 0.0) or getattr(insp, "oct_retiramiento", 0.0))
+        ):
+            # FOLIO-QM-ODOO18-075: Retiramiento corresponde a Guillotina y se certifica en cm.
+            vals["certified_retiramiento"] = insp.reticula_extendida or insp.oct_retiramiento
         if self.include_calibracion and insp.calibracion:
-            vals["certified_calibracion"] = insp.calibracion
+            # FOLIO-QM-ODOO18-075: conservar precisión 0.0010 en certificado.
+            vals["certified_calibracion"] = round(insp.calibracion, 4)
         if self.include_engomado and insp.engomado:
             vals["certified_engomado"] = self._selection_label(insp, "engomado", insp.engomado)
 
@@ -10425,7 +12007,20 @@ class QualityCertificateWizard(models.TransientModel):
         if self.include_espesor:
             vals['certified_espesor'] = insp.espesor or insp.oct_espesor
         if self.include_hexagono:
-            vals['certified_hexagono'] = insp.hexagono or insp.oct_hexagono
+            # FOLIO-QM-ODOO18-075:
+            # Hexágono es selección textual; no debe escribirse en certified_hexagono (Float).
+            hex_sources = [
+                ('hexagono', insp.hexagono),
+                ('oct_hexagono_tipo', getattr(insp, 'oct_hexagono_tipo', False)),
+                ('oct_hexagono', getattr(insp, 'oct_hexagono', False)),
+                ('tipo_hexagono', insp.tipo_hexagono),
+            ]
+            for field_name, hex_value in hex_sources:
+                if hex_value:
+                    vals['certified_hexagono_label'] = dict(
+                        insp._fields[field_name].selection
+                    ).get(hex_value, hex_value)
+                    break
         if self.include_resistencia and insp.resistencia:
             vals['certified_resistencia'] = insp.resistencia
         if self.include_apariencia and insp.apariencia:
@@ -10441,10 +12036,14 @@ class QualityCertificateWizard(models.TransientModel):
                 vals['certified_pegado'] = dict(
                     insp._fields[source_field].selection
                 ).get(pegado_val, '')
-        if self.include_retiramiento and insp.oct_retiramiento:
-            vals['certified_retiramiento'] = insp.oct_retiramiento
+        if (
+            self.include_retiramiento
+            and insp.process_code != 'octagono'
+            and (getattr(insp, 'reticula_extendida', 0.0) or insp.oct_retiramiento)
+        ):
+            vals['certified_retiramiento'] = getattr(insp, 'reticula_extendida', 0.0) or insp.oct_retiramiento
         if self.include_calibracion and insp.calibracion:
-            vals['certified_calibracion'] = insp.calibracion
+            vals['certified_calibracion'] = round(insp.calibracion, 4)
         if self.include_engomado and insp.engomado:
             vals['certified_engomado'] = dict(
                 insp._fields['engomado'].selection

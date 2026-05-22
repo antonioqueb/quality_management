@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_quality_inspection_form_ranura_qi024" model="ir.ui.view">
+        <field name="name">quality.inspection.form.ranura.qi024</field>
+        <field name="model">quality.inspection</field>
+        <field name="inherit_id" ref="quality_management.view_quality_inspection_form"/>
+        <field name="arch" type="xml">
+
+            <!-- FOLIO-QM-ODOO18-079: refuerza búsqueda de OP por HMP1/HMPx, producto, código y origen. -->
+            <xpath expr="//field[@name='production_order_id']" position="attributes">
+                <attribute name="context">{'quality_inspection_mrp_search': True, 'active_test': False}</attribute>
+                <attribute name="domain">[]</attribute>
+            </xpath>
+
+            <!-- FOLIO-QM-ODOO18-076: Ranurado editable, sin default Cumple, con tolerancia estándar. -->
+            <xpath expr="//page[@name='ranurado']" position="replace">
+                <page string="Ranurado"
+                      invisible="process_code != 'sierras_ranuradoras' or state == 'borrador'"
+                      name="ranurado">
+                    <div class="alert alert-info" role="alert">
+                        <i class="fa fa-info-circle"/>
+                        Capture la medida real. Si existe medida esperada y está activo
+                        <b>Evaluar por tolerancia</b>, el resultado se calcula con la tolerancia
+                        estándar: <b>+/- 3 mm</b> o <b>+/- 1/8 in</b>. Si no hay nominal,
+                        seleccione manualmente Cumple / No Cumple / N/A.
+                    </div>
+                    <group>
+                        <field name="ranurado_unit" string="Unidad predeterminada"/>
+                    </group>
+                    <field name="ranurado_ids"
+                           domain="[('tipo_operacion', '=', 'ranurado')]"
+                           context="{'default_unidad': ranurado_unit, 'default_tipo_operacion': 'ranurado'}">
+                        <list editable="bottom">
+                            <field name="sequence"/>
+                            <field name="tipo_operacion" column_invisible="1"/>
+                            <field name="concepto"/>
+                            <field name="medida_esperada"/>
+                            <field name="medida"/>
+                            <field name="unidad"/>
+                            <field name="tolerancia"/>
+                            <field name="desviacion" readonly="1"/>
+                            <field name="evaluar_por_tolerancia"/>
+                            <field name="resultado"/>
+                            <field name="notas"/>
+                        </list>
+                    </field>
+                </page>
+
+                <!-- FOLIO-QM-ODOO18-076: opción independiente solicitada para Corte Sierra. -->
+                <page string="Corte Sierra"
+                      invisible="process_code != 'sierras_ranuradoras' or state == 'borrador'"
+                      name="corte_sierra">
+                    <div class="alert alert-info" role="alert">
+                        <i class="fa fa-info-circle"/>
+                        Use esta pestaña cuando la validación corresponda a corte con sierra,
+                        separada del ranurado. Aplica la misma lógica de tolerancia y selección manual.
+                    </div>
+                    <field name="corte_sierra_ids"
+                           domain="[('tipo_operacion', '=', 'corte_sierra')]"
+                           context="{'default_unidad': ranurado_unit, 'default_tipo_operacion': 'corte_sierra', 'default_concepto': 'Corte Sierra'}">
+                        <list editable="bottom">
+                            <field name="sequence"/>
+                            <field name="tipo_operacion" column_invisible="1"/>
+                            <field name="concepto"/>
+                            <field name="medida_esperada"/>
+                            <field name="medida"/>
+                            <field name="unidad"/>
+                            <field name="tolerancia"/>
+                            <field name="desviacion" readonly="1"/>
+                            <field name="evaluar_por_tolerancia"/>
+                            <field name="resultado"/>
+                            <field name="notas"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>
