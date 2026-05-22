@@ -39,6 +39,11 @@ RESERVED_MEASURE_ATTRS = {
     "alineación",
 }
 
+# FOLIO-QM-ODOO18-070: procesos que no aceptan N/A ni valores numéricos en atributos.
+STRICT_BINARY_RESULT_PROCESS_CODES = {
+    "acabado_empaque",
+}
+
 
 def _slug(value):
     value = value or ""
@@ -165,10 +170,81 @@ class QualityInspectionLineHardening(models.Model):
     )
     allow_zero = fields.Boolean("Permitir cero")
 
+    # FOLIO-QM-ODOO18-070: permite que vistas, validaciones y reportes identifiquen
+    # líneas pertenecientes a procesos estrictamente Cumple/No Cumple.
+    process_code = fields.Char(
+        related="inspection_id.process_code",
+        store=True,
+        readonly=True,
+    )
+    strict_binary_result = fields.Boolean(
+        compute="_compute_strict_binary_result",
+        store=False,
+    )
+
+    @api.depends("inspection_id.process_code")
+    def _compute_strict_binary_result(self):
+        for line in self:
+            line.strict_binary_result = (
+                line.inspection_id.process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+                if line.inspection_id
+                else False
+            )
+
+    def _is_strict_binary_result_line(self):
+        self.ensure_one()
+        return bool(
+            self.inspection_id
+            and self.inspection_id.process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+        )
+
+    def _clear_strict_na_values_hardening(self):
+        for line in self:
+            if not line._is_strict_binary_result_line():
+                continue
+
+            vals = {}
+            if line.value_cumple == "na":
+                vals["value_cumple"] = False
+            if line.value_ok == "na":
+                vals["value_ok"] = False
+            if line.result == "na":
+                vals["result"] = False
+
+            if vals:
+                line.with_context(skip_strict_binary_cleanup=True).write(vals)
+
     @api.depends("name")
     def _compute_normalized_name(self):
         for line in self:
             line.normalized_name = _slug(line.name)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._clear_strict_na_values_hardening()
+        return records
+
+    def write(self, vals):
+        if not self.env.context.get("skip_strict_binary_cleanup"):
+            writes_na = any(
+                vals.get(field_name) == "na"
+                for field_name in ("value_cumple", "value_ok", "result")
+            )
+            if writes_na:
+                for line in self:
+                    if line._is_strict_binary_result_line():
+                        raise ValidationError(_(
+                            "Acabado y Empaque no permite N/A. "
+                            "Seleccione únicamente Cumple o No Cumple."
+                        ))
+
+        res = super().write(vals)
+
+        if not self.env.context.get("skip_strict_binary_cleanup"):
+            self._clear_strict_na_values_hardening()
+
+        return res
 
     @api.onchange("attribute_template_id")
     def _onchange_template_hardening(self):
@@ -207,13 +283,43 @@ class QualityInspectionLineHardening(models.Model):
     def _onchange_value_cumple_hardening(self):
         for line in self:
             if line.attribute_type == "boolean" and line.result_mode == "cumple":
-                line.result = line.value_cumple or "na"
+                if line._is_strict_binary_result_line():
+                    if line.value_cumple == "na":
+                        line.value_cumple = False
+                        line.result = False
+                        return {
+                            "warning": {
+                                "title": _("Valor no permitido"),
+                                "message": _(
+                                    "Acabado y Empaque no permite N/A. "
+                                    "Seleccione Cumple o No Cumple."
+                                ),
+                            }
+                        }
+                    line.result = line.value_cumple or False
+                else:
+                    line.result = line.value_cumple or "na"
 
     @api.onchange("value_ok", "attribute_type", "result_mode")
     def _onchange_value_ok_hardening(self):
         for line in self:
             if line.attribute_type == "boolean" and line.result_mode == "ok":
-                line.result = line.value_ok or "na"
+                if line._is_strict_binary_result_line():
+                    if line.value_ok == "na":
+                        line.value_ok = False
+                        line.result = False
+                        return {
+                            "warning": {
+                                "title": _("Valor no permitido"),
+                                "message": _(
+                                    "Este proceso no permite N/A. "
+                                    "Seleccione un resultado válido."
+                                ),
+                            }
+                        }
+                    line.result = line.value_ok or False
+                else:
+                    line.result = line.value_ok or "na"
 
     @api.constrains(
         "inspection_id",
@@ -372,10 +478,13 @@ class QualityInspectionHardening(models.Model):
 
     @api.onchange("process_type_id", "product_id")
     def _onchange_load_attribute_templates(self):
-        # FOLIO-QM-ODOO18-021: se consolida la carga de atributos para evitar
-        # que dos onchanges generen líneas duplicadas o incompletas.
+        # FOLIO-QM-ODOO18-070: Acabado y Empaque solo carga atributos booleanos
+        # Cumple/No Cumple y nunca inicializa líneas con N/A.
         if not self.process_type_id and not self.product_id:
             return
+
+        process_code = self.process_type_id.code or self.process_code
+        strict_binary = process_code in STRICT_BINARY_RESULT_PROCESS_CODES
 
         templates = self.env["quality.attribute.template"]
         if self.process_type_id:
@@ -391,6 +500,9 @@ class QualityInspectionHardening(models.Model):
                 ]
             )
 
+        if strict_binary:
+            templates = templates.filtered(lambda template: template.attribute_type == "boolean")
+
         if not templates:
             return
 
@@ -402,6 +514,22 @@ class QualityInspectionHardening(models.Model):
                 continue
 
             seen.add(key)
+
+            if strict_binary:
+                value_cumple = False
+                value_ok = False
+                result = False
+                attribute_type = "boolean"
+                result_mode = "cumple"
+                capture_zone = "additional"
+            else:
+                value_cumple = "na"
+                value_ok = "na"
+                result = "na"
+                attribute_type = template.attribute_type
+                result_mode = template.result_mode
+                capture_zone = template.capture_zone
+
             lines.append(
                 (
                     0,
@@ -409,17 +537,17 @@ class QualityInspectionHardening(models.Model):
                     {
                         "attribute_template_id": template.id,
                         "name": template.name,
-                        "attribute_type": template.attribute_type,
-                        "capture_zone": template.capture_zone,
-                        "result_mode": template.result_mode,
+                        "attribute_type": attribute_type,
+                        "capture_zone": capture_zone,
+                        "result_mode": result_mode,
                         "min_value": template.min_value,
                         "max_value": template.max_value,
                         "unit": template.unit,
                         "allow_zero": template.allow_zero,
                         "sequence": template.sequence,
-                        "value_cumple": "na",
-                        "value_ok": "na",
-                        "result": "na",
+                        "value_cumple": value_cumple,
+                        "value_ok": value_ok,
+                        "result": result,
                     },
                 )
             )
@@ -489,6 +617,36 @@ class QualityInspectionHardening(models.Model):
             if not required_lines:
                 raise UserError(_("Debe capturar los atributos adicionales del proceso."))
 
+            strict_binary = rec.process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+
+            if strict_binary:
+                invalid_type = required_lines.filtered(
+                    lambda line: line.attribute_type != "boolean" or line.result_mode != "cumple"
+                )
+                if invalid_type:
+                    raise UserError(_(
+                        "Acabado y Empaque solo permite atributos adicionales "
+                        "de tipo Cumple/No Cumple. Revise: %s"
+                    ) % ", ".join(invalid_type.mapped("name")))
+
+                for line in required_lines:
+                    if line.value_cumple in ("cumple", "no_cumple") and line.result != line.value_cumple:
+                        line.result = line.value_cumple
+
+                missing_binary = required_lines.filtered(
+                    lambda line: (
+                        line.value_cumple not in ("cumple", "no_cumple")
+                        or line.result not in ("cumple", "no_cumple")
+                    )
+                )
+                if missing_binary:
+                    raise UserError(_(
+                        "Acabado y Empaque no permite N/A ni resultados vacíos. "
+                        "Seleccione Cumple o No Cumple en: %s"
+                    ) % ", ".join(missing_binary.mapped("name")))
+
+                continue
+
             missing_result = required_lines.filtered(
                 lambda line: not line.result
             )
@@ -514,8 +672,11 @@ class QualityInspectionHardening(models.Model):
 
     def _check_measures_captured_hardening(self):
         for rec in self:
-            if rec.capture_mode == "additional_only":
+            # FOLIO-QM-ODOO18-070: Acabado y Empaque no debe validar medidas,
+            # aunque la base conserve banderas show_* antiguas.
+            if rec.capture_mode == "additional_only" or rec.process_code in STRICT_BINARY_RESULT_PROCESS_CODES:
                 continue
+
             if not rec.process_type_id.require_measures:
                 continue
 
@@ -591,10 +752,29 @@ class QualityInspectionHardening(models.Model):
             rec._check_required_additional_attributes_hardening()
             rec._check_previous_process_hardening()
 
+    def _sync_strict_binary_lines_hardening(self):
+        for rec in self.filtered(lambda item: item.process_code in STRICT_BINARY_RESULT_PROCESS_CODES):
+            for line in rec.line_ids:
+                vals = {}
+
+                if line.value_cumple == "na":
+                    vals["value_cumple"] = False
+                if line.value_ok == "na":
+                    vals["value_ok"] = False
+                if line.result == "na":
+                    vals["result"] = False
+
+                if line.value_cumple in ("cumple", "no_cumple") and line.result != line.value_cumple:
+                    vals["result"] = line.value_cumple
+
+                if vals:
+                    line.write(vals)
+
     def action_start(self):
         for rec in self:
             rec.date_started = fields.Datetime.now()
             rec.state = "en_proceso"
+            rec._sync_strict_binary_lines_hardening()
             rec.message_post(
                 body=_("Inspección iniciada."),
                 subtype_xmlid="mail.mt_comment",

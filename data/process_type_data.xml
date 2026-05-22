@@ -37,7 +37,7 @@
             <field name="show_pegado" eval="True"/>
         </record>
 
-        <!-- 4. Laminadora (separada de Remanejo) -->
+        <!-- 4. Laminadora -->
         <record id="process_type_laminadora" model="quality.process.type">
             <field name="name">Laminadora</field>
             <field name="code">laminadora</field>
@@ -51,7 +51,7 @@
             <field name="show_humedad" eval="True"/>
         </record>
 
-        <!-- 5. Sierras y Ranuradoras (antes "Remanejo") -->
+        <!-- 5. Sierras y Ranuradoras -->
         <record id="process_type_sierras_ranuradoras" model="quality.process.type">
             <field name="name">Sierras y Ranuradoras</field>
             <field name="code">sierras_ranuradoras</field>
@@ -75,7 +75,7 @@
             <field name="show_apariencia" eval="True"/>
         </record>
 
-        <!-- 7. Impresión (solo atributos adicionales) -->
+        <!-- 7. Impresión -->
         <record id="process_type_impresion" model="quality.process.type">
             <field name="name">Impresión</field>
             <field name="code">impresion</field>
@@ -83,7 +83,21 @@
             <field name="show_apariencia" eval="True"/>
         </record>
 
-        <!-- 8. Acabado y Empaque (solo atributos adicionales) -->
+        <!-- 8. Esquinera -->
+        <record id="process_type_esquinera" model="quality.process.type">
+            <field name="name">Esquinera</field>
+            <field name="code">esquinera</field>
+            <field name="sequence">75</field>
+            <!-- FOLIO-QM-ODOO18-068: proceso solicitado por Calidad/Producción para Planta 2. -->
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_pegado" eval="True"/>
+            <field name="show_numero_corrida" eval="True"/>
+        </record>
+
+        <!-- 9. Acabado y Empaque -->
         <record id="process_type_acabado" model="quality.process.type">
             <field name="name">Acabado y Empaque</field>
             <field name="code">acabado_empaque</field>

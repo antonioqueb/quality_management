@@ -72,13 +72,31 @@
             <field name="show_pegado" eval="False"/>
         </record>
 
+        <record id="process_type_esquinera" model="quality.process.type">
+            <field name="name">Esquinera</field>
+            <field name="code">esquinera</field>
+            <!-- FOLIO-QM-ODOO18-068: endurecimiento del proceso Esquinera sin hacerlo parte de la secuencia obligatoria global. -->
+            <field name="capture_mode">full</field>
+            <field name="require_measures" eval="True"/>
+            <field name="require_additional_attributes" eval="True"/>
+            <field name="zero_value_blocking" eval="True"/>
+            <field name="show_largo" eval="True"/>
+            <field name="show_ancho" eval="True"/>
+            <field name="show_espesor" eval="True"/>
+            <field name="show_apariencia" eval="True"/>
+            <field name="show_pegado" eval="True"/>
+            <field name="show_numero_corrida" eval="True"/>
+        </record>
+
         <record id="process_type_acabado" model="quality.process.type">
             <field name="name">Acabado y Empaque</field>
             <field name="code">acabado_empaque</field>
+            <!-- FOLIO-QM-ODOO18-070: Acabado y Empaque solo captura atributos Cumple/No Cumple; no medidas numéricas. -->
             <field name="capture_mode">additional_only</field>
             <field name="require_measures" eval="False"/>
             <field name="require_additional_attributes" eval="True"/>
             <field name="zero_value_blocking" eval="True"/>
+
             <field name="show_largo" eval="False"/>
             <field name="show_ancho" eval="False"/>
             <field name="show_espesor" eval="False"/>
@@ -87,6 +105,53 @@
             <field name="show_apariencia" eval="False"/>
             <field name="show_humedad" eval="False"/>
             <field name="show_pegado" eval="False"/>
+            <field name="show_retiramiento" eval="False"/>
+            <field name="show_calibracion" eval="False"/>
+            <field name="show_engomado" eval="False"/>
+            <field name="show_alineacion" eval="False"/>
+            <field name="show_ranurado" eval="False"/>
+            <field name="show_troquelado" eval="False"/>
+            <field name="show_papel" eval="False"/>
+            <field name="show_adhesivo" eval="False"/>
+            <field name="show_tipo_hexagono" eval="False"/>
+            <field name="show_corte_guillotina" eval="False"/>
+            <field name="show_numero_corrida" eval="False"/>
+        </record>
+
+        <!-- FOLIO-QM-ODOO18-070: atributos de Acabado y Empaque quedan como booleanos Cumple/No Cumple. -->
+        <record id="attr_aca_amarre" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_aca_etiquetado" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_aca_emplayado" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_aca_apariencia" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
+        </record>
+
+        <record id="attr_aca_cantidad" model="quality.attribute.template">
+            <field name="attribute_type">boolean</field>
+            <field name="capture_zone">additional</field>
+            <field name="result_mode">cumple</field>
+            <field name="allow_zero" eval="False"/>
         </record>
 
     </data>

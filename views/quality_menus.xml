@@ -28,6 +28,14 @@
               action="action_quality_drawing_release"
               sequence="20"/>
 
+    <!-- FOLIO-QM-ODOO18-069: Troqueles se mueve de la raíz del módulo a Liberaciones. -->
+    <menuitem id="menu_quality_troquel"
+              name="Troqueles"
+              parent="menu_quality_releases"
+              action="action_quality_troquel"
+              sequence="30"
+              groups="quality_management.group_quality_manager"/>
+
     <menuitem id="menu_quality_certificate"
               name="Certificados"
               parent="menu_quality_root"
@@ -47,14 +55,6 @@
               parent="menu_quality_root"
               action="action_quality_customer_return"
               sequence="50"/>
-
-    <!-- FOLIO-QM-ODOO18-051: el menú de Troqueles se centraliza aquí y se elimina duplicidad con vistas de troquel. -->
-    <menuitem id="menu_quality_troquel"
-              name="Troqueles"
-              parent="menu_quality_root"
-              action="action_quality_troquel"
-              sequence="55"
-              groups="quality_management.group_quality_manager"/>
 
     <menuitem id="menu_quality_customer_document"
               name="Documentos de Cliente"

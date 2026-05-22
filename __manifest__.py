@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Gestión de Calidad - Hexágonos Mexicanos",
-    # FOLIO-QM-ODOO18-001: se actualiza la serie del manifiesto para Odoo 18.
-    "version": "18.0.3.2.0",
+    # FOLIO-QM-ODOO18-070: Acabado y Empaque queda limitado a atributos adicionales Cumple/No Cumple.
+    "version": "18.0.3.4.0",
     "category": "Manufacturing/Quality",
     "summary": "Gestión integral de calidad - Hexágonos (req. Feb-26)",
     "author": "Alphaqueb Consulting SAS",
@@ -23,7 +23,6 @@
     ],
     "data": [
         "security/quality_groups.xml",
-        # FOLIO-QM-ODOO18-002: el CSV estaba referenciado pero no incluido en el módulo cargado.
         "security/ir.model.access.csv",
         "security/quality_rules.xml",
         "security/quality_strict_acl.xml",
@@ -40,7 +39,6 @@
         "views/quality_drawing_release_views.xml",
         "views/quality_inspection_views.xml",
         "views/quality_certificate_views.xml",
-        # FOLIO-QM-ODOO18-003: las vistas heredadas de hardening se cargan después de sus vistas base.
         "views/quality_hardening_views.xml",
         "views/quality_corrective_action_views.xml",
         "views/quality_customer_return_views.xml",
@@ -50,7 +48,6 @@
         "views/res_company_views.xml",
         "views/product_views.xml",
         "views/project_task_quality_views.xml",
-        # FOLIO-QM-ODOO18-004: la vista de rutas hereda la pestaña Calidad creada en product_views.
         "views/quality_process_route_views.xml",
         "views/quality_retention_views.xml",
         "views/quality_change_history_views.xml",

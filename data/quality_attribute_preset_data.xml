@@ -194,5 +194,42 @@
             <field name="is_required" eval="True"/>
         </record>
 
+                <!-- ═══════════════ ESQUINERA ═══════════════ -->
+        <record id="attr_esquinera_medidas" model="quality.attribute.template">
+            <field name="name">Medidas correctas</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">10</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_esquinera_escuadra" model="quality.attribute.template">
+            <field name="name">Escuadra / Esquinado correcto</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">20</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_esquinera_pegado" model="quality.attribute.template">
+            <field name="name">Pegado correcto</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">30</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_esquinera_apariencia" model="quality.attribute.template">
+            <field name="name">Apariencia general</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">40</field>
+            <field name="is_required" eval="True"/>
+        </record>
+        <record id="attr_esquinera_etiquetado" model="quality.attribute.template">
+            <field name="name">Etiquetado</field>
+            <field name="process_type_id" ref="process_type_esquinera"/>
+            <field name="attribute_type">boolean</field>
+            <field name="sequence">50</field>
+            <field name="is_required" eval="True"/>
+        </record>
+
     </data>
 </odoo>

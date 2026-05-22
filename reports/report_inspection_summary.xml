@@ -70,7 +70,7 @@
                             </tbody>
                         </table>
 
-                        <t t-if="doc.show_largo or doc.show_ancho or doc.show_espesor or doc.show_hexagono or doc.show_resistencia or doc.show_apariencia or doc.show_humedad or doc.show_pegado or doc.show_retiramiento or doc.show_calibracion or doc.show_engomado">
+                        <t t-if="doc.capture_mode != 'additional_only' and doc.process_code != 'acabado_empaque' and (doc.show_largo or doc.show_ancho or doc.show_espesor or doc.show_hexagono or doc.show_resistencia or doc.show_apariencia or doc.show_humedad or doc.show_pegado or doc.show_retiramiento or doc.show_calibracion or doc.show_engomado)">
                             <h4>Medidas - <span t-field="doc.process_type_id.name"/></h4>
                             <table class="table table-bordered table-sm">
                                 <thead>
@@ -202,18 +202,32 @@
                                     <tr t-foreach="doc.line_ids" t-as="attr">
                                         <td><span t-field="attr.name"/></td>
                                         <td class="text-center">
-                                            <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
-                                            <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
-                                            <!-- FOLIO-QM-ODOO18-045: el resumen impreso soporta Cumple/NC y OK/NO OK. -->
-                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple"/>
-                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok"/>
+                                            <t t-if="doc.process_code == 'acabado_empaque'">
+                                                <t t-if="attr.value_cumple == 'cumple' or (not attr.value_cumple and attr.result == 'cumple')">Cumple</t>
+                                                <t t-elif="attr.value_cumple == 'no_cumple' or (not attr.value_cumple and attr.result == 'no_cumple')">No Cumple</t>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
+                                                <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
+                                                <!-- FOLIO-QM-ODOO18-045: el resumen impreso soporta Cumple/NC y OK/NO OK. -->
+                                                <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple"/>
+                                                <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok"/>
+                                            </t>
                                         </td>
                                         <td class="text-center">
-                                            <t t-if="attr.min_value or attr.max_value">
+                                            <t t-if="doc.process_code != 'acabado_empaque' and (attr.min_value or attr.max_value)">
                                                 <span t-field="attr.min_value"/> - <span t-field="attr.max_value"/> <span t-field="attr.unit"/>
                                             </t>
                                         </td>
-                                        <td class="text-center"><span t-field="attr.result"/></td>
+                                        <td class="text-center">
+                                            <t t-if="doc.process_code == 'acabado_empaque'">
+                                                <t t-if="attr.result == 'cumple' or attr.value_cumple == 'cumple'">Cumple</t>
+                                                <t t-elif="attr.result == 'no_cumple' or attr.value_cumple == 'no_cumple'">No Cumple</t>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-field="attr.result"/>
+                                            </t>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
