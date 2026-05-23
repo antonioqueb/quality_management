@@ -151,10 +151,12 @@ class QualitySampleRelease(models.Model):
             if not rec.project_task_id:
                 continue
 
-            domain = expression.AND([
-                [("id", "=", rec.project_task_id.id)],
-                rec._get_sample_release_project_task_domain(),
-            ])
+            domain = expression.AND(
+                [
+                    [("id", "=", rec.project_task_id.id)],
+                    rec._get_sample_release_project_task_domain(),
+                ]
+            )
 
             if not Task.search_count(domain):
                 raise ValidationError(_(

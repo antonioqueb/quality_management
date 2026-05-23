@@ -895,6 +895,17 @@ class QualityInspectionHardening(models.Model):
     folio = fields.Char("Folio de Producción", required=True, help="")
     code = fields.Char("Código de Producto", required=True, help="")
 
+    # FOLIO-QM-ODOO18-080:
+    # El lote no puede quedar como NOT NULL en borrador porque Odoo dispara web_save
+    # al interactuar con many2one/booleanos como Inspector, Supervisor o Sin Supervisor.
+    # Se valida obligatoriamente antes de iniciar/liberar, no durante la creación parcial.
+    lot_id = fields.Many2one(
+        "stock.lot",
+        "Lote de Fabricación",
+        tracking=True,
+        required=False,
+    )
+
     # FOLIO-QM-ODOO18-072 / 075:
     # Espesor no aplica en Octágono; se conserva para otros procesos.
     espesor = fields.Float("Espesor", digits=(16, 2))
@@ -943,6 +954,37 @@ class QualityInspectionHardening(models.Model):
         compute="_compute_process_gate_hardening",
         store=False,
     )
+
+    def init(self):
+        """
+        FOLIO-QM-ODOO18-080:
+        Corrige bases donde lot_id quedó con restricción NOT NULL por required=True
+        previo. La inspección debe poder guardarse como borrador mientras el usuario
+        termina de seleccionar personal, supervisor y lote.
+        """
+        super().init()
+        cr = self.env.cr
+
+        cr.execute("""
+            SELECT EXISTS (
+                SELECT 1
+                  FROM information_schema.tables
+                 WHERE table_name = 'quality_inspection'
+            )
+        """)
+        table_exists = cr.fetchone()[0]
+        if not table_exists:
+            return
+
+        cr.execute("""
+            SELECT is_nullable
+              FROM information_schema.columns
+             WHERE table_name = 'quality_inspection'
+               AND column_name = 'lot_id'
+        """)
+        row = cr.fetchone()
+        if row and row[0] == "NO":
+            cr.execute("ALTER TABLE quality_inspection ALTER COLUMN lot_id DROP NOT NULL")
 
     def _get_quality_attribute_templates_hardening(self):
         self.ensure_one()
@@ -994,8 +1036,16 @@ class QualityInspectionHardening(models.Model):
             "unit": template.unit,
             "allow_zero": getattr(template, "allow_zero", False),
             "sequence": template.sequence,
-            "value_cumple": "na" if template.attribute_type == "boolean" and result_mode == "cumple" else False,
-            "value_ok": "na" if template.attribute_type == "boolean" and result_mode == "ok" else False,
+            "value_cumple": (
+                "na"
+                if template.attribute_type == "boolean" and result_mode == "cumple"
+                else False
+            ),
+            "value_ok": (
+                "na"
+                if template.attribute_type == "boolean" and result_mode == "ok"
+                else False
+            ),
             "result": "na",
         }
 
@@ -1040,6 +1090,7 @@ class QualityInspectionHardening(models.Model):
             self._normalize_inspection_vals_hardening(vals)
             for vals in vals_list
         ]
+
         records = super().create(clean_vals_list)
         records._cleanup_octagono_not_applicable_hardening()
 
@@ -1156,9 +1207,14 @@ class QualityInspectionHardening(models.Model):
             rec.process_gate_open = False
             rec.process_gate_message = rec._build_previous_process_block_message_hardening(previous_code)
 
-    @api.constrains("sin_supervisor", "supervisor_id")
+    @api.constrains("sin_supervisor", "supervisor_id", "state")
     def _check_supervisor_or_no_supervisor(self):
         for rec in self:
+            # FOLIO-QM-ODOO18-080:
+            # No bloquear guardados parciales en borrador. El bloqueo real se aplica
+            # antes de iniciar/liberar la inspección.
+            if rec.state == "borrador":
+                continue
             if not rec.sin_supervisor and not rec.supervisor_id:
                 raise ValidationError(
                     _("Seleccione un supervisor o marque 'Sin Supervisor'.")
@@ -1553,11 +1609,43 @@ class QualityInspectionHardening(models.Model):
                     % ", ".join(missing)
                 )
 
+    def _check_required_header_before_start_hardening(self):
+        for rec in self:
+            missing = []
+
+            if not rec.process_type_id:
+                missing.append("Tipo de Proceso")
+            if not rec.production_order_id:
+                missing.append("Orden de Producción")
+            if not rec.product_id:
+                missing.append("Producto")
+            if not rec.lot_id:
+                missing.append("Lote de Fabricación")
+            if not rec.partner_id:
+                missing.append("Cliente")
+            if not rec.operator_id:
+                missing.append("Operador")
+            if not rec.inspector_id:
+                missing.append("Inspector de Calidad")
+            if not rec.shift:
+                missing.append("Turno")
+            if not rec.plant:
+                missing.append("Planta")
+            if not rec.sin_supervisor and not rec.supervisor_id:
+                missing.append("Supervisor o marque Sin Supervisor")
+
+            if missing:
+                raise UserError(
+                    _("Complete los datos generales antes de iniciar la inspección: %s")
+                    % ", ".join(missing)
+                )
+
     def _full_quality_validation_hardening(self):
         for rec in self:
             if rec.state != "en_proceso":
                 raise UserError(_("Debe presionar 'INICIAR INSPECCIÓN' antes de liberar."))
 
+            rec._check_required_header_before_start_hardening()
             rec._check_reserved_duplicate_attributes_hardening()
             rec._check_measures_captured_hardening()
             rec._check_required_additional_attributes_hardening()
@@ -1606,6 +1694,8 @@ class QualityInspectionHardening(models.Model):
 
     def action_start(self):
         for rec in self:
+            # FOLIO-QM-ODOO18-080: permitir borrador incompleto, pero no iniciar sin encabezado completo.
+            rec._check_required_header_before_start_hardening()
             # FOLIO-QM-ODOO18-074: no se permite iniciar captura si el proceso previo no está liberado.
             rec._check_previous_process_hardening()
             rec.date_started = fields.Datetime.now()
