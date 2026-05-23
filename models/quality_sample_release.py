@@ -353,6 +353,21 @@ class QualitySampleRelease(models.Model):
                 )
 
 
+    @api.constrains("state", "inspector_id")
+    def _check_inspector_required_when_not_draft(self):
+        for rec in self:
+            if rec.state != "borrador" and not rec.inspector_id:
+                raise ValidationError(_(
+                    "No se puede avanzar la liberación de muestra sin Inspector de Calidad."
+                ))
+
+    def _check_inspector_required_for_progress(self):
+        for rec in self:
+            if not rec.inspector_id:
+                raise UserError(_(
+                    "Seleccione un Inspector de Calidad antes de avanzar la liberación de muestra."
+                ))
+
     def _get_sample_release_notification_partners(self):
         """
         Devuelve únicamente los contactos que deben recibir avisos de Liberación de Muestras:
@@ -420,10 +435,7 @@ class QualitySampleRelease(models.Model):
 
     def action_submit_inspection(self):
         for rec in self:
-            if not rec.inspector_id:
-                raise UserError(_(
-                    "Seleccione un Inspector de Calidad antes de enviar la muestra a inspección."
-                ))
+            rec._check_inspector_required_for_progress()
 
             rec._check_spec_pdf()
             rec._check_pt_workflow()
@@ -451,6 +463,7 @@ class QualitySampleRelease(models.Model):
 
     def action_accept(self):
         for rec in self:
+            rec._check_inspector_required_for_progress()
             rec._check_attributes_valid(block_failing=True)
 
             rec.state = "aceptado"
@@ -468,6 +481,7 @@ class QualitySampleRelease(models.Model):
 
     def action_reject(self):
         for rec in self:
+            rec._check_inspector_required_for_progress()
             rec.state = "rechazado"
             rec.date_inspected = fields.Datetime.now()
             rec.activity_feedback(
