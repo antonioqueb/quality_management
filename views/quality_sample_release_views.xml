@@ -106,14 +106,43 @@
                         </page>
 
                         <page string="Atributos de Inspección" name="attrs">
-                            <field name="inspection_line_ids">
+                            <div class="alert alert-info" role="alert">
+                                <i class="fa fa-info-circle"/>
+                                Puede seleccionar una plantilla existente o dejar <b>Plantilla</b> vacío para capturar un atributo manual.
+                                Los atributos manuales permiten definir nombre, tipo de dato, opciones, rango y si admiten No aplica.
+                            </div>
+
+                            <field name="inspection_line_ids"
+                                   context="{
+                                       'default_capture_zone': 'additional',
+                                       'default_result_mode': 'cumple',
+                                       'default_attribute_type': 'boolean'
+                                   }">
                                 <list editable="bottom">
-                                    <field name="allow_not_applicable" column_invisible="1"/>
+                                    <field name="capture_zone" column_invisible="1"/>
                                     <field name="result_mode" column_invisible="1"/>
-                                    <field name="allow_zero" column_invisible="1"/>
+
                                     <field name="sequence" widget="handle"/>
-                                    <field name="name" readonly="1"/>
-                                    <field name="attribute_type" readonly="1"/>
+
+                                    <field name="attribute_template_id"
+                                           string="Plantilla"
+                                           optional="show"
+                                           options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+
+                                    <field name="name"
+                                           string="Nombre del atributo"
+                                           readonly="attribute_template_id"
+                                           placeholder="Ej. Color/Tono, Registro, Empaque..."/>
+
+                                    <field name="attribute_type"
+                                           string="Tipo de dato"
+                                           readonly="attribute_template_id"/>
+
+                                    <field name="selection_options"
+                                           string="Opciones"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'selection'"
+                                           placeholder="Ej. Bueno, Regular, Malo"/>
 
                                     <field name="value_float"
                                            string="Valor medido"
@@ -121,19 +150,25 @@
 
                                     <field name="value_selection"
                                            string="Valor selección"
-                                           invisible="attribute_type != 'selection' or is_not_applicable"/>
+                                           invisible="attribute_type != 'selection' or is_not_applicable"
+                                           placeholder="Capture una opción configurada"/>
 
                                     <field name="value_char"
                                            string="Valor texto"
                                            invisible="attribute_type != 'char' or is_not_applicable"/>
 
                                     <field name="value_cumple_required"
-                                           string="Resultado"
+                                           string="Cumple/No cumple"
                                            invisible="attribute_type != 'boolean' or is_not_applicable"/>
 
                                     <field name="result_required"
                                            string="Resultado"
                                            invisible="attribute_type not in ('selection','char') or is_not_applicable"/>
+
+                                    <field name="allow_not_applicable"
+                                           string="Permitir N/A"
+                                           readonly="attribute_template_id"
+                                           optional="show"/>
 
                                     <field name="is_not_applicable"
                                            string="No aplica"
@@ -141,16 +176,24 @@
 
                                     <field name="min_value"
                                            string="Mínimo"
-                                           readonly="1"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float'"/>
+
                                     <field name="max_value"
                                            string="Máximo"
-                                           readonly="1"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float'"/>
+
                                     <field name="unit"
                                            string="Unidad"
-                                           readonly="1"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float'"/>
+
+                                    <field name="allow_zero"
+                                           string="Permitir cero"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'float'"
+                                           optional="hide"/>
 
                                     <field name="result"
                                            string="Resultado calculado"
@@ -159,10 +202,10 @@
                                            invisible="attribute_type != 'float' or is_not_applicable"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
+
                                     <field name="notes" optional="show"/>
                                 </list>
                             </field>
-
                         </page>
 
                         <page string="Evidencia (Imágenes)" name="evidence">
