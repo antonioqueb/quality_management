@@ -292,35 +292,29 @@
                                     <tr t-foreach="doc.line_ids" t-as="attr">
                                         <td><span t-field="attr.name"/></td>
                                         <td class="text-center">
-                                            <t t-if="doc.process_code == 'acabado_empaque'">
-                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
-                                                <t t-elif="attr.value_cumple_required == 'cumple' or attr.value_cumple == 'cumple' or (not attr.value_cumple and attr.result == 'cumple')">Cumple</t>
-                                                <t t-elif="attr.value_cumple_required == 'no_cumple' or attr.value_cumple == 'no_cumple' or (not attr.value_cumple and attr.result == 'no_cumple')">No Cumple</t>
+                                            <t t-if="attr.is_not_applicable or attr.result == 'na'">—</t>
+                                            <t t-elif="attr.attribute_type == 'float' and (attr.value_float or attr.allow_zero)">
+                                                <span t-field="attr.value_float"/>
                                             </t>
-                                            <t t-else="">
-                                                <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
-                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
-                                                <span t-elif="attr.attribute_type == 'selection'" t-field="attr.value_selection"/>
-                                                <span t-elif="attr.attribute_type == 'char'" t-field="attr.value_char"/>
-                                                <!-- FOLIO-QM-ODOO18-045/081: el resumen impreso soporta Cumple/NC y OK/NO OK sin N/A automático. -->
-                                                <span t-elif="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple_required"/>
-                                                <span t-elif="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok_required"/>
-                                            </t>
+                                            <span t-elif="attr.attribute_type == 'selection'" t-field="attr.value_selection"/>
+                                            <span t-elif="attr.attribute_type == 'char'" t-field="attr.value_char"/>
+                                            <t t-elif="attr.attribute_type == 'boolean'">—</t>
+                                            <t t-else="">—</t>
                                         </td>
                                         <td class="text-center">
-                                            <t t-if="doc.process_code != 'acabado_empaque' and (attr.min_value or attr.max_value)">
+                                            <t t-if="not (attr.is_not_applicable or attr.result == 'na') and attr.attribute_type == 'float' and (attr.min_value or attr.max_value)">
                                                 <span t-field="attr.min_value"/> - <span t-field="attr.max_value"/> <span t-field="attr.unit"/>
                                             </t>
                                         </td>
                                         <td class="text-center">
-                                            <t t-if="doc.process_code == 'acabado_empaque'">
-                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
-                                                <t t-elif="attr.result == 'cumple' or attr.value_cumple_required == 'cumple' or attr.value_cumple == 'cumple'">Cumple</t>
-                                                <t t-elif="attr.result == 'no_cumple' or attr.value_cumple_required == 'no_cumple' or attr.value_cumple == 'no_cumple'">No Cumple</t>
-                                            </t>
-                                            <t t-else="">
+                                            <span t-if="attr.is_not_applicable or attr.result == 'na'">No aplica</span>
+                                            <span t-elif="attr.result in ('cumple','ok')" style="color: green; font-weight: bold;">
                                                 <span t-field="attr.result"/>
-                                            </t>
+                                            </span>
+                                            <span t-elif="attr.result in ('no_cumple','no_ok')" style="color: red; font-weight: bold;">
+                                                <span t-field="attr.result"/>
+                                            </span>
+                                            <span t-else="" style="color: #6b7280;">Pendiente</span>
                                         </td>
                                     </tr>
                                 </tbody>

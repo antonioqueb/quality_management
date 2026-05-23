@@ -71,6 +71,7 @@ NA_RESULTS = {"na"}
 
 CUMPLE_VALUES = {"cumple", "no_cumple"}
 OK_VALUES = {"ok", "no_ok"}
+OK_TO_CUMPLE_RESULT = {"ok": "cumple", "no_ok": "no_cumple"}
 
 
 def _split_selection_options(value):
@@ -642,6 +643,7 @@ class QualityInspectionLineHardening(models.Model):
             "is_not_applicable",
             "allow_not_applicable",
             "selection_options",
+            "value_selection",
         }
         if optional_columns.issubset(line_columns):
             cr.execute("""
@@ -660,12 +662,106 @@ class QualityInspectionLineHardening(models.Model):
                            WHEN result IN ('cumple','no_cumple','ok','no_ok') THEN result
                            ELSE NULL
                        END,
-                       is_not_applicable = CASE WHEN result = 'na' THEN TRUE ELSE FALSE END,
+                       is_not_applicable = CASE WHEN COALESCE(allow_not_applicable, FALSE) AND result = 'na' THEN TRUE ELSE FALSE END,
                        allow_not_applicable = COALESCE(allow_not_applicable, FALSE)
                  WHERE value_cumple_required IS NULL
                     OR value_ok_required IS NULL
                     OR result_required IS NULL
                     OR is_not_applicable IS NULL
+            """)
+
+
+            # Limpieza específica para Liberación de Muestras:
+            # - Booleanos siempre quedan en Cumple/No Cumple.
+            # - OK/NO OK histórico se mapea a Cumple/No Cumple.
+            # - N/A solo permanece si allow_not_applicable=True y fue marcado.
+            cr.execute("""
+                WITH sample_boolean AS (
+                    SELECT
+                        id,
+                        CASE
+                            WHEN value_cumple_required IN ('cumple','no_cumple') THEN value_cumple_required
+                            WHEN value_cumple IN ('cumple','no_cumple') THEN value_cumple
+                            WHEN result_required IN ('cumple','no_cumple') THEN result_required
+                            WHEN result IN ('cumple','no_cumple') THEN result
+                            WHEN value_ok_required = 'ok' THEN 'cumple'
+                            WHEN value_ok_required = 'no_ok' THEN 'no_cumple'
+                            WHEN value_ok = 'ok' THEN 'cumple'
+                            WHEN value_ok = 'no_ok' THEN 'no_cumple'
+                            WHEN result_required = 'ok' THEN 'cumple'
+                            WHEN result_required = 'no_ok' THEN 'no_cumple'
+                            WHEN result = 'ok' THEN 'cumple'
+                            WHEN result = 'no_ok' THEN 'no_cumple'
+                            ELSE NULL
+                        END AS normalized_result,
+                        (
+                            COALESCE(allow_not_applicable, FALSE)
+                            AND (
+                                COALESCE(is_not_applicable, FALSE)
+                                OR value_cumple = 'na'
+                                OR value_ok = 'na'
+                                OR result = 'na'
+                            )
+                        ) AS keep_na
+                    FROM quality_inspection_line
+                    WHERE sample_release_id IS NOT NULL
+                      AND attribute_type = 'boolean'
+                )
+                UPDATE quality_inspection_line AS line
+                   SET result_mode = 'cumple',
+                       capture_zone = 'additional',
+                       value_ok = NULL,
+                       value_ok_required = NULL,
+                       value_float = 0,
+                       value_char = NULL,
+                       value_selection = NULL,
+                       selection_options = NULL,
+                       min_value = 0,
+                       max_value = 0,
+                       unit = NULL,
+                       allow_zero = FALSE,
+                       value_cumple = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN sample_boolean.normalized_result
+                           ELSE NULL
+                       END,
+                       value_cumple_required = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN sample_boolean.normalized_result
+                           ELSE NULL
+                       END,
+                       result = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN sample_boolean.normalized_result
+                           WHEN sample_boolean.keep_na THEN 'na'
+                           ELSE NULL
+                       END,
+                       result_required = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN sample_boolean.normalized_result
+                           ELSE NULL
+                       END,
+                       is_not_applicable = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN FALSE
+                           WHEN sample_boolean.keep_na THEN TRUE
+                           ELSE FALSE
+                       END,
+                       allow_not_applicable = COALESCE(line.allow_not_applicable, FALSE)
+                  FROM sample_boolean
+                 WHERE line.id = sample_boolean.id
+            """)
+
+            cr.execute("""
+                UPDATE quality_inspection_line
+                   SET result = NULL,
+                       result_required = NULL,
+                       is_not_applicable = FALSE,
+                       value_cumple = CASE WHEN value_cumple = 'na' THEN NULL ELSE value_cumple END,
+                       value_ok = CASE WHEN value_ok = 'na' THEN NULL ELSE value_ok END
+                 WHERE sample_release_id IS NOT NULL
+                   AND NOT COALESCE(allow_not_applicable, FALSE)
+                   AND (
+                       result = 'na'
+                       OR COALESCE(is_not_applicable, FALSE)
+                       OR value_cumple = 'na'
+                       OR value_ok = 'na'
+                   )
             """)
 
     @api.depends("inspection_id.process_code")
@@ -775,30 +871,42 @@ class QualityInspectionLineHardening(models.Model):
             vals["value_selection"] = False
             return vals
 
+        if "is_not_applicable" in vals and not vals.get("is_not_applicable"):
+            if vals.get("result") == "na" or "result" not in vals:
+                vals["result"] = False
+            if vals.get("result_required") == "na" or "result_required" not in vals:
+                vals["result_required"] = False
+
         if vals.get("value_cumple_required") in CUMPLE_VALUES:
+            vals["is_not_applicable"] = False
             vals["value_cumple"] = vals["value_cumple_required"]
             vals["result"] = vals["value_cumple_required"]
             vals["result_required"] = vals["value_cumple_required"]
 
         if vals.get("value_cumple") in CUMPLE_VALUES:
+            vals["is_not_applicable"] = False
             vals["value_cumple_required"] = vals["value_cumple"]
             vals["result"] = vals["value_cumple"]
             vals["result_required"] = vals["value_cumple"]
 
         if vals.get("value_ok_required") in OK_VALUES:
+            vals["is_not_applicable"] = False
             vals["value_ok"] = vals["value_ok_required"]
             vals["result"] = vals["value_ok_required"]
             vals["result_required"] = vals["value_ok_required"]
 
         if vals.get("value_ok") in OK_VALUES:
+            vals["is_not_applicable"] = False
             vals["value_ok_required"] = vals["value_ok"]
             vals["result"] = vals["value_ok"]
             vals["result_required"] = vals["value_ok"]
 
         if vals.get("result_required") in VALID_FINAL_RESULTS:
+            vals["is_not_applicable"] = False
             vals["result"] = vals["result_required"]
 
         if vals.get("result") in VALID_FINAL_RESULTS:
+            vals["is_not_applicable"] = False
             vals["result_required"] = vals["result"]
 
         if "value_selection" in vals and vals.get("value_selection"):
@@ -840,6 +948,61 @@ class QualityInspectionLineHardening(models.Model):
             set_value("value_cumple_required", source or False)
             set_value("result", source or False)
             set_value("result_required", source or False)
+            return vals
+
+        if self.sample_release_id and self.attribute_type == "boolean":
+            source = (
+                self.value_cumple_required
+                or (self.value_cumple if self.value_cumple in CUMPLE_VALUES else False)
+                or (self.result_required if self.result_required in CUMPLE_VALUES else False)
+                or (self.result if self.result in CUMPLE_VALUES else False)
+            )
+            if not source:
+                ok_source = (
+                    self.value_ok_required
+                    or (self.value_ok if self.value_ok in OK_VALUES else False)
+                    or (self.result_required if self.result_required in OK_VALUES else False)
+                    or (self.result if self.result in OK_VALUES else False)
+                )
+                source = OK_TO_CUMPLE_RESULT.get(ok_source)
+
+            wants_na = bool(
+                self.allow_not_applicable
+                and not source
+                and (
+                    self.is_not_applicable
+                    or self.result == "na"
+                    or self.value_cumple == "na"
+                    or self.value_ok == "na"
+                )
+            )
+
+            set_value("capture_zone", "additional")
+            set_value("result_mode", "cumple")
+            set_value("value_ok", False)
+            set_value("value_ok_required", False)
+            set_value("value_float", 0.0)
+            set_value("value_char", False)
+            set_value("value_selection", False)
+            set_value("selection_options", False)
+            set_value("min_value", 0.0)
+            set_value("max_value", 0.0)
+            set_value("unit", False)
+            set_value("allow_zero", False)
+
+            if wants_na:
+                set_value("is_not_applicable", True)
+                set_value("value_cumple", False)
+                set_value("value_cumple_required", False)
+                set_value("result", "na")
+                set_value("result_required", False)
+            else:
+                set_value("is_not_applicable", False)
+                set_value("value_cumple", source or False)
+                set_value("value_cumple_required", source or False)
+                set_value("result", source or False)
+                set_value("result_required", source or False)
+
             return vals
 
         if self.result == "na" and self.allow_not_applicable and not self.is_not_applicable:

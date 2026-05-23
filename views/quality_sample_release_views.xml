@@ -109,61 +109,57 @@
                             <field name="inspection_line_ids">
                                 <list editable="bottom">
                                     <field name="allow_not_applicable" column_invisible="1"/>
+                                    <field name="result_mode" column_invisible="1"/>
+                                    <field name="allow_zero" column_invisible="1"/>
                                     <field name="sequence" widget="handle"/>
-                                    <field name="name"/>
-                                    <field name="attribute_type"/>
-                                    <field name="result_mode"
-                                           invisible="attribute_type != 'boolean'"/>
+                                    <field name="name" readonly="1"/>
+                                    <field name="attribute_type" readonly="1"/>
 
                                     <field name="value_float"
                                            string="Valor medido"
-                                           invisible="attribute_type != 'float'"/>
+                                           invisible="attribute_type != 'float' or is_not_applicable"/>
 
                                     <field name="value_selection"
                                            string="Valor selección"
-                                           invisible="attribute_type != 'selection'"/>
+                                           invisible="attribute_type != 'selection' or is_not_applicable"/>
 
                                     <field name="value_char"
                                            string="Valor texto"
-                                           invisible="attribute_type != 'char'"/>
+                                           invisible="attribute_type != 'char' or is_not_applicable"/>
 
                                     <field name="value_cumple_required"
-                                           string="Cumple/NC"
-                                           invisible="attribute_type != 'boolean' or result_mode != 'cumple'"
-                                           widget="badge"
-                                           decoration-success="value_cumple_required == 'cumple'"
-                                           decoration-danger="value_cumple_required == 'no_cumple'"/>
-
-                                    <field name="value_ok_required"
-                                           string="OK/NO OK"
-                                           invisible="attribute_type != 'boolean' or result_mode != 'ok'"
-                                           widget="badge"
-                                           decoration-success="value_ok_required == 'ok'"
-                                           decoration-danger="value_ok_required == 'no_ok'"/>
-
-                                    <field name="is_not_applicable"
-                                           string="N/A"
-                                           invisible="not allow_not_applicable"/>
-
-                                    <field name="min_value" invisible="attribute_type != 'float'"/>
-                                    <field name="max_value" invisible="attribute_type != 'float'"/>
-                                    <field name="unit" invisible="attribute_type != 'float'"/>
-                                    <field name="allow_zero" invisible="attribute_type != 'float'"/>
+                                           string="Resultado"
+                                           invisible="attribute_type != 'boolean' or is_not_applicable"/>
 
                                     <field name="result_required"
                                            string="Resultado"
-                                           invisible="attribute_type not in ('selection','char') or is_not_applicable"
-                                           widget="badge"
-                                           decoration-success="result_required in ('cumple','ok')"
-                                           decoration-danger="result_required in ('no_cumple','no_ok')"/>
+                                           invisible="attribute_type not in ('selection','char') or is_not_applicable"/>
+
+                                    <field name="is_not_applicable"
+                                           string="No aplica"
+                                           invisible="not allow_not_applicable"/>
+
+                                    <field name="min_value"
+                                           string="Mínimo"
+                                           readonly="1"
+                                           invisible="attribute_type != 'float'"/>
+                                    <field name="max_value"
+                                           string="Máximo"
+                                           readonly="1"
+                                           invisible="attribute_type != 'float'"/>
+                                    <field name="unit"
+                                           string="Unidad"
+                                           readonly="1"
+                                           invisible="attribute_type != 'float'"/>
 
                                     <field name="result"
-                                           string="Resultado automático"
+                                           string="Resultado calculado"
                                            readonly="1"
                                            widget="badge"
-                                           invisible="attribute_type != 'float' and not is_not_applicable"
+                                           invisible="attribute_type != 'float' or is_not_applicable"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
+                                    <field name="notes" optional="show"/>
                                 </list>
                             </field>
 

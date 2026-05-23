@@ -90,28 +90,36 @@
                                         <td><t t-esc="line_index + 1"/></td>
                                         <td><span t-field="line.name"/></td>
                                         <td class="text-center">
-                                            <span t-if="line.attribute_type == 'float'" t-field="line.value_float"/>
-                                            <t t-if="line.is_not_applicable or line.result == 'na'">N/A</t>
+                                            <t t-if="line.is_not_applicable or line.result == 'na'">—</t>
+                                            <t t-elif="line.attribute_type == 'float' and (line.value_float or line.allow_zero)">
+                                                <span t-field="line.value_float"/>
+                                            </t>
                                             <span t-elif="line.attribute_type == 'selection'" t-field="line.value_selection"/>
                                             <span t-elif="line.attribute_type == 'char'" t-field="line.value_char"/>
-                                            <!-- FOLIO-QM-ODOO18-044/081: se muestran los modos reales sin N/A automático. -->
-                                            <span t-elif="line.attribute_type == 'boolean' and line.result_mode == 'cumple'" t-field="line.value_cumple_required"/>
-                                            <span t-elif="line.attribute_type == 'boolean' and line.result_mode == 'ok'" t-field="line.value_ok_required"/>
+                                            <t t-elif="line.attribute_type == 'boolean'">—</t>
+                                            <t t-else="">—</t>
                                         </td>
                                         <td class="text-center">
-                                            <t t-if="line.min_value or line.max_value">
+                                            <t t-if="not (line.is_not_applicable or line.result == 'na') and line.attribute_type == 'float' and (line.min_value or line.max_value)">
                                                 <span t-field="line.min_value"/> - <span t-field="line.max_value"/>
                                             </t>
                                         </td>
-                                        <td class="text-center"><span t-field="line.unit"/></td>
                                         <td class="text-center">
-                                            <span t-if="line.result in ('cumple','ok')" style="color: green; font-weight: bold;">
+                                            <t t-if="not (line.is_not_applicable or line.result == 'na')">
+                                                <span t-field="line.unit"/>
+                                            </t>
+                                        </td>
+                                        <td class="text-center">
+                                            <span t-if="line.is_not_applicable or line.result == 'na'">
+                                                No aplica
+                                            </span>
+                                            <span t-elif="line.result in ('cumple','ok')" style="color: green; font-weight: bold;">
                                                 <span t-field="line.result"/>
                                             </span>
-                                            <span t-if="line.result in ('no_cumple','no_ok')" style="color: red; font-weight: bold;">
+                                            <span t-elif="line.result in ('no_cumple','no_ok')" style="color: red; font-weight: bold;">
                                                 <span t-field="line.result"/>
                                             </span>
-                                            <span t-if="line.result == 'na' or line.is_not_applicable">N/A</span>
+                                            <span t-else="" style="color: #6b7280;">Pendiente</span>
                                         </td>
                                     </tr>
                                 </tbody>

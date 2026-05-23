@@ -177,12 +177,24 @@ class QualitySampleRelease(models.Model):
             )
 
     def _prepare_sample_attribute_line_vals(self, template):
-        result_mode = getattr(template, "result_mode", False) or "cumple"
+        """
+        En Liberación de Muestras los atributos booleanos se capturan siempre como
+        Cumple / No Cumple. OK / NO OK queda reservado para inspecciones donde el
+        proceso lo configure explícitamente, pero no para esta pantalla operativa.
+
+        N/A tampoco se usa como valor por defecto: solo queda disponible cuando la
+        plantilla permita No aplica y el usuario lo marque de forma explícita.
+        """
+        attribute_type = template.attribute_type
+        is_boolean = attribute_type == "boolean"
+        is_float = attribute_type == "float"
+        is_selection = attribute_type == "selection"
+        result_mode = "cumple" if is_boolean else (getattr(template, "result_mode", False) or "cumple")
 
         return {
             "attribute_template_id": template.id,
             "name": template.name,
-            "attribute_type": template.attribute_type,
+            "attribute_type": attribute_type,
             "capture_zone": getattr(template, "capture_zone", False) or "additional",
             "result_mode": result_mode,
             "value_float": 0.0,
@@ -192,13 +204,13 @@ class QualitySampleRelease(models.Model):
             "value_cumple_required": False,
             "value_ok": False,
             "value_ok_required": False,
-            "min_value": template.min_value,
-            "max_value": template.max_value,
-            "unit": template.unit if template.attribute_type == "float" else False,
-            "allow_zero": getattr(template, "allow_zero", False) if template.attribute_type == "float" else False,
+            "min_value": template.min_value if is_float else 0.0,
+            "max_value": template.max_value if is_float else 0.0,
+            "unit": template.unit if is_float else False,
+            "allow_zero": getattr(template, "allow_zero", False) if is_float else False,
             "allow_not_applicable": getattr(template, "allow_not_applicable", False),
             "is_not_applicable": False,
-            "selection_options": template.selection_options if template.attribute_type == "selection" else False,
+            "selection_options": template.selection_options if is_selection else False,
             "result": False,
             "result_required": False,
             "sequence": template.sequence,
