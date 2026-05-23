@@ -293,15 +293,18 @@
                                         <td><span t-field="attr.name"/></td>
                                         <td class="text-center">
                                             <t t-if="doc.process_code == 'acabado_empaque'">
-                                                <t t-if="attr.value_cumple == 'cumple' or (not attr.value_cumple and attr.result == 'cumple')">Cumple</t>
-                                                <t t-elif="attr.value_cumple == 'no_cumple' or (not attr.value_cumple and attr.result == 'no_cumple')">No Cumple</t>
+                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
+                                                <t t-elif="attr.value_cumple_required == 'cumple' or attr.value_cumple == 'cumple' or (not attr.value_cumple and attr.result == 'cumple')">Cumple</t>
+                                                <t t-elif="attr.value_cumple_required == 'no_cumple' or attr.value_cumple == 'no_cumple' or (not attr.value_cumple and attr.result == 'no_cumple')">No Cumple</t>
                                             </t>
                                             <t t-else="">
                                                 <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
-                                                <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
-                                                <!-- FOLIO-QM-ODOO18-045: el resumen impreso soporta Cumple/NC y OK/NO OK. -->
-                                                <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple"/>
-                                                <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok"/>
+                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
+                                                <span t-elif="attr.attribute_type == 'selection'" t-field="attr.value_selection"/>
+                                                <span t-elif="attr.attribute_type == 'char'" t-field="attr.value_char"/>
+                                                <!-- FOLIO-QM-ODOO18-045/081: el resumen impreso soporta Cumple/NC y OK/NO OK sin N/A automático. -->
+                                                <span t-elif="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple_required"/>
+                                                <span t-elif="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok_required"/>
                                             </t>
                                         </td>
                                         <td class="text-center">
@@ -311,8 +314,9 @@
                                         </td>
                                         <td class="text-center">
                                             <t t-if="doc.process_code == 'acabado_empaque'">
-                                                <t t-if="attr.result == 'cumple' or attr.value_cumple == 'cumple'">Cumple</t>
-                                                <t t-elif="attr.result == 'no_cumple' or attr.value_cumple == 'no_cumple'">No Cumple</t>
+                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
+                                                <t t-elif="attr.result == 'cumple' or attr.value_cumple_required == 'cumple' or attr.value_cumple == 'cumple'">Cumple</t>
+                                                <t t-elif="attr.result == 'no_cumple' or attr.value_cumple_required == 'no_cumple' or attr.value_cumple == 'no_cumple'">No Cumple</t>
                                             </t>
                                             <t t-else="">
                                                 <span t-field="attr.result"/>

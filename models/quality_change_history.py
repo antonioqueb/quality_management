@@ -27,8 +27,10 @@ TRACKED_INSPECTION_FIELDS = [
 ]
 
 TRACKED_LINE_FIELDS = [
-    "value_float", "value_char", "value_cumple", "value_ok",
-    "min_value", "max_value", "result", "notes",
+    "value_float", "value_char", "value_selection", "value_cumple",
+    "value_cumple_required", "value_ok", "value_ok_required",
+    "is_not_applicable", "result_required", "min_value", "max_value",
+    "result", "notes",
 ]
 
 

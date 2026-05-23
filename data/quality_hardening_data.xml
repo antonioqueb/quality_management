@@ -20,6 +20,8 @@
             <field name="show_espesor" eval="False"/>
             <field name="show_hexagono" eval="True"/>
             <field name="show_resistencia" eval="False"/>
+            <field name="allow_resistencia_na" eval="False"/>
+            <field name="allow_hexagono_na" eval="False"/>
             <field name="show_apariencia" eval="False"/>
             <field name="show_humedad" eval="False"/>
             <field name="show_pegado" eval="False"/>
@@ -70,6 +72,8 @@
             <field name="show_espesor" eval="True"/>
             <field name="show_hexagono" eval="True"/>
             <field name="show_resistencia" eval="True"/>
+            <field name="allow_resistencia_na" eval="True"/>
+            <field name="allow_hexagono_na" eval="True"/>
             <field name="show_apariencia" eval="True"/>
             <field name="show_humedad" eval="True"/>
         </record>
@@ -88,6 +92,8 @@
             <field name="show_espesor" eval="True"/>
             <field name="show_hexagono" eval="True"/>
             <field name="show_resistencia" eval="True"/>
+            <field name="allow_resistencia_na" eval="True"/>
+            <field name="allow_hexagono_na" eval="True"/>
             <field name="show_apariencia" eval="True"/>
             <field name="show_humedad" eval="True"/>
         </record>
@@ -194,6 +200,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
         <record id="attr_imp_registro" model="quality.attribute.template">
@@ -201,6 +208,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
         <record id="attr_imp_legibilidad" model="quality.attribute.template">
@@ -208,6 +216,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
         <record id="attr_imp_uniformidad" model="quality.attribute.template">
@@ -215,6 +224,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
         <!-- FOLIO-QM-ODOO18-070: atributos de Acabado y Empaque quedan como booleanos Cumple/No Cumple. -->
@@ -223,6 +233,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
         <record id="attr_aca_etiquetado" model="quality.attribute.template">
@@ -230,6 +241,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
         <record id="attr_aca_emplayado" model="quality.attribute.template">
@@ -237,6 +249,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
         <record id="attr_aca_apariencia" model="quality.attribute.template">
@@ -244,6 +257,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
         <record id="attr_aca_cantidad" model="quality.attribute.template">
@@ -251,6 +265,7 @@
             <field name="capture_zone">additional</field>
             <field name="result_mode">cumple</field>
             <field name="allow_zero" eval="False"/>
+            <field name="allow_not_applicable" eval="False"/>
         </record>
 
     </data>

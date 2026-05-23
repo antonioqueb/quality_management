@@ -102,6 +102,9 @@
                     <field name="process_code" invisible="1"/>
                     <field name="history_count" invisible="1"/>
                     <field name="capture_mode" invisible="1"/>
+                    <field name="allow_resistencia_na" invisible="1"/>
+                    <field name="allow_hexagono_na" invisible="1"/>
+                    <field name="hexagono_na" invisible="1"/>
                     <field name="process_gate_open" invisible="1"/>
                     <field name="process_gate_message" invisible="1"/>
                     <field name="previous_process_type_id" invisible="1"/>
@@ -185,7 +188,20 @@
                                         <field name="espesor_unit" nolabel="1"
                                                class="oe_inline"/>
                                     </div>
-                                    <field name="hexagono" invisible="not show_hexagono"/>
+                                    <label for="hexagono" string="Hexágono"
+                                           invisible="not show_hexagono"/>
+                                    <div class="o_row" invisible="not show_hexagono">
+                                        <field name="hexagono"
+                                               readonly="hexagono_na"/>
+                                        <field name="hexagono_na"
+                                               nolabel="1"
+                                               class="oe_inline"
+                                               invisible="not allow_hexagono_na"/>
+                                        <span class="ms-2 oe_inline"
+                                              invisible="not hexagono_na">
+                                            No Aplica
+                                        </span>
+                                    </div>
                                 </group>
                                 <group string="Propiedades">
                                     <label for="resistencia"
@@ -196,15 +212,13 @@
                                                readonly="resistencia_na"
                                                invisible="resistencia_na"/>
                                         <field name="resistencia_na"
-                                               nolabel="1" class="oe_inline"/>
+                                               nolabel="1"
+                                               class="oe_inline"
+                                               invisible="not allow_resistencia_na"/>
                                         <span class="ms-2 oe_inline"
                                               invisible="not resistencia_na">
                                             No Aplica
                                         </span>
-                                        <label for="resistencia_na"
-                                               string="No Aplica"
-                                               class="ms-2 oe_inline"
-                                               invisible="resistencia_na"/>
                                     </div>
                                     <field name="apariencia"
                                            invisible="not show_apariencia"
@@ -236,7 +250,21 @@
                             <group>
                                 <group string="Medidas">
                                     <field name="ancho" string="Ancho (mm)"/>
-                                    <field name="hexagono" string="Hexágono" widget="radio"/>
+                                    <label for="hexagono" string="Hexágono"/>
+                                    <div class="o_row">
+                                        <field name="hexagono"
+                                               string="Hexágono"
+                                               widget="radio"
+                                               readonly="hexagono_na"/>
+                                        <field name="hexagono_na"
+                                               nolabel="1"
+                                               class="oe_inline"
+                                               invisible="not allow_hexagono_na"/>
+                                        <span class="ms-2 oe_inline"
+                                              invisible="not hexagono_na">
+                                            No Aplica
+                                        </span>
+                                    </div>
                                     <field name="calibracion"
                                            string="Calibración"
                                            placeholder="Ej. 0.0010"/>
@@ -374,47 +402,70 @@
                                 <list editable="bottom">
                                     <field name="process_code" column_invisible="1"/>
                                     <field name="strict_binary_result" column_invisible="1"/>
+                                    <field name="allow_not_applicable" column_invisible="1"/>
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
-                                    <field name="result_mode"/>
+                                    <field name="result_mode"
+                                           invisible="attribute_type != 'boolean'"/>
 
                                     <field name="value_float"
+                                           string="Valor medido"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
-                                    <field name="value_char"
-                                           invisible="attribute_type not in ('char','selection') or strict_binary_result"/>
 
-                                    <field name="value_ok"
-                                           string="OK/NO OK/N/A"
+                                    <field name="value_selection"
+                                           string="Valor selección"
+                                           invisible="attribute_type != 'selection' or strict_binary_result"/>
+
+                                    <field name="value_char"
+                                           string="Valor texto"
+                                           invisible="attribute_type != 'char' or strict_binary_result"/>
+
+                                    <field name="value_ok_required"
+                                           string="OK/NO OK"
                                            invisible="attribute_type != 'boolean' or result_mode != 'ok' or strict_binary_result"
                                            widget="badge"
-                                           decoration-success="value_ok == 'ok'"
-                                           decoration-danger="value_ok == 'no_ok'"/>
+                                           decoration-success="value_ok_required == 'ok'"
+                                           decoration-danger="value_ok_required == 'no_ok'"/>
 
-                                    <field name="value_cumple"
+                                    <field name="value_cumple_required"
                                            string="Cumple/NC"
                                            invisible="attribute_type != 'boolean' or result_mode != 'cumple'"
                                            widget="badge"
-                                           decoration-success="value_cumple == 'cumple'"
-                                           decoration-danger="value_cumple == 'no_cumple'"/>
+                                           decoration-success="value_cumple_required == 'cumple'"
+                                           decoration-danger="value_cumple_required == 'no_cumple'"/>
+
+                                    <field name="is_not_applicable"
+                                           string="N/A"
+                                           invisible="not allow_not_applicable or strict_binary_result"/>
 
                                     <field name="min_value"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
                                     <field name="max_value"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
                                     <field name="unit"
-                                           invisible="strict_binary_result"/>
+                                           invisible="attribute_type != 'float' or strict_binary_result"/>
                                     <field name="allow_zero"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
 
-                                    <field name="result"
+                                    <field name="result_required"
+                                           string="Resultado"
+                                           invisible="attribute_type not in ('selection','char') or is_not_applicable"
                                            widget="badge"
-                                           column_invisible="parent.process_code in ('acabado_empaque', 'impresion')"
+                                           decoration-success="result_required in ('cumple','ok')"
+                                           decoration-danger="result_required in ('no_cumple','no_ok')"/>
+
+                                    <field name="result"
+                                           string="Resultado automático"
+                                           widget="badge"
+                                           readonly="1"
+                                           invisible="attribute_type != 'float' and not is_not_applicable"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
                                     <field name="notes"/>
                                 </list>
                             </field>
+
                         </page>
 
                         <page string="Evidencia (Imágenes)" name="evimg"

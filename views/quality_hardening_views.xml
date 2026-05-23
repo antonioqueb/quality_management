@@ -12,6 +12,8 @@
                 <field name="require_measures"/>
                 <field name="require_additional_attributes"/>
                 <field name="zero_value_blocking"/>
+                <field name="allow_resistencia_na"/>
+                <field name="allow_hexagono_na"/>
             </xpath>
         </field>
     </record>
@@ -21,11 +23,8 @@
         <field name="model">quality.attribute.template</field>
         <field name="inherit_id" ref="quality_management.view_quality_attribute_template_form"/>
         <field name="arch" type="xml">
-            <!-- FOLIO-QM-ODOO18-033: se agregan zona de captura, modo de resultado y permiso de cero por plantilla. -->
-            <xpath expr="//field[@name='attribute_type']" position="after">
-                <field name="capture_zone"/>
-                <field name="result_mode" invisible="attribute_type != 'boolean'"/>
-                <field name="allow_zero" invisible="attribute_type != 'float'"/>
+            <!-- FOLIO-QM-ODOO18-033/081: campo técnico para revisar deduplicación. -->
+            <xpath expr="//field[@name='allow_not_applicable']" position="after">
                 <field name="normalized_name" readonly="1"/>
             </xpath>
         </field>

@@ -34,8 +34,9 @@
                             <field name="selection_options" invisible="attribute_type != 'selection'"/>
                             <field name="min_value" invisible="attribute_type != 'float'"/>
                             <field name="max_value" invisible="attribute_type != 'float'"/>
-                            <field name="unit"/>
+                            <field name="unit" invisible="attribute_type != 'float'"/>
                             <field name="allow_zero" invisible="attribute_type != 'float'" optional="show"/>
+                            <field name="allow_not_applicable" optional="show"/>
                             <field name="is_required"/>
                             <field name="active" optional="hide"/>
                         </list>

@@ -10,10 +10,14 @@
                 <field name="product_tmpl_id" optional="show"/>
                 <field name="process_type_id" optional="show"/>
                 <field name="attribute_type"/>
+                <field name="capture_zone" optional="show"/>
+                <field name="result_mode" invisible="attribute_type != 'boolean'"/>
                 <field name="selection_options" invisible="attribute_type != 'selection'"/>
                 <field name="min_value" invisible="attribute_type != 'float'"/>
                 <field name="max_value" invisible="attribute_type != 'float'"/>
-                <field name="unit"/>
+                <field name="unit" invisible="attribute_type != 'float'"/>
+                <field name="allow_zero" invisible="attribute_type != 'float'" optional="show"/>
+                <field name="allow_not_applicable" optional="show"/>
                 <field name="is_required"/>
             </list>
         </field>
@@ -36,10 +40,14 @@
                         </group>
                         <group string="Configuración del Valor">
                             <field name="attribute_type"/>
-                            <field name="unit"/>
+                            <field name="capture_zone"/>
+                            <field name="result_mode" invisible="attribute_type != 'boolean'"/>
+                            <field name="selection_options" invisible="attribute_type != 'selection'"/>
                             <field name="min_value" invisible="attribute_type != 'float'"/>
                             <field name="max_value" invisible="attribute_type != 'float'"/>
-                            <field name="selection_options" invisible="attribute_type != 'selection'"/>
+                            <field name="unit" invisible="attribute_type != 'float'"/>
+                            <field name="allow_zero" invisible="attribute_type != 'float'"/>
+                            <field name="allow_not_applicable"/>
                         </group>
                     </group>
                     <div class="alert alert-info" role="alert" invisible="product_tmpl_id or process_type_id">

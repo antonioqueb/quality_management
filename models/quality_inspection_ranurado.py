@@ -19,5 +19,5 @@ class QualityInspectionRanurado(models.Model):
     resultado = fields.Selection([
         ('cumple', 'Cumple'),
         ('no_cumple', 'No Cumple'),
-    ], string='Resultado', default='cumple')
+    ], string='Resultado', default=False)
     notas = fields.Char('Notas')

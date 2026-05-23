@@ -38,7 +38,7 @@ class QualityInspectionLine(models.Model):
         ('cumple', 'Cumple'),
         ('no_cumple', 'No Cumple'),
         ('na', 'N/A'),
-    ], string='Resultado', default='na')
+    ], string='Resultado', default=False)
     notes = fields.Char('Notas')
 
     @api.onchange('value_float', 'min_value', 'max_value', 'attribute_type')

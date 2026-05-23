@@ -146,10 +146,11 @@
                                         <td><span t-field="attr.name"/></td>
                                         <td class="text-center">
                                             <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
-                                            <span t-if="attr.attribute_type in ('char', 'selection')" t-field="attr.value_char"/>
-                                            <!-- FOLIO-QM-ODOO18-042: el PDF del certificado muestra correctamente Cumple/NC o OK/NO OK según result_mode. -->
-                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple"/>
-                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok"/>
+                                            <span t-if="attr.attribute_type == 'selection'" t-field="attr.value_selection"/>
+                                            <span t-if="attr.attribute_type == 'char'" t-field="attr.value_char"/>
+                                            <!-- FOLIO-QM-ODOO18-042/081: el PDF del certificado muestra correctamente Cumple/NC o OK/NO OK según result_mode. -->
+                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple_required"/>
+                                            <span t-if="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok_required"/>
                                         </td>
                                         <td class="text-center"><span t-field="attr.result"/></td>
                                     </tr>

@@ -117,6 +117,8 @@ class QualityInspectionRetention(models.Model):
             rec.state = "rechazado"
             rec.retention_state = "rechazado_post_retencion"
             rec._log_retention(_("Rechazado tras reinspección."))
+            if hasattr(rec, "_notify_quality_non_conformance_hardening"):
+                rec._notify_quality_non_conformance_hardening(_("Rechazado tras reinspección"))
 
 
 class QualityInspectionRetentionLog(models.Model):

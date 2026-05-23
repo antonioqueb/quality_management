@@ -61,6 +61,33 @@ STRICT_BINARY_RESULT_PROCESS_CODES = {
     "impresion",
 }
 
+# FOLIO-QM-ODOO18-081:
+# Resultados finales normalizados para evitar que N/A se use como valor
+# automático cuando el atributo realmente debe capturarse.
+PASS_RESULTS = {"cumple", "ok"}
+FAIL_RESULTS = {"no_cumple", "no_ok"}
+VALID_FINAL_RESULTS = PASS_RESULTS | FAIL_RESULTS
+NA_RESULTS = {"na"}
+
+CUMPLE_VALUES = {"cumple", "no_cumple"}
+OK_VALUES = {"ok", "no_ok"}
+
+
+def _split_selection_options(value):
+    """Convierte "A,B,C" en una lista limpia de opciones."""
+    if not value:
+        return []
+    return [item.strip() for item in str(value).split(",") if item and item.strip()]
+
+
+def _float_is_captured(value, allow_zero=False):
+    if value in (False, None, ""):
+        return False
+    if float(value or 0.0) == 0.0 and not allow_zero:
+        return False
+    return True
+
+
 # FOLIO-QM-ODOO18-075:
 # En Octágono estos conceptos son campos nativos obligatorios o no aplican
 # en el proceso; no deben duplicarse como atributos adicionales.
@@ -155,6 +182,22 @@ class QualityProcessTypeHardening(models.Model):
         "Bloquear valores numéricos en cero",
         default=True,
     )
+    allow_resistencia_na = fields.Boolean(
+        "Permitir N/A en Resistencia",
+        default=False,
+        help=(
+            "Si está activo, el proceso permite marcar Resistencia como No aplica. "
+            "Si está apagado y el proceso muestra Resistencia, la captura es obligatoria."
+        ),
+    )
+    allow_hexagono_na = fields.Boolean(
+        "Permitir N/A en Hexágono",
+        default=False,
+        help=(
+            "Si está activo, el proceso permite marcar Hexágono como No aplica. "
+            "Si está apagado y el proceso muestra Hexágono, la captura es obligatoria."
+        ),
+    )
 
 
 class QualityAttributeTemplateHardening(models.Model):
@@ -182,13 +225,25 @@ class QualityAttributeTemplateHardening(models.Model):
     )
     result_mode = fields.Selection(
         [
-            ("cumple", "Cumple / No Cumple / N/A"),
-            ("ok", "OK / NO OK / N/A"),
+            ("cumple", "Cumple / No Cumple"),
+            ("ok", "OK / NO OK"),
         ],
         default="cumple",
         required=True,
+        help=(
+            "Define el par de resultados del atributo. N/A ya no se usa como "
+            "opción automática; se habilita por separado con 'Permitir No aplica'."
+        ),
     )
     allow_zero = fields.Boolean("Permitir valor cero", default=False)
+    allow_not_applicable = fields.Boolean(
+        "Permitir No aplica",
+        default=False,
+        help=(
+            "Actívelo solo cuando el atributo realmente pueda quedar como N/A. "
+            "Si está apagado, la captura queda obligatoria y no se acepta N/A."
+        ),
+    )
 
     @api.depends("name")
     def _compute_normalized_name(self):
@@ -210,6 +265,48 @@ class QualityAttributeTemplateHardening(models.Model):
 
         return bool(process and process.code in STRICT_BINARY_RESULT_PROCESS_CODES)
 
+    def _normalize_template_vals_by_type(self, vals, current=False):
+        vals = dict(vals or {})
+        attribute_type = vals.get(
+            "attribute_type",
+            current.attribute_type if current else "float",
+        )
+
+        if attribute_type == "boolean":
+            vals.update({
+                "capture_zone": vals.get("capture_zone") or "additional",
+                "min_value": 0.0,
+                "max_value": 0.0,
+                "unit": False,
+                "selection_options": False,
+                "allow_zero": False,
+            })
+
+        elif attribute_type == "selection":
+            vals.update({
+                "min_value": 0.0,
+                "max_value": 0.0,
+                "unit": False,
+                "allow_zero": False,
+            })
+
+        elif attribute_type == "char":
+            vals.update({
+                "min_value": 0.0,
+                "max_value": 0.0,
+                "unit": False,
+                "selection_options": False,
+                "allow_zero": False,
+            })
+
+        elif attribute_type == "float":
+            vals.update({
+                "selection_options": False,
+                "result_mode": "cumple",
+            })
+
+        return vals
+
     def _normalize_template_vals_for_strict_binary(self, vals):
         vals = dict(vals or {})
         vals.update({
@@ -217,6 +314,7 @@ class QualityAttributeTemplateHardening(models.Model):
             "capture_zone": "additional",
             "result_mode": "cumple",
             "allow_zero": False,
+            "allow_not_applicable": False,
             "min_value": 0.0,
             "max_value": 0.0,
             "unit": False,
@@ -224,7 +322,31 @@ class QualityAttributeTemplateHardening(models.Model):
         })
         return vals
 
-    @api.onchange("process_type_id", "attribute_type", "result_mode")
+    @api.onchange("attribute_type")
+    def _onchange_attribute_type_clean_config(self):
+        for rec in self:
+            if rec.attribute_type == "boolean":
+                rec.min_value = 0.0
+                rec.max_value = 0.0
+                rec.unit = False
+                rec.selection_options = False
+                rec.allow_zero = False
+            elif rec.attribute_type == "selection":
+                rec.min_value = 0.0
+                rec.max_value = 0.0
+                rec.unit = False
+                rec.allow_zero = False
+            elif rec.attribute_type == "char":
+                rec.min_value = 0.0
+                rec.max_value = 0.0
+                rec.unit = False
+                rec.selection_options = False
+                rec.allow_zero = False
+            elif rec.attribute_type == "float":
+                rec.selection_options = False
+                rec.result_mode = "cumple"
+
+    @api.onchange("process_type_id", "attribute_type", "result_mode", "allow_not_applicable")
     def _onchange_strict_binary_template(self):
         for rec in self:
             if rec.process_type_id and rec.process_type_id.code in STRICT_BINARY_RESULT_PROCESS_CODES:
@@ -232,10 +354,60 @@ class QualityAttributeTemplateHardening(models.Model):
                 rec.capture_zone = "additional"
                 rec.result_mode = "cumple"
                 rec.allow_zero = False
+                rec.allow_not_applicable = False
                 rec.min_value = 0.0
                 rec.max_value = 0.0
                 rec.unit = False
                 rec.selection_options = False
+
+    @api.constrains(
+        "attribute_type",
+        "unit",
+        "min_value",
+        "max_value",
+        "selection_options",
+        "allow_zero",
+        "allow_not_applicable",
+        "process_type_id",
+    )
+    def _check_attribute_type_configuration_hardening(self):
+        for rec in self:
+            if rec.process_type_id and rec.process_type_id.code in STRICT_BINARY_RESULT_PROCESS_CODES:
+                if (
+                    rec.attribute_type != "boolean"
+                    or rec.result_mode != "cumple"
+                    or rec.allow_not_applicable
+                    or rec.unit
+                    or rec.min_value
+                    or rec.max_value
+                    or rec.selection_options
+                ):
+                    raise ValidationError(_(
+                        "%s solo permite atributos adicionales Cumple/No Cumple; "
+                        "no permite N/A, unidad, mínimo, máximo ni valor numérico."
+                    ) % rec.process_type_id.display_name)
+
+            if rec.attribute_type == "boolean":
+                if rec.unit or rec.min_value or rec.max_value or rec.selection_options or rec.allow_zero:
+                    raise ValidationError(_(
+                        "El atributo '%s' es Cumple/No Cumple y no debe tener "
+                        "unidad, mínimo, máximo, opciones de selección ni valor numérico."
+                    ) % rec.name)
+
+            if rec.attribute_type == "selection" and not rec.selection_options:
+                raise ValidationError(_(
+                    "El atributo de selección '%s' debe tener opciones separadas por coma."
+                ) % rec.name)
+
+            if rec.attribute_type != "float" and rec.allow_zero:
+                raise ValidationError(_(
+                    "Permitir cero solo aplica a atributos numéricos."
+                ))
+
+            if rec.attribute_type == "float" and rec.min_value and rec.max_value and rec.min_value > rec.max_value:
+                raise ValidationError(_(
+                    "En '%s', el valor mínimo no puede ser mayor que el máximo."
+                ) % rec.name)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -251,6 +423,8 @@ class QualityAttributeTemplateHardening(models.Model):
             )
             if process and process.code in STRICT_BINARY_RESULT_PROCESS_CODES:
                 vals = self._normalize_template_vals_for_strict_binary(vals)
+            else:
+                vals = self._normalize_template_vals_by_type(vals)
             clean_vals_list.append(vals)
 
         return super().create(clean_vals_list)
@@ -260,16 +434,15 @@ class QualityAttributeTemplateHardening(models.Model):
         if not vals:
             return super().write(vals)
 
-        strict_records = self.filtered(lambda rec: rec._target_process_is_strict_binary(vals))
-        other_records = self - strict_records
-
         result = True
-        if other_records:
-            result = super(QualityAttributeTemplateHardening, other_records).write(vals) and result
+        for rec in self:
+            write_vals = dict(vals)
+            if rec._target_process_is_strict_binary(write_vals):
+                write_vals = rec._normalize_template_vals_for_strict_binary(write_vals)
+            else:
+                write_vals = rec._normalize_template_vals_by_type(write_vals, current=rec)
 
-        if strict_records:
-            strict_vals = self._normalize_template_vals_for_strict_binary(vals)
-            result = super(QualityAttributeTemplateHardening, strict_records).write(strict_vals) and result
+            result = super(QualityAttributeTemplateHardening, rec).write(write_vals) and result
 
         return result
 
@@ -300,8 +473,8 @@ class QualityInspectionLineHardening(models.Model):
     )
     result_mode = fields.Selection(
         [
-            ("cumple", "Cumple / No Cumple / N/A"),
-            ("ok", "OK / NO OK / N/A"),
+            ("cumple", "Cumple / No Cumple"),
+            ("ok", "OK / NO OK"),
         ],
         default="cumple",
         required=True,
@@ -310,7 +483,15 @@ class QualityInspectionLineHardening(models.Model):
     value_cumple = fields.Selection(
         selection_add=[("na", "N/A")],
         ondelete={"na": "set default"},
-        default="na",
+        default=False,
+    )
+    value_cumple_required = fields.Selection(
+        [
+            ("cumple", "Cumple"),
+            ("no_cumple", "No Cumple"),
+        ],
+        string="Cumple/No Cumple",
+        default=False,
     )
     value_ok = fields.Selection(
         [
@@ -319,7 +500,27 @@ class QualityInspectionLineHardening(models.Model):
             ("na", "N/A"),
         ],
         string="OK/NO OK/N/A",
-        default="na",
+        default=False,
+    )
+    value_ok_required = fields.Selection(
+        [
+            ("ok", "OK"),
+            ("no_ok", "NO OK"),
+        ],
+        string="OK/NO OK",
+        default=False,
+    )
+    value_selection = fields.Char("Valor Selección")
+    selection_options = fields.Char("Opciones de Selección")
+    result_required = fields.Selection(
+        [
+            ("cumple", "Cumple"),
+            ("no_cumple", "No Cumple"),
+            ("ok", "OK"),
+            ("no_ok", "NO OK"),
+        ],
+        string="Resultado",
+        default=False,
     )
     result = fields.Selection(
         selection_add=[
@@ -330,8 +531,11 @@ class QualityInspectionLineHardening(models.Model):
             "ok": "set default",
             "no_ok": "set default",
         },
+        default=False,
     )
     allow_zero = fields.Boolean("Permitir cero")
+    allow_not_applicable = fields.Boolean("Permitir No aplica")
+    is_not_applicable = fields.Boolean("No aplica")
 
     process_code = fields.Char(
         related="inspection_id.process_code",
@@ -375,6 +579,16 @@ class QualityInspectionLineHardening(models.Model):
         """)
         line_columns = {row[0] for row in cr.fetchall()}
 
+        cr.execute("""
+            SELECT column_name
+              FROM information_schema.columns
+             WHERE table_name = 'quality_inspection'
+        """)
+        inspection_columns = {row[0] for row in cr.fetchall()}
+
+        if "process_code" not in inspection_columns:
+            return
+
         required_line_columns = {
             "inspection_id",
             "attribute_type",
@@ -393,16 +607,7 @@ class QualityInspectionLineHardening(models.Model):
         if not required_line_columns.issubset(line_columns):
             return
 
-        cr.execute("""
-            SELECT column_name
-              FROM information_schema.columns
-             WHERE table_name = 'quality_inspection'
-        """)
-        inspection_columns = {row[0] for row in cr.fetchall()}
-
-        if "process_code" not in inspection_columns:
-            return
-
+        # Limpieza de datos heredados en procesos que no permiten N/A.
         cr.execute("""
             UPDATE quality_inspection_line AS line
                SET attribute_type = 'boolean',
@@ -430,6 +635,39 @@ class QualityInspectionLineHardening(models.Model):
                AND inspection.process_code IN ('acabado_empaque', 'impresion')
         """)
 
+        optional_columns = {
+            "value_cumple_required",
+            "value_ok_required",
+            "result_required",
+            "is_not_applicable",
+            "allow_not_applicable",
+            "selection_options",
+        }
+        if optional_columns.issubset(line_columns):
+            cr.execute("""
+                UPDATE quality_inspection_line
+                   SET value_cumple_required = CASE
+                           WHEN value_cumple IN ('cumple','no_cumple') THEN value_cumple
+                           WHEN result IN ('cumple','no_cumple') THEN result
+                           ELSE NULL
+                       END,
+                       value_ok_required = CASE
+                           WHEN value_ok IN ('ok','no_ok') THEN value_ok
+                           WHEN result IN ('ok','no_ok') THEN result
+                           ELSE NULL
+                       END,
+                       result_required = CASE
+                           WHEN result IN ('cumple','no_cumple','ok','no_ok') THEN result
+                           ELSE NULL
+                       END,
+                       is_not_applicable = CASE WHEN result = 'na' THEN TRUE ELSE FALSE END,
+                       allow_not_applicable = COALESCE(allow_not_applicable, FALSE)
+                 WHERE value_cumple_required IS NULL
+                    OR value_ok_required IS NULL
+                    OR result_required IS NULL
+                    OR is_not_applicable IS NULL
+            """)
+
     @api.depends("inspection_id.process_code")
     def _compute_strict_binary_result(self):
         for line in self:
@@ -438,6 +676,11 @@ class QualityInspectionLineHardening(models.Model):
                 if line.inspection_id
                 else False
             )
+
+    @api.depends("name")
+    def _compute_normalized_name(self):
+        for line in self:
+            line.normalized_name = _slug(line.name)
 
     def _is_strict_binary_result_line(self):
         self.ensure_one()
@@ -452,81 +695,280 @@ class QualityInspectionLineHardening(models.Model):
             return self.inspection_id.process_type_id.display_name
         return _("Este proceso")
 
+    def _apply_template_vals_to_line_create(self, vals):
+        vals = dict(vals or {})
+        template = (
+            self.env["quality.attribute.template"].browse(vals["attribute_template_id"]).exists()
+            if vals.get("attribute_template_id")
+            else False
+        )
+        if not template:
+            return vals
+
+        defaults = {
+            "name": template.name,
+            "attribute_type": template.attribute_type,
+            "capture_zone": getattr(template, "capture_zone", False) or "additional",
+            "result_mode": getattr(template, "result_mode", False) or "cumple",
+            "min_value": template.min_value,
+            "max_value": template.max_value,
+            "unit": template.unit,
+            "allow_zero": getattr(template, "allow_zero", False),
+            "allow_not_applicable": getattr(template, "allow_not_applicable", False),
+            "selection_options": template.selection_options,
+            "sequence": template.sequence,
+        }
+        for key, value in defaults.items():
+            vals.setdefault(key, value)
+
+        return vals
+
     def _normalize_vals_for_strict_binary_line(self, vals, reset_missing=False):
         vals = dict(vals or {})
+
+        source = (
+            vals.get("value_cumple_required")
+            or vals.get("value_cumple")
+            or vals.get("result")
+        )
+        if source not in CUMPLE_VALUES:
+            source = False
 
         vals.update({
             "attribute_type": "boolean",
             "capture_zone": "additional",
             "result_mode": "cumple",
+            "allow_not_applicable": False,
+            "is_not_applicable": False,
             "value_ok": False,
+            "value_ok_required": False,
             "value_float": 0.0,
             "value_char": False,
+            "value_selection": False,
+            "selection_options": False,
             "min_value": 0.0,
             "max_value": 0.0,
             "unit": False,
             "allow_zero": False,
         })
 
-        if reset_missing or "value_cumple" in vals:
-            if vals.get("value_cumple") not in ("cumple", "no_cumple"):
-                vals["value_cumple"] = False
-
-        if reset_missing or "result" in vals:
-            if vals.get("result") not in ("cumple", "no_cumple"):
-                vals["result"] = False
-
-        if vals.get("value_cumple") in ("cumple", "no_cumple"):
-            vals["result"] = vals["value_cumple"]
-        elif vals.get("result") in ("cumple", "no_cumple"):
-            vals["value_cumple"] = vals["result"]
+        if reset_missing or "value_cumple" in vals or "value_cumple_required" in vals or "result" in vals:
+            vals["value_cumple"] = source or False
+            vals["value_cumple_required"] = source or False
+            vals["result"] = source or False
+            vals["result_required"] = source or False
 
         return vals
 
-    def _clear_strict_na_values_hardening(self):
+    def _normalize_input_vals_hardening(self, vals):
+        vals = dict(vals or {})
+
+        if vals.get("is_not_applicable"):
+            vals["result"] = "na"
+            vals["result_required"] = False
+            vals["value_cumple"] = False
+            vals["value_cumple_required"] = False
+            vals["value_ok"] = False
+            vals["value_ok_required"] = False
+            vals["value_float"] = 0.0
+            vals["value_char"] = False
+            vals["value_selection"] = False
+            return vals
+
+        if vals.get("value_cumple_required") in CUMPLE_VALUES:
+            vals["value_cumple"] = vals["value_cumple_required"]
+            vals["result"] = vals["value_cumple_required"]
+            vals["result_required"] = vals["value_cumple_required"]
+
+        if vals.get("value_cumple") in CUMPLE_VALUES:
+            vals["value_cumple_required"] = vals["value_cumple"]
+            vals["result"] = vals["value_cumple"]
+            vals["result_required"] = vals["value_cumple"]
+
+        if vals.get("value_ok_required") in OK_VALUES:
+            vals["value_ok"] = vals["value_ok_required"]
+            vals["result"] = vals["value_ok_required"]
+            vals["result_required"] = vals["value_ok_required"]
+
+        if vals.get("value_ok") in OK_VALUES:
+            vals["value_ok_required"] = vals["value_ok"]
+            vals["result"] = vals["value_ok"]
+            vals["result_required"] = vals["value_ok"]
+
+        if vals.get("result_required") in VALID_FINAL_RESULTS:
+            vals["result"] = vals["result_required"]
+
+        if vals.get("result") in VALID_FINAL_RESULTS:
+            vals["result_required"] = vals["result"]
+
+        if "value_selection" in vals and vals.get("value_selection"):
+            vals.setdefault("value_char", vals.get("value_selection"))
+
+        return vals
+
+    def _get_synced_vals_hardening(self):
+        self.ensure_one()
+        vals = {}
+
+        def set_value(field_name, value):
+            if field_name in self._fields and self[field_name] != value:
+                vals[field_name] = value
+
+        if self._is_strict_binary_result_line():
+            source = (
+                self.value_cumple_required
+                or (self.value_cumple if self.value_cumple in CUMPLE_VALUES else False)
+                or (self.result if self.result in CUMPLE_VALUES else False)
+            )
+
+            set_value("attribute_type", "boolean")
+            set_value("capture_zone", "additional")
+            set_value("result_mode", "cumple")
+            set_value("allow_not_applicable", False)
+            set_value("is_not_applicable", False)
+            set_value("value_ok", False)
+            set_value("value_ok_required", False)
+            set_value("value_float", 0.0)
+            set_value("value_char", False)
+            set_value("value_selection", False)
+            set_value("selection_options", False)
+            set_value("min_value", 0.0)
+            set_value("max_value", 0.0)
+            set_value("unit", False)
+            set_value("allow_zero", False)
+            set_value("value_cumple", source or False)
+            set_value("value_cumple_required", source or False)
+            set_value("result", source or False)
+            set_value("result_required", source or False)
+            return vals
+
+        if self.result == "na" and self.allow_not_applicable and not self.is_not_applicable:
+            set_value("is_not_applicable", True)
+
+        if self.is_not_applicable:
+            if self.allow_not_applicable:
+                set_value("result", "na")
+                set_value("result_required", False)
+                set_value("value_cumple", False)
+                set_value("value_cumple_required", False)
+                set_value("value_ok", False)
+                set_value("value_ok_required", False)
+                set_value("value_float", 0.0)
+                set_value("value_char", False)
+                set_value("value_selection", False)
+            else:
+                set_value("is_not_applicable", False)
+                set_value("result", False)
+            return vals
+
+        if self.result == "na" and not self.allow_not_applicable:
+            set_value("result", False)
+
+        if self.attribute_type == "boolean":
+            if self.result_mode == "ok":
+                source = (
+                    self.value_ok_required
+                    or (self.value_ok if self.value_ok in OK_VALUES else False)
+                    or (self.result if self.result in OK_VALUES else False)
+                )
+                set_value("value_ok", source or False)
+                set_value("value_ok_required", source or False)
+                set_value("result", source or False)
+                set_value("result_required", source or False)
+                set_value("value_cumple", False)
+                set_value("value_cumple_required", False)
+            else:
+                source = (
+                    self.value_cumple_required
+                    or (self.value_cumple if self.value_cumple in CUMPLE_VALUES else False)
+                    or (self.result if self.result in CUMPLE_VALUES else False)
+                )
+                set_value("result_mode", "cumple")
+                set_value("value_cumple", source or False)
+                set_value("value_cumple_required", source or False)
+                set_value("result", source or False)
+                set_value("result_required", source or False)
+                set_value("value_ok", False)
+                set_value("value_ok_required", False)
+
+            set_value("value_float", 0.0)
+            set_value("value_char", False)
+            set_value("value_selection", False)
+            set_value("selection_options", False)
+            set_value("min_value", 0.0)
+            set_value("max_value", 0.0)
+            set_value("unit", False)
+            set_value("allow_zero", False)
+
+        elif self.attribute_type == "float":
+            set_value("result_mode", "cumple")
+            set_value("value_cumple", False)
+            set_value("value_cumple_required", False)
+            set_value("value_ok", False)
+            set_value("value_ok_required", False)
+            set_value("value_char", False)
+            set_value("value_selection", False)
+            set_value("selection_options", False)
+
+            if not _float_is_captured(self.value_float, allow_zero=self.allow_zero):
+                set_value("result", False)
+                set_value("result_required", False)
+            elif not self.min_value and not self.max_value:
+                set_value("result", False)
+                set_value("result_required", False)
+            elif self.min_value and self.value_float < self.min_value:
+                set_value("result", "no_cumple")
+                set_value("result_required", "no_cumple")
+            elif self.max_value and self.value_float > self.max_value:
+                set_value("result", "no_cumple")
+                set_value("result_required", "no_cumple")
+            else:
+                set_value("result", "cumple")
+                set_value("result_required", "cumple")
+
+        elif self.attribute_type in ("selection", "char"):
+            if self.attribute_type == "selection":
+                if self.value_selection and self.value_char != self.value_selection:
+                    set_value("value_char", self.value_selection)
+                elif self.value_char and not self.value_selection:
+                    set_value("value_selection", self.value_char)
+                set_value("unit", False)
+                set_value("min_value", 0.0)
+                set_value("max_value", 0.0)
+                set_value("allow_zero", False)
+            else:
+                set_value("value_selection", False)
+                set_value("selection_options", False)
+                set_value("unit", False)
+                set_value("min_value", 0.0)
+                set_value("max_value", 0.0)
+                set_value("allow_zero", False)
+
+            source = (
+                self.result_required
+                if self.result_required in VALID_FINAL_RESULTS
+                else self.result if self.result in VALID_FINAL_RESULTS
+                else False
+            )
+            set_value("result", source or False)
+            set_value("result_required", source or False)
+            set_value("value_cumple", False)
+            set_value("value_cumple_required", False)
+            set_value("value_ok", False)
+            set_value("value_ok_required", False)
+
+        return vals
+
+    def _sync_line_result_hardening(self):
+        if self.env.context.get("skip_quality_line_sync"):
+            return
         for line in self:
-            if not line._is_strict_binary_result_line():
-                continue
-
-            vals = {}
-            if line.attribute_type != "boolean":
-                vals["attribute_type"] = "boolean"
-            if line.capture_zone != "additional":
-                vals["capture_zone"] = "additional"
-            if line.result_mode != "cumple":
-                vals["result_mode"] = "cumple"
-            if line.value_ok:
-                vals["value_ok"] = False
-            if line.value_float:
-                vals["value_float"] = 0.0
-            if line.value_char:
-                vals["value_char"] = False
-            if line.min_value:
-                vals["min_value"] = 0.0
-            if line.max_value:
-                vals["max_value"] = 0.0
-            if line.unit:
-                vals["unit"] = False
-            if line.allow_zero:
-                vals["allow_zero"] = False
-
-            if line.value_cumple == "na":
-                vals["value_cumple"] = False
-            if line.result == "na":
-                vals["result"] = False
-
-            if line.value_cumple in ("cumple", "no_cumple") and line.result != line.value_cumple:
-                vals["result"] = line.value_cumple
-            elif line.result in ("cumple", "no_cumple") and line.value_cumple != line.result:
-                vals["value_cumple"] = line.result
-
+            vals = line._get_synced_vals_hardening()
             if vals:
-                line.with_context(skip_strict_binary_cleanup=True).write(vals)
+                line.with_context(skip_quality_line_sync=True).write(vals)
 
-    @api.depends("name")
-    def _compute_normalized_name(self):
-        for line in self:
-            line.normalized_name = _slug(line.name)
+    def _clear_strict_na_values_hardening(self):
+        self._sync_line_result_hardening()
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -534,7 +976,9 @@ class QualityInspectionLineHardening(models.Model):
         Inspection = self.env["quality.inspection"]
 
         for vals in vals_list:
-            vals = dict(vals or {})
+            vals = self._apply_template_vals_to_line_create(vals)
+            vals = self._normalize_input_vals_hardening(vals)
+
             inspection = (
                 Inspection.browse(vals["inspection_id"])
                 if vals.get("inspection_id")
@@ -542,10 +986,11 @@ class QualityInspectionLineHardening(models.Model):
             )
             if inspection and inspection.process_code in STRICT_BINARY_RESULT_PROCESS_CODES:
                 vals = self._normalize_vals_for_strict_binary_line(vals, reset_missing=True)
+
             clean_vals_list.append(vals)
 
         records = super().create(clean_vals_list)
-        records._clear_strict_na_values_hardening()
+        records._sync_line_result_hardening()
         return records
 
     def write(self, vals):
@@ -553,17 +998,22 @@ class QualityInspectionLineHardening(models.Model):
         if not vals:
             return super().write(vals)
 
-        if not self.env.context.get("skip_strict_binary_cleanup"):
-            writes_na = any(
-                vals.get(field_name) == "na"
-                for field_name in ("value_cumple", "value_ok", "result")
-            )
-            if writes_na:
-                for line in self:
-                    if line._is_strict_binary_result_line():
-                        raise ValidationError(_(
-                            "%s no permite N/A. Seleccione únicamente Cumple o No Cumple."
-                        ) % line._strict_binary_process_display_name())
+        if self.env.context.get("skip_quality_line_sync"):
+            return super().write(vals)
+
+        writes_na = any(
+            vals.get(field_name) == "na"
+            for field_name in ("value_cumple", "value_ok", "result")
+        )
+        if writes_na:
+            for line in self:
+                if line._is_strict_binary_result_line() or not line.allow_not_applicable:
+                    raise ValidationError(_(
+                        "%s no permite N/A. Active 'Permitir No aplica' en el atributo "
+                        "o capture un resultado real."
+                    ) % (line.name or line._strict_binary_process_display_name()))
+
+        vals = self._normalize_input_vals_hardening(vals)
 
         strict_lines = self.filtered(lambda line: line._is_strict_binary_result_line())
         other_lines = self - strict_lines
@@ -576,9 +1026,7 @@ class QualityInspectionLineHardening(models.Model):
             strict_vals = self._normalize_vals_for_strict_binary_line(vals, reset_missing=False)
             res = super(QualityInspectionLineHardening, strict_lines).write(strict_vals) and res
 
-        if not self.env.context.get("skip_strict_binary_cleanup"):
-            self._clear_strict_na_values_hardening()
-
+        self._sync_line_result_hardening()
         return res
 
     @api.onchange("attribute_template_id")
@@ -596,14 +1044,21 @@ class QualityInspectionLineHardening(models.Model):
             line.max_value = template.max_value
             line.unit = template.unit
             line.allow_zero = template.allow_zero
+            line.allow_not_applicable = getattr(template, "allow_not_applicable", False)
+            line.selection_options = template.selection_options
 
             if line._is_strict_binary_result_line():
                 line.attribute_type = "boolean"
                 line.capture_zone = "additional"
                 line.result_mode = "cumple"
+                line.allow_not_applicable = False
+                line.is_not_applicable = False
                 line.value_ok = False
+                line.value_ok_required = False
                 line.value_float = 0.0
                 line.value_char = False
+                line.value_selection = False
+                line.selection_options = False
                 line.min_value = 0.0
                 line.max_value = 0.0
                 line.unit = False
@@ -613,110 +1068,152 @@ class QualityInspectionLineHardening(models.Model):
                 if line.result == "na":
                     line.result = False
 
-    @api.onchange("attribute_type", "result_mode")
-    def _onchange_strict_binary_attribute_config(self):
-        for line in self:
-            if not line._is_strict_binary_result_line():
-                continue
-
-            warning = False
-            if line.attribute_type != "boolean" or line.result_mode != "cumple":
-                warning = True
-
-            line.attribute_type = "boolean"
-            line.capture_zone = "additional"
-            line.result_mode = "cumple"
-            line.value_ok = False
-            line.value_float = 0.0
-            line.value_char = False
-            line.min_value = 0.0
-            line.max_value = 0.0
-            line.unit = False
-            line.allow_zero = False
-            if line.value_cumple == "na":
-                line.value_cumple = False
-            if line.result == "na":
-                line.result = False
-
-            if warning:
-                return {
-                    "warning": {
-                        "title": _("Configuración no permitida"),
-                        "message": _(
-                            "%s solo permite atributos adicionales de tipo Cumple/No Cumple."
-                        ) % line._strict_binary_process_display_name(),
-                    }
-                }
-
-    @api.onchange("value_float", "min_value", "max_value", "attribute_type")
-    def _onchange_evaluate_result_hardening(self):
+    @api.onchange("attribute_type", "result_mode", "allow_not_applicable")
+    def _onchange_attribute_config_hardening(self):
         for line in self:
             if line._is_strict_binary_result_line():
-                if line.attribute_type != "boolean":
-                    line.attribute_type = "boolean"
-                    line.capture_zone = "additional"
-                    line.result_mode = "cumple"
-                    line.value_float = 0.0
-                    line.min_value = 0.0
-                    line.max_value = 0.0
-                    line.unit = False
-                    line.result = line.value_cumple if line.value_cumple in ("cumple", "no_cumple") else False
-                continue
+                warning = False
+                if (
+                    line.attribute_type != "boolean"
+                    or line.result_mode != "cumple"
+                    or line.allow_not_applicable
+                ):
+                    warning = True
 
-            if line.attribute_type != "float":
-                continue
+                line.attribute_type = "boolean"
+                line.capture_zone = "additional"
+                line.result_mode = "cumple"
+                line.allow_not_applicable = False
+                line.is_not_applicable = False
+                line.value_ok = False
+                line.value_ok_required = False
+                line.value_float = 0.0
+                line.value_char = False
+                line.value_selection = False
+                line.selection_options = False
+                line.min_value = 0.0
+                line.max_value = 0.0
+                line.unit = False
+                line.allow_zero = False
+                if line.value_cumple == "na":
+                    line.value_cumple = False
+                if line.result == "na":
+                    line.result = False
 
-            if not line.value_float and not line.allow_zero:
-                line.result = "na"
-                continue
-
-            if line.min_value and line.value_float < line.min_value:
-                line.result = "no_cumple"
-            elif line.max_value and line.value_float > line.max_value:
-                line.result = "no_cumple"
-            else:
-                line.result = "cumple"
-
-    @api.onchange("value_cumple", "attribute_type", "result_mode")
-    def _onchange_value_cumple_hardening(self):
-        for line in self:
-            if line.attribute_type == "boolean" and line.result_mode == "cumple":
-                if line._is_strict_binary_result_line():
-                    if line.value_cumple == "na":
-                        line.value_cumple = False
-                        line.result = False
-                        return {
-                            "warning": {
-                                "title": _("Valor no permitido"),
-                                "message": _(
-                                    "%s no permite N/A. Seleccione Cumple o No Cumple."
-                                ) % line._strict_binary_process_display_name(),
-                            }
-                        }
-                    line.result = line.value_cumple or False
-                else:
-                    line.result = line.value_cumple or "na"
-
-    @api.onchange("value_ok", "attribute_type", "result_mode")
-    def _onchange_value_ok_hardening(self):
-        for line in self:
-            if line._is_strict_binary_result_line():
-                if line.value_ok:
-                    line.value_ok = False
-                    line.result_mode = "cumple"
-                    line.attribute_type = "boolean"
+                if warning:
                     return {
                         "warning": {
-                            "title": _("Modo no permitido"),
+                            "title": _("Configuración no permitida"),
                             "message": _(
-                                "%s no permite OK/NO OK/N/A. Use únicamente Cumple o No Cumple."
+                                "%s solo permite atributos adicionales de tipo Cumple/No Cumple."
                             ) % line._strict_binary_process_display_name(),
                         }
                     }
-                continue
 
-            if line.attribute_type == "boolean" and line.result_mode == "ok":
-                line.result = line.value_ok or "na"
+            elif line.attribute_type == "boolean":
+                line.min_value = 0.0
+                line.max_value = 0.0
+                line.unit = False
+                line.value_float = 0.0
+                line.value_char = False
+                line.value_selection = False
+                line.selection_options = False
+                line.allow_zero = False
+            elif line.attribute_type == "selection":
+                line.min_value = 0.0
+                line.max_value = 0.0
+                line.unit = False
+                line.allow_zero = False
+            elif line.attribute_type == "char":
+                line.min_value = 0.0
+                line.max_value = 0.0
+                line.unit = False
+                line.value_selection = False
+                line.selection_options = False
+                line.allow_zero = False
+            elif line.attribute_type == "float":
+                line.result_mode = "cumple"
+                line.selection_options = False
+
+    @api.onchange(
+        "value_float",
+        "min_value",
+        "max_value",
+        "allow_zero",
+        "attribute_type",
+        "value_cumple",
+        "value_cumple_required",
+        "value_ok",
+        "value_ok_required",
+        "result",
+        "result_required",
+        "value_char",
+        "value_selection",
+        "is_not_applicable",
+    )
+    def _onchange_evaluate_result_hardening(self):
+        for line in self:
+            vals = line._get_synced_vals_hardening()
+            for field_name, value in vals.items():
+                line[field_name] = value
+
+    def _quality_line_has_result_hardening(self):
+        self.ensure_one()
+        if self.is_not_applicable:
+            return bool(self.allow_not_applicable and self.result == "na")
+        return self.result in VALID_FINAL_RESULTS
+
+    def _quality_line_is_missing_hardening(self):
+        self.ensure_one()
+
+        if self.is_not_applicable:
+            return not (self.allow_not_applicable and self.result == "na")
+
+        if self.result == "na":
+            return not self.allow_not_applicable
+
+        if self.attribute_type == "float":
+            if not _float_is_captured(self.value_float, allow_zero=self.allow_zero):
+                return True
+            if not self.min_value and not self.max_value:
+                return True
+            return self.result not in VALID_FINAL_RESULTS
+
+        if self.attribute_type == "boolean":
+            if self.result_mode == "ok":
+                return (
+                    self.value_ok_required not in OK_VALUES
+                    or self.result not in OK_VALUES
+                )
+            return (
+                self.value_cumple_required not in CUMPLE_VALUES
+                or self.result not in CUMPLE_VALUES
+            )
+
+        if self.attribute_type == "selection":
+            captured = self.value_selection or self.value_char
+            if not captured:
+                return True
+            return self.result not in VALID_FINAL_RESULTS
+
+        if self.attribute_type == "char":
+            if not self.value_char:
+                return True
+            return self.result not in VALID_FINAL_RESULTS
+
+        return self.result not in VALID_FINAL_RESULTS
+
+    def _quality_line_missing_reason_hardening(self):
+        self.ensure_one()
+        if self.attribute_type == "float" and not (self.min_value or self.max_value):
+            return _("%s: configure mínimo y/o máximo para calcular el resultado") % self.name
+        if self.attribute_type == "selection" and not (self.value_selection or self.value_char):
+            return _("%s: capture el valor de selección") % self.name
+        if self.attribute_type == "char" and not self.value_char:
+            return _("%s: capture el valor") % self.name
+        if self.attribute_type == "boolean":
+            return _("%s: seleccione Cumple/No Cumple") % self.name
+        return _("%s: capture resultado") % self.name
 
     @api.constrains(
         "inspection_id",
@@ -775,12 +1272,56 @@ class QualityInspectionLineHardening(models.Model):
                 line.attribute_type != "boolean"
                 or line.result_mode != "cumple"
                 or line.capture_zone != "additional"
+                or line.allow_not_applicable
             ):
                 raise ValidationError(_(
                     "%s solo permite atributos adicionales de tipo Cumple/No Cumple."
                 ) % line._strict_binary_process_display_name())
 
-    @api.constrains("value_float", "attribute_type", "allow_zero", "result")
+    @api.constrains(
+        "attribute_type",
+        "unit",
+        "min_value",
+        "max_value",
+        "selection_options",
+        "allow_zero",
+        "allow_not_applicable",
+        "is_not_applicable",
+        "result",
+        "value_cumple",
+        "value_ok",
+    )
+    def _check_result_configuration_hardening(self):
+        for line in self:
+            if (line.is_not_applicable or line.result == "na" or line.value_cumple == "na" or line.value_ok == "na") and not line.allow_not_applicable:
+                raise ValidationError(_(
+                    "El atributo '%s' no permite N/A. Active 'Permitir No aplica' "
+                    "en la plantilla o capture un resultado real."
+                ) % line.name)
+
+            if line.attribute_type == "boolean":
+                if line.unit or line.min_value or line.max_value or line.selection_options or line.allow_zero:
+                    raise ValidationError(_(
+                        "El atributo '%s' es Cumple/No Cumple y no debe tener "
+                        "unidad, mínimo, máximo, opciones ni valor numérico."
+                    ) % line.name)
+
+            if line.attribute_type == "selection":
+                options = _split_selection_options(line.selection_options)
+                value = (line.value_selection or line.value_char or "").strip()
+                if options and value:
+                    normalized_options = {item.lower() for item in options}
+                    if value.lower() not in normalized_options:
+                        raise ValidationError(_(
+                            "El valor '%s' no está dentro de las opciones configuradas para '%s': %s"
+                        ) % (value, line.name, ", ".join(options)))
+
+            if line.attribute_type == "float" and line.min_value and line.max_value and line.min_value > line.max_value:
+                raise ValidationError(_(
+                    "En '%s', el valor mínimo no puede ser mayor que el máximo."
+                ) % line.name)
+
+    @api.constrains("value_float", "attribute_type", "allow_zero", "result", "is_not_applicable")
     def _check_zero_numeric_hardening(self):
         for line in self:
             if line._is_strict_binary_result_line():
@@ -796,16 +1337,18 @@ class QualityInspectionLineHardening(models.Model):
             if parent_state in ("borrador", False):
                 continue
 
+            if line.is_not_applicable and line.allow_not_applicable:
+                continue
+
             if (
                 line.attribute_type == "float"
                 and not line.allow_zero
                 and not line.value_float
-                and line.result != "na"
             ):
                 raise ValidationError(
                     _(
                         "El atributo numérico '%s' no puede quedar en cero. "
-                        "Capture el valor real o marque N/A."
+                        "Capture el valor real o marque No aplica si la plantilla lo permite."
                     )
                     % line.name
                 )
@@ -822,6 +1365,7 @@ class QualityInspectionRanuradoHardening(models.Model):
     resultado = fields.Selection(
         selection_add=[("na", "N/A")],
         ondelete={"na": "set default"},
+        default=False,
     )
 
     @api.constrains("medida", "resultado")
@@ -848,6 +1392,7 @@ class QualityInspectionTroqueladoHardening(models.Model):
     resultado = fields.Selection(
         selection_add=[("na", "N/A")],
         ondelete={"na": "set default"},
+        default=False,
     )
 
     @api.constrains("medida", "resultado")
@@ -946,6 +1491,20 @@ class QualityInspectionHardening(models.Model):
         related="process_type_id.capture_mode",
         store=True,
         readonly=True,
+    )
+    allow_resistencia_na = fields.Boolean(
+        related="process_type_id.allow_resistencia_na",
+        store=True,
+        readonly=True,
+    )
+    allow_hexagono_na = fields.Boolean(
+        related="process_type_id.allow_hexagono_na",
+        store=True,
+        readonly=True,
+    )
+    hexagono_na = fields.Boolean(
+        "Hexágono No Aplica",
+        help="Marcar únicamente cuando el proceso permita explícitamente N/A en Hexágono.",
     )
     date_started = fields.Datetime("Fecha de Inicio", readonly=True)
     date_closed = fields.Datetime("Fecha de Cierre", readonly=True)
@@ -1157,10 +1716,16 @@ class QualityInspectionHardening(models.Model):
                 "max_value": 0.0,
                 "unit": False,
                 "allow_zero": False,
+                "allow_not_applicable": False,
+                "is_not_applicable": False,
+                "selection_options": False,
                 "sequence": template.sequence,
                 "value_cumple": False,
+                "value_cumple_required": False,
                 "value_ok": False,
+                "value_ok_required": False,
                 "result": False,
+                "result_required": False,
             }
 
         result_mode = getattr(template, "result_mode", False) or "cumple"
@@ -1173,20 +1738,20 @@ class QualityInspectionHardening(models.Model):
             "result_mode": result_mode,
             "min_value": template.min_value,
             "max_value": template.max_value,
-            "unit": template.unit,
-            "allow_zero": getattr(template, "allow_zero", False),
+            "unit": template.unit if template.attribute_type == "float" else False,
+            "allow_zero": getattr(template, "allow_zero", False) if template.attribute_type == "float" else False,
+            "allow_not_applicable": getattr(template, "allow_not_applicable", False),
+            "is_not_applicable": False,
+            "selection_options": template.selection_options if template.attribute_type == "selection" else False,
             "sequence": template.sequence,
-            "value_cumple": (
-                "na"
-                if template.attribute_type == "boolean" and result_mode == "cumple"
-                else False
-            ),
-            "value_ok": (
-                "na"
-                if template.attribute_type == "boolean" and result_mode == "ok"
-                else False
-            ),
-            "result": "na",
+            "value_cumple": False,
+            "value_cumple_required": False,
+            "value_ok": False,
+            "value_ok_required": False,
+            "value_selection": False,
+            "value_char": False,
+            "result": False,
+            "result_required": False,
         }
 
     def _build_quality_attribute_line_commands_hardening(self, clear_existing=True):
@@ -1308,6 +1873,37 @@ class QualityInspectionHardening(models.Model):
                 rec.oct_espesor = 0.0
                 rec.oct_retiramiento = 0.0
                 rec.reticula_extendida = 0.0
+
+    @api.onchange("hexagono_na")
+    def _onchange_hexagono_na_hardening(self):
+        for rec in self:
+            if rec.hexagono_na:
+                if not rec.allow_hexagono_na:
+                    rec.hexagono_na = False
+                    return {
+                        "warning": {
+                            "title": _("No aplica no permitido"),
+                            "message": _("Este proceso no permite marcar Hexágono como N/A."),
+                        }
+                    }
+                rec.hexagono = False
+                rec.tipo_hexagono = False
+                rec.oct_hexagono = False
+                rec.oct_hexagono_tipo = False
+
+    @api.onchange("resistencia_na")
+    def _onchange_resistencia_na_hardening(self):
+        for rec in self:
+            if rec.resistencia_na:
+                if not rec.allow_resistencia_na:
+                    rec.resistencia_na = False
+                    return {
+                        "warning": {
+                            "title": _("No aplica no permitido"),
+                            "message": _("Este proceso no permite marcar Resistencia como N/A."),
+                        }
+                    }
+                rec.resistencia = 0.0
 
     @api.onchange("product_id")
     def _onchange_product_code_hardening(self):
@@ -1603,6 +2199,8 @@ class QualityInspectionHardening(models.Model):
             if not required_lines:
                 raise UserError(_("Debe capturar los atributos adicionales del proceso."))
 
+            required_lines._sync_line_result_hardening()
+
             strict_binary = rec.process_code in STRICT_BINARY_RESULT_PROCESS_CODES
 
             if strict_binary:
@@ -1611,6 +2209,7 @@ class QualityInspectionHardening(models.Model):
                         line.attribute_type != "boolean"
                         or line.result_mode != "cumple"
                         or line.capture_zone != "additional"
+                        or line.allow_not_applicable
                     )
                 )
                 if invalid_type:
@@ -1621,48 +2220,35 @@ class QualityInspectionHardening(models.Model):
                         ", ".join(invalid_type.mapped("name")),
                     ))
 
-                for line in required_lines:
-                    if line.value_cumple in ("cumple", "no_cumple") and line.result != line.value_cumple:
-                        line.result = line.value_cumple
-
-                missing_binary = required_lines.filtered(
-                    lambda line: (
-                        line.value_cumple not in ("cumple", "no_cumple")
-                        or line.result not in ("cumple", "no_cumple")
+            missing_lines = required_lines.filtered(
+                lambda line: line._quality_line_is_missing_hardening()
+            )
+            if missing_lines:
+                raise UserError(
+                    _("Hay atributos obligatorios sin captura válida: %s")
+                    % "; ".join(
+                        missing_lines.mapped(lambda line: line._quality_line_missing_reason_hardening())
                     )
                 )
-                if missing_binary:
-                    raise UserError(_(
-                        "%s no permite N/A ni resultados vacíos. Seleccione Cumple o No Cumple en: %s"
-                    ) % (
-                        rec.process_type_id.display_name,
-                        ", ".join(missing_binary.mapped("name")),
-                    ))
 
-                continue
-
-            missing_result = required_lines.filtered(
-                lambda line: not line.result
-            )
-            if missing_result:
-                raise UserError(
-                    _("Hay atributos adicionales sin dictamen: %s")
-                    % ", ".join(missing_result.mapped("name"))
-                )
-
-            numeric_zero = required_lines.filtered(
+            not_allowed_na = required_lines.filtered(
                 lambda line: (
-                    line.attribute_type == "float"
-                    and not line.allow_zero
-                    and not line.value_float
-                    and line.result != "na"
+                    (line.result == "na" or line.is_not_applicable)
+                    and not line.allow_not_applicable
                 )
             )
-            if numeric_zero:
+            if not_allowed_na:
                 raise UserError(
-                    _("Se detectan atributos numéricos con valor igual a cero. Rectifique: %s")
-                    % ", ".join(numeric_zero.mapped("name"))
+                    _("Estos atributos no permiten N/A: %s")
+                    % ", ".join(not_allowed_na.mapped("name"))
                 )
+
+            failing = required_lines.filtered(lambda line: line.result in FAIL_RESULTS)
+            if failing:
+                raise UserError(_(
+                    "No se puede aceptar/liberar: hay atributo(s) No Cumple/NO OK. "
+                    "Retenga o rechace la inspección. Revise: %s"
+                ) % ", ".join(failing.mapped("name")))
 
     def _check_measures_captured_hardening(self):
         for rec in self:
@@ -1671,6 +2257,12 @@ class QualityInspectionHardening(models.Model):
 
             if not rec.process_type_id.require_measures:
                 continue
+
+            if rec.resistencia_na and not rec.allow_resistencia_na:
+                raise UserError(_("Este proceso no permite marcar Resistencia como N/A."))
+
+            if rec.hexagono_na and not rec.allow_hexagono_na:
+                raise UserError(_("Este proceso no permite marcar Hexágono como N/A."))
 
             if rec.process_code == "octagono":
                 missing = []
@@ -1682,6 +2274,7 @@ class QualityInspectionHardening(models.Model):
                     or getattr(rec, "oct_hexagono_tipo", False)
                     or getattr(rec, "oct_hexagono", False)
                     or rec.tipo_hexagono
+                    or (rec.hexagono_na and rec.allow_hexagono_na)
                 ):
                     missing.append("Hexágono")
                 if not rec.numero_corrida:
@@ -1725,9 +2318,13 @@ class QualityInspectionHardening(models.Model):
                 or getattr(rec, "tipo_hexagono", False)
                 or getattr(rec, "oct_hexagono_tipo", False)
                 or getattr(rec, "oct_hexagono", False)
+                or (rec.hexagono_na and rec.allow_hexagono_na)
             ):
                 missing.append("Hexágono")
-            if rec.show_resistencia and not rec.resistencia_na and not rec.resistencia:
+            if rec.show_resistencia and not (
+                rec.resistencia
+                or (rec.resistencia_na and rec.allow_resistencia_na)
+            ):
                 missing.append("Resistencia")
             if rec.show_apariencia and not rec.apariencia:
                 missing.append("Apariencia")
@@ -1748,7 +2345,10 @@ class QualityInspectionHardening(models.Model):
                 missing.append("Alineación")
             if rec.show_numero_corrida and not rec.numero_corrida:
                 missing.append("Número de Corrida")
-            if rec.show_tipo_hexagono and not rec.tipo_hexagono:
+            if rec.show_tipo_hexagono and not (
+                rec.tipo_hexagono
+                or (rec.hexagono_na and rec.allow_hexagono_na)
+            ):
                 missing.append("Tipo de Hexágono")
 
             if rec.show_papel:
@@ -1765,8 +2365,13 @@ class QualityInspectionHardening(models.Model):
             if rec.show_corte_guillotina and not rec.corte_guillotina:
                 missing.append("Corte en Guillotina")
 
-            if rec.process_code == "troquelado_plano" and not rec.troquelado_ids:
-                missing.append("Pestaña Troquelado")
+            if rec.process_code == "troquelado_plano":
+                if not rec.troquelado_ids:
+                    missing.append("Pestaña Troquelado")
+                else:
+                    missing_troquel = rec.troquelado_ids.filtered(lambda line: not line.resultado)
+                    if missing_troquel:
+                        missing.append("Resultado en Troquelado")
 
             if (
                 rec.process_code == "sierras_ranuradoras"
@@ -1781,6 +2386,97 @@ class QualityInspectionHardening(models.Model):
                     % ", ".join(missing)
                 )
 
+    def _get_non_conformance_labels_hardening(self):
+        self.ensure_one()
+        labels = []
+
+        self.line_ids._sync_line_result_hardening()
+
+        for line in self.line_ids.filtered(lambda item: item.result in FAIL_RESULTS):
+            result_label = dict(line._fields["result"].selection).get(line.result, line.result)
+            labels.append("%s (%s)" % (line.name, result_label))
+
+        native_fields = [
+            ("apariencia", "Apariencia"),
+            ("pegado_result", "Resultado de Pegado"),
+            ("oct_alineacion", "Alineación"),
+            ("oct_pegado", "Pegado Octágono"),
+            ("engomado", "Engomado"),
+        ]
+        for field_name, label in native_fields:
+            if field_name in self._fields and self[field_name] == "no_cumple":
+                labels.append("%s (No Cumple)" % label)
+
+        ranura_failing = self.ranurado_ids.filtered(lambda line: line.resultado == "no_cumple")
+        for line in ranura_failing:
+            labels.append("Ranurado/Corte Sierra: %s (No Cumple)" % (getattr(line, "concepto", False) or line.display_name))
+
+        troquel_failing = self.troquelado_ids.filtered(lambda line: line.resultado == "no_cumple")
+        for line in troquel_failing:
+            labels.append("Troquelado #%s (No Cumple)" % (line.sequence or line.id))
+
+        return labels
+
+    def _check_no_failing_results_hardening(self):
+        for rec in self:
+            labels = rec._get_non_conformance_labels_hardening()
+            if labels:
+                raise UserError(_(
+                    "No se puede aceptar/liberar la inspección porque existen resultados No Cumple/NO OK. "
+                    "Use Retener si el producto será corregido o Rechazar si no procede. Revise: %s"
+                ) % "; ".join(labels))
+
+    def _notify_quality_non_conformance_hardening(self, action_label):
+        for rec in self:
+            labels = rec._get_non_conformance_labels_hardening()
+            if not labels:
+                continue
+
+            partner_ids = set()
+
+            supervisor_partner = False
+            if hasattr(rec, "_get_supervisor_partner_hardening"):
+                supervisor_partner = rec._get_supervisor_partner_hardening()
+            elif rec.supervisor_id and rec.supervisor_id.user_id and rec.supervisor_id.user_id.partner_id:
+                supervisor_partner = rec.supervisor_id.user_id.partner_id
+
+            if supervisor_partner:
+                partner_ids.update(supervisor_partner.ids)
+                rec.message_subscribe(partner_ids=supervisor_partner.ids)
+
+            if rec.inspector_id and rec.inspector_id.partner_id:
+                partner_ids.add(rec.inspector_id.partner_id.id)
+
+            manager_group = self.env.ref(
+                "quality_management.group_quality_manager",
+                raise_if_not_found=False,
+            )
+            if manager_group:
+                for user in manager_group.users:
+                    if user.partner_id:
+                        partner_ids.add(user.partner_id.id)
+
+            supervisor_user = rec._get_supervisor_user_hardening()
+            if supervisor_user:
+                rec.activity_schedule(
+                    "mail.mail_activity_data_todo",
+                    date_deadline=fields.Date.today(),
+                    summary=_("Incumplimiento de calidad: %s") % rec.name,
+                    user_id=supervisor_user.id,
+                )
+
+            rec.message_post(
+                body=_(
+                    "%(action)s por %(user)s debido a incumplimiento(s): %(items)s"
+                ) % {
+                    "action": action_label,
+                    "user": self.env.user.name,
+                    "items": "; ".join(labels),
+                },
+                partner_ids=list(partner_ids),
+                subtype_xmlid="mail.mt_comment",
+            )
+
     def _full_quality_validation_hardening(self):
         for rec in self:
             if rec.state != "en_proceso":
@@ -1790,48 +2486,12 @@ class QualityInspectionHardening(models.Model):
             rec._check_reserved_duplicate_attributes_hardening()
             rec._check_measures_captured_hardening()
             rec._check_required_additional_attributes_hardening()
+            rec._check_no_failing_results_hardening()
             rec._check_previous_process_hardening()
 
     def _sync_strict_binary_lines_hardening(self):
         for rec in self.filtered(lambda item: item.process_code in STRICT_BINARY_RESULT_PROCESS_CODES):
-            for line in rec.line_ids:
-                vals = {}
-
-                if line.attribute_type != "boolean":
-                    vals["attribute_type"] = "boolean"
-                if line.capture_zone != "additional":
-                    vals["capture_zone"] = "additional"
-                if line.result_mode != "cumple":
-                    vals["result_mode"] = "cumple"
-                if line.value_ok:
-                    vals["value_ok"] = False
-                if line.value_float:
-                    vals["value_float"] = 0.0
-                if line.value_char:
-                    vals["value_char"] = False
-                if line.min_value:
-                    vals["min_value"] = 0.0
-                if line.max_value:
-                    vals["max_value"] = 0.0
-                if line.unit:
-                    vals["unit"] = False
-                if line.allow_zero:
-                    vals["allow_zero"] = False
-
-                if line.value_cumple == "na":
-                    vals["value_cumple"] = False
-                if line.value_ok == "na":
-                    vals["value_ok"] = False
-                if line.result == "na":
-                    vals["result"] = False
-
-                if line.value_cumple in ("cumple", "no_cumple") and line.result != line.value_cumple:
-                    vals["result"] = line.value_cumple
-                elif line.result in ("cumple", "no_cumple") and line.value_cumple != line.result:
-                    vals["value_cumple"] = line.result
-
-                if vals:
-                    line.write(vals)
+            rec.line_ids._sync_line_result_hardening()
 
     def action_start(self):
         for rec in self:
@@ -1896,6 +2556,8 @@ class QualityInspectionHardening(models.Model):
                 subtype_xmlid="mail.mt_comment",
             )
 
+            rec._notify_quality_non_conformance_hardening(_("Producto RETENIDO"))
+
     def action_reject(self):
         for rec in self:
             if rec.state != "en_proceso":
@@ -1906,6 +2568,7 @@ class QualityInspectionHardening(models.Model):
                 body=_("Inspección RECHAZADA por %s.") % self.env.user.name,
                 subtype_xmlid="mail.mt_comment",
             )
+            rec._notify_quality_non_conformance_hardening(_("Inspección RECHAZADA"))
 
 
 class QualityCertificateHardening(models.Model):

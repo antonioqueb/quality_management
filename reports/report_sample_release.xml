@@ -91,10 +91,12 @@
                                         <td><span t-field="line.name"/></td>
                                         <td class="text-center">
                                             <span t-if="line.attribute_type == 'float'" t-field="line.value_float"/>
-                                            <span t-if="line.attribute_type in ('char', 'selection')" t-field="line.value_char"/>
-                                            <!-- FOLIO-QM-ODOO18-044: se deja de usar value_boolean legacy y se muestran los modos reales. -->
-                                            <span t-if="line.attribute_type == 'boolean' and line.result_mode == 'cumple'" t-field="line.value_cumple"/>
-                                            <span t-if="line.attribute_type == 'boolean' and line.result_mode == 'ok'" t-field="line.value_ok"/>
+                                            <t t-if="line.is_not_applicable or line.result == 'na'">N/A</t>
+                                            <span t-elif="line.attribute_type == 'selection'" t-field="line.value_selection"/>
+                                            <span t-elif="line.attribute_type == 'char'" t-field="line.value_char"/>
+                                            <!-- FOLIO-QM-ODOO18-044/081: se muestran los modos reales sin N/A automático. -->
+                                            <span t-elif="line.attribute_type == 'boolean' and line.result_mode == 'cumple'" t-field="line.value_cumple_required"/>
+                                            <span t-elif="line.attribute_type == 'boolean' and line.result_mode == 'ok'" t-field="line.value_ok_required"/>
                                         </td>
                                         <td class="text-center">
                                             <t t-if="line.min_value or line.max_value">
@@ -109,7 +111,7 @@
                                             <span t-if="line.result in ('no_cumple','no_ok')" style="color: red; font-weight: bold;">
                                                 <span t-field="line.result"/>
                                             </span>
-                                            <span t-if="line.result == 'na'">N/A</span>
+                                            <span t-if="line.result == 'na' or line.is_not_applicable">N/A</span>
                                         </td>
                                     </tr>
                                 </tbody>

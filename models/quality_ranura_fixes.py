@@ -295,9 +295,12 @@ class QualityInspectionQI024(models.Model):
             if rec.state != "en_proceso":
                 raise UserError(_("Debe presionar 'INICIAR INSPECCIÓN' antes de liberar."))
 
+            rec._check_required_header_hardening()
             rec._check_reserved_duplicate_attributes_hardening()
             rec._check_measures_captured_hardening()
             rec._check_required_additional_attributes_hardening()
+            if hasattr(rec, "_check_no_failing_results_hardening"):
+                rec._check_no_failing_results_hardening()
             rec._check_previous_process_hardening()
 
     def _get_supervisor_partner_hardening(self):
@@ -377,6 +380,9 @@ class QualityInspectionQI024(models.Model):
                 partner_ids=partner_ids,
                 subtype_xmlid="mail.mt_comment",
             )
+
+            if hasattr(rec, "_notify_quality_non_conformance_hardening"):
+                rec._notify_quality_non_conformance_hardening(_("Producto RETENIDO"))
 
     def action_correction_done(self):
         """

@@ -187,21 +187,20 @@ class QualitySampleRelease(models.Model):
             "result_mode": result_mode,
             "value_float": 0.0,
             "value_char": False,
-            "value_cumple": (
-                "na"
-                if template.attribute_type == "boolean" and result_mode == "cumple"
-                else False
-            ),
-            "value_ok": (
-                "na"
-                if template.attribute_type == "boolean" and result_mode == "ok"
-                else False
-            ),
+            "value_selection": False,
+            "value_cumple": False,
+            "value_cumple_required": False,
+            "value_ok": False,
+            "value_ok_required": False,
             "min_value": template.min_value,
             "max_value": template.max_value,
-            "unit": template.unit,
-            "allow_zero": getattr(template, "allow_zero", False),
-            "result": "na",
+            "unit": template.unit if template.attribute_type == "float" else False,
+            "allow_zero": getattr(template, "allow_zero", False) if template.attribute_type == "float" else False,
+            "allow_not_applicable": getattr(template, "allow_not_applicable", False),
+            "is_not_applicable": False,
+            "selection_options": template.selection_options if template.attribute_type == "selection" else False,
+            "result": False,
+            "result_required": False,
             "sequence": template.sequence,
         }
 
@@ -274,26 +273,52 @@ class QualitySampleRelease(models.Model):
 
         return res
 
-    def _check_attributes_valid(self):
+    def _check_attributes_valid(self, block_failing=False):
         for rec in self:
             if not rec.inspection_line_ids:
                 raise UserError(
                     _("Debe capturar al menos un atributo de inspección antes de avanzar.")
                 )
 
-            zero_lines = rec.inspection_line_ids.filtered(
+            rec.inspection_line_ids._sync_line_result_hardening()
+
+            missing_lines = rec.inspection_line_ids.filtered(
                 lambda line: (
-                    line.attribute_type == "float"
-                    and not getattr(line, "allow_zero", False)
-                    and not line.value_float
-                    and line.result != "na"
+                    line.attribute_template_id.is_required
+                    if line.attribute_template_id
+                    else True
+                )
+                and line._quality_line_is_missing_hardening()
+            )
+            if missing_lines:
+                raise UserError(
+                    _("Hay atributos obligatorios sin captura válida: %s")
+                    % "; ".join(
+                        missing_lines.mapped(lambda line: line._quality_line_missing_reason_hardening())
+                    )
+                )
+
+            not_allowed_na = rec.inspection_line_ids.filtered(
+                lambda line: (
+                    (line.result == "na" or line.is_not_applicable)
+                    and not line.allow_not_applicable
                 )
             )
-            if zero_lines:
+            if not_allowed_na:
                 raise UserError(
-                    _("Hay atributos con valor 0 que deben capturarse: %s")
-                    % ", ".join(zero_lines.mapped("name"))
+                    _("Estos atributos no permiten N/A: %s")
+                    % ", ".join(not_allowed_na.mapped("name"))
                 )
+
+            if block_failing:
+                failing = rec.inspection_line_ids.filtered(
+                    lambda line: line.result in ("no_cumple", "no_ok")
+                )
+                if failing:
+                    raise UserError(
+                        _("No se puede liberar: hay atributo(s) que no cumplen: %s.")
+                        % ", ".join(failing.mapped("name"))
+                    )
 
     def _check_spec_pdf(self):
         for rec in self:
@@ -353,15 +378,7 @@ class QualitySampleRelease(models.Model):
 
     def action_accept(self):
         for rec in self:
-            rec._check_attributes_valid()
-            failing = rec.inspection_line_ids.filtered(
-                lambda line: line.result in ("no_cumple", "no_ok")
-            )
-            if failing:
-                raise UserError(
-                    _("No se puede liberar: hay %d atributo(s) que no cumplen.")
-                    % len(failing)
-                )
+            rec._check_attributes_valid(block_failing=True)
 
             rec.state = "aceptado"
             rec.date_inspected = fields.Datetime.now()
