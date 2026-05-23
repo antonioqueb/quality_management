@@ -398,16 +398,40 @@
                                 Capture el valor real del atributo. Use <b>No aplica</b> solo cuando la plantilla lo permita explícitamente.
                             </p>
 
-                            <field name="line_ids">
+                            <field name="line_ids"
+                                   context="{
+                                       'default_capture_zone': 'additional',
+                                       'default_result_mode': 'cumple',
+                                       'default_attribute_type': 'boolean'
+                                   }">
                                 <list editable="bottom">
                                     <field name="process_code" column_invisible="1"/>
                                     <field name="strict_binary_result" column_invisible="1"/>
-                                    <field name="allow_not_applicable" column_invisible="1"/>
+                                    <field name="capture_zone" column_invisible="1"/>
                                     <field name="result_mode" column_invisible="1"/>
-                                    <field name="allow_zero" column_invisible="1"/>
+
                                     <field name="sequence" widget="handle"/>
-                                    <field name="name" readonly="1"/>
-                                    <field name="attribute_type" readonly="1"/>
+
+                                    <field name="attribute_template_id"
+                                           string="Plantilla"
+                                           optional="show"
+                                           options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+
+                                    <field name="name"
+                                           string="Nombre del atributo"
+                                           readonly="attribute_template_id"
+                                           required="not attribute_template_id"
+                                           placeholder="Ej. Aplicación de adhesivo, Medidas correctas..."/>
+
+                                    <field name="attribute_type"
+                                           string="Tipo de dato"
+                                           readonly="attribute_template_id"/>
+
+                                    <field name="selection_options"
+                                           string="Opciones"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'selection'"
+                                           placeholder="Ej. Buena, Regular, Mala"/>
 
                                     <field name="value_float"
                                            string="Valor medido"
@@ -415,7 +439,8 @@
 
                                     <field name="value_selection"
                                            string="Valor selección"
-                                           invisible="attribute_type != 'selection' or strict_binary_result or is_not_applicable"/>
+                                           invisible="attribute_type != 'selection' or strict_binary_result or is_not_applicable"
+                                           placeholder="Capture una opción configurada"/>
 
                                     <field name="value_char"
                                            string="Valor texto"
@@ -429,22 +454,36 @@
                                            string="Resultado"
                                            invisible="attribute_type != 'boolean' or result_mode != 'cumple' or is_not_applicable"/>
 
+                                    <field name="allow_not_applicable"
+                                           string="Permitir No aplica"
+                                           readonly="attribute_template_id"
+                                           invisible="strict_binary_result"
+                                           optional="show"/>
+
                                     <field name="is_not_applicable"
                                            string="No aplica"
                                            invisible="not allow_not_applicable or strict_binary_result"/>
 
                                     <field name="min_value"
                                            string="Mínimo"
-                                           readonly="1"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
+
                                     <field name="max_value"
                                            string="Máximo"
-                                           readonly="1"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
+
                                     <field name="unit"
                                            string="Unidad"
-                                           readonly="1"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
+
+                                    <field name="allow_zero"
+                                           string="Permitir cero"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'float' or strict_binary_result"
+                                           optional="hide"/>
 
                                     <field name="result_required"
                                            string="Resultado"
@@ -457,7 +496,8 @@
                                            invisible="attribute_type != 'float' or is_not_applicable"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
-                                    <field name="notes"/>
+
+                                    <field name="notes" optional="show"/>
                                 </list>
                             </field>
 

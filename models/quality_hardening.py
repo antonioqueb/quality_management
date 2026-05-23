@@ -89,6 +89,53 @@ def _float_is_captured(value, allow_zero=False):
     return True
 
 
+def _quality_line_vals_has_user_content(vals):
+    """
+    Detecta si una línea manual tiene contenido real.
+
+    Una línea creada accidentalmente por la lista editable suele llegar solo
+    con defaults técnicos: attribute_type, result_mode, capture_zone, ceros, etc.
+    Esa línea se puede ignorar. Si trae valor, rango, nota, resultado o N/A,
+    entonces sí debe exigir Nombre del Atributo.
+    """
+    vals = vals or {}
+
+    if vals.get("attribute_template_id"):
+        return True
+
+    if (vals.get("name") or "").strip():
+        return True
+
+    text_fields = (
+        "value_char",
+        "value_selection",
+        "value_cumple",
+        "value_cumple_required",
+        "value_ok",
+        "value_ok_required",
+        "result",
+        "result_required",
+        "notes",
+        "unit",
+        "selection_options",
+    )
+    if any(vals.get(field_name) for field_name in text_fields):
+        return True
+
+    numeric_fields = ("value_float", "min_value", "max_value")
+    for field_name in numeric_fields:
+        try:
+            if float(vals.get(field_name) or 0.0) != 0.0:
+                return True
+        except (TypeError, ValueError):
+            return True
+
+    if vals.get("allow_zero") or vals.get("allow_not_applicable") or vals.get("is_not_applicable"):
+        return True
+
+    return False
+
+
 # FOLIO-QM-ODOO18-075:
 # En Octágono estos conceptos son campos nativos obligatorios o no aplican
 # en el proceso; no deben duplicarse como atributos adicionales.
@@ -1140,6 +1187,21 @@ class QualityInspectionLineHardening(models.Model):
 
         for vals in vals_list:
             vals = self._apply_template_vals_to_line_create(vals)
+
+            if not (vals.get("name") or "").strip():
+                if vals.get("attribute_template_id"):
+                    template = self.env["quality.attribute.template"].browse(
+                        vals["attribute_template_id"]
+                    ).exists()
+                    if template and template.name:
+                        vals["name"] = template.name
+
+            if not (vals.get("name") or "").strip():
+                raise ValidationError(_(
+                    "Capture el Nombre del Atributo antes de guardar la línea de inspección. "
+                    "Si no desea agregar un atributo manual, elimine la línea vacía."
+                ))
+
             vals = self._normalize_input_vals_hardening(vals)
 
             inspection = (
@@ -1739,6 +1801,56 @@ class QualityInspectionHardening(models.Model):
                     'ALTER COLUMN "%s" DROP NOT NULL' % column_name
                 )
 
+    def _sanitize_line_commands_hardening(self, vals):
+        """
+        Evita que la lista editable de Atributos Adicionales intente crear
+        líneas sin Nombre del Atributo.
+
+        Casos:
+        - Línea completamente vacía: se descarta.
+        - Línea con plantilla: se completa el nombre desde la plantilla.
+        - Línea manual con datos pero sin nombre: se bloquea con mensaje claro.
+        """
+        vals = dict(vals or {})
+        commands = vals.get("line_ids")
+
+        if not commands:
+            return vals
+
+        clean_commands = []
+
+        for command in commands:
+            if (
+                not isinstance(command, (list, tuple))
+                or len(command) < 3
+                or command[0] != 0
+            ):
+                clean_commands.append(command)
+                continue
+
+            line_vals = dict(command[2] or {})
+
+            if not (line_vals.get("name") or "").strip() and line_vals.get("attribute_template_id"):
+                template = self.env["quality.attribute.template"].browse(
+                    line_vals["attribute_template_id"]
+                ).exists()
+                if template and template.name:
+                    line_vals["name"] = template.name
+
+            if not (line_vals.get("name") or "").strip():
+                if _quality_line_vals_has_user_content(line_vals):
+                    raise UserError(_(
+                        "Capture el Nombre del Atributo en la línea manual de inspección "
+                        "antes de guardar. Si no desea agregarla, elimine la línea vacía."
+                    ))
+                # Línea vacía creada accidentalmente por la lista editable.
+                continue
+
+            clean_commands.append((command[0], command[1], line_vals))
+
+        vals["line_ids"] = clean_commands
+        return vals
+
     def _normalize_inspection_vals_hardening(self, vals):
         vals = dict(vals or {})
         if "espesor" in vals and vals.get("espesor") not in (False, None, ""):
@@ -1949,6 +2061,7 @@ class QualityInspectionHardening(models.Model):
         clean_vals_list = []
 
         for vals in vals_list:
+            vals = self._sanitize_line_commands_hardening(vals)
             vals = self._complete_vals_from_production_hardening(vals)
             vals = self._normalize_inspection_vals_hardening(vals)
 
@@ -1976,7 +2089,7 @@ class QualityInspectionHardening(models.Model):
         return records
 
     def write(self, vals):
-        vals = dict(vals or {})
+        vals = self._sanitize_line_commands_hardening(vals)
 
         if "production_order_id" in vals:
             vals = self._complete_vals_from_production_hardening(vals)
