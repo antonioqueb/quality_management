@@ -127,6 +127,56 @@ class QualitySampleRelease(models.Model):
                 else False
             )
 
+    def _prepare_sample_attribute_line_vals(self, template):
+        result_mode = getattr(template, "result_mode", False) or "cumple"
+
+        return {
+            "attribute_template_id": template.id,
+            "name": template.name,
+            "attribute_type": template.attribute_type,
+            "capture_zone": getattr(template, "capture_zone", False) or "additional",
+            "result_mode": result_mode,
+            "value_float": 0.0,
+            "value_char": False,
+            "value_cumple": "na" if template.attribute_type == "boolean" and result_mode == "cumple" else False,
+            "value_ok": "na" if template.attribute_type == "boolean" and result_mode == "ok" else False,
+            "min_value": template.min_value,
+            "max_value": template.max_value,
+            "unit": template.unit,
+            "allow_zero": getattr(template, "allow_zero", False),
+            "result": "na",
+            "sequence": template.sequence,
+        }
+
+    def _reload_sample_attribute_templates(self, clear_existing=True):
+        for rec in self:
+            if not rec.product_id:
+                if clear_existing:
+                    rec.inspection_line_ids = [(5, 0, 0)]
+                continue
+
+            templates = rec.env["quality.attribute.template"]._get_applicable_templates_for_capture(
+                product=rec.product_id,
+                process=False,
+                include_general=False,
+                strict_binary=False,
+            )
+
+            commands = [(5, 0, 0)] if clear_existing else []
+
+            for template in templates:
+                commands.append((0, 0, rec._prepare_sample_attribute_line_vals(template)))
+
+            if clear_existing:
+                rec.inspection_line_ids = commands or [(5, 0, 0)]
+            elif commands:
+                rec.inspection_line_ids = commands
+
+    @api.onchange("product_id")
+    def _onchange_product_load_sample_attribute_templates(self):
+        for rec in self:
+            rec._reload_sample_attribute_templates(clear_existing=True)
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -135,7 +185,33 @@ class QualitySampleRelease(models.Model):
                     self.env["ir.sequence"].next_by_code("quality.sample.release")
                     or "Nuevo"
                 )
-        return super().create(vals_list)
+
+        records = super().create(vals_list)
+
+        for rec, vals in zip(records, vals_list):
+            if not vals.get("inspection_line_ids") and not rec.inspection_line_ids and rec.product_id:
+                rec.with_context(skip_quality_template_autoload=True)._reload_sample_attribute_templates(
+                    clear_existing=False,
+                )
+
+        return records
+
+    def write(self, vals):
+        reload_templates = (
+            not self.env.context.get("skip_quality_template_autoload")
+            and "inspection_line_ids" not in vals
+            and "product_id" in vals
+        )
+
+        res = super().write(vals)
+
+        if reload_templates:
+            draft_records = self.filtered(lambda rec: rec.state == "borrador")
+            draft_records.with_context(skip_quality_template_autoload=True)._reload_sample_attribute_templates(
+                clear_existing=True,
+            )
+
+        return res
 
     def _check_attributes_valid(self):
         for rec in self:

@@ -944,6 +944,88 @@ class QualityInspectionHardening(models.Model):
         store=False,
     )
 
+    def _get_quality_attribute_templates_hardening(self):
+        self.ensure_one()
+
+        process = self.process_type_id
+        process_code = process.code or self.process_code
+        strict_binary = process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+
+        return self.env["quality.attribute.template"]._get_applicable_templates_for_capture(
+            product=self.product_id,
+            process=process,
+            include_general=False,
+            strict_binary=strict_binary,
+        )
+
+    def _prepare_quality_line_vals_from_template_hardening(self, template):
+        self.ensure_one()
+
+        process_code = self.process_type_id.code or self.process_code
+        strict_binary = process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+
+        if strict_binary:
+            return {
+                "attribute_template_id": template.id,
+                "name": template.name,
+                "attribute_type": "boolean",
+                "capture_zone": "additional",
+                "result_mode": "cumple",
+                "min_value": 0.0,
+                "max_value": 0.0,
+                "unit": False,
+                "allow_zero": False,
+                "sequence": template.sequence,
+                "value_cumple": False,
+                "value_ok": False,
+                "result": False,
+            }
+
+        result_mode = getattr(template, "result_mode", False) or "cumple"
+
+        return {
+            "attribute_template_id": template.id,
+            "name": template.name,
+            "attribute_type": template.attribute_type,
+            "capture_zone": getattr(template, "capture_zone", False) or "additional",
+            "result_mode": result_mode,
+            "min_value": template.min_value,
+            "max_value": template.max_value,
+            "unit": template.unit,
+            "allow_zero": getattr(template, "allow_zero", False),
+            "sequence": template.sequence,
+            "value_cumple": "na" if template.attribute_type == "boolean" and result_mode == "cumple" else False,
+            "value_ok": "na" if template.attribute_type == "boolean" and result_mode == "ok" else False,
+            "result": "na",
+        }
+
+    def _build_quality_attribute_line_commands_hardening(self, clear_existing=True):
+        self.ensure_one()
+
+        commands = [(5, 0, 0)] if clear_existing else []
+        templates = self._get_quality_attribute_templates_hardening()
+
+        for template in templates:
+            commands.append((0, 0, self._prepare_quality_line_vals_from_template_hardening(template)))
+
+        return commands
+
+    def _reload_quality_attribute_templates_hardening(self, clear_existing=True):
+        for rec in self:
+            if not rec.product_id and not rec.process_type_id:
+                if clear_existing:
+                    rec.line_ids = [(5, 0, 0)]
+                continue
+
+            commands = rec._build_quality_attribute_line_commands_hardening(
+                clear_existing=clear_existing,
+            )
+
+            if clear_existing:
+                rec.line_ids = commands or [(5, 0, 0)]
+            elif commands:
+                rec.line_ids = commands
+
     def _normalize_inspection_vals_hardening(self, vals):
         vals = dict(vals or {})
         if "espesor" in vals and vals.get("espesor") not in (False, None, ""):
@@ -960,13 +1042,35 @@ class QualityInspectionHardening(models.Model):
         ]
         records = super().create(clean_vals_list)
         records._cleanup_octagono_not_applicable_hardening()
+
+        for rec, vals in zip(records, clean_vals_list):
+            if not vals.get("line_ids") and not rec.line_ids and (rec.product_id or rec.process_type_id):
+                rec.with_context(skip_quality_template_autoload=True)._reload_quality_attribute_templates_hardening(
+                    clear_existing=False,
+                )
+
         return records
 
     def write(self, vals):
         vals = self._normalize_inspection_vals_hardening(vals)
+
+        reload_templates = (
+            not self.env.context.get("skip_quality_template_autoload")
+            and "line_ids" not in vals
+            and any(field in vals for field in ("product_id", "process_type_id", "production_order_id"))
+        )
+
         res = super().write(vals)
+
         if not self.env.context.get("skip_octagono_cleanup"):
             self._cleanup_octagono_not_applicable_hardening()
+
+        if reload_templates:
+            draft_records = self.filtered(lambda rec: rec.state == "borrador")
+            draft_records.with_context(skip_quality_template_autoload=True)._reload_quality_attribute_templates_hardening(
+                clear_existing=True,
+            )
+
         return res
 
     def _cleanup_octagono_not_applicable_hardening(self):
@@ -1070,114 +1174,36 @@ class QualityInspectionHardening(models.Model):
         # FOLIO-QM-ODOO18-020 / 075:
         # Se consolida el enlace OP -> Producto/Lote/Cliente/Código para que
         # Octágono no dependa de seleccionar productos al azar.
-        if not self.production_order_id:
-            return
+        for rec in self:
+            if not rec.production_order_id:
+                rec._reload_quality_attribute_templates_hardening(clear_existing=True)
+                continue
 
-        production = self.production_order_id
-        if production.product_id:
-            self.product_id = production.product_id
-            self.code = production.product_id.default_code or self.code
+            production = rec.production_order_id
+            if production.product_id:
+                rec.product_id = production.product_id
+                rec.code = production.product_id.default_code or rec.code
 
-        if not self.folio and production.name:
-            self.folio = production.name
+            if not rec.folio and production.name:
+                rec.folio = production.name
 
-        if getattr(production, "lot_producing_id", False):
-            self.lot_id = production.lot_producing_id
+            if getattr(production, "lot_producing_id", False):
+                rec.lot_id = production.lot_producing_id
 
-        sale_order = (
-            self.env["sale.order"].search([("name", "=", production.origin)], limit=1)
-            if production.origin
-            else False
-        )
-        if sale_order and sale_order.partner_id:
-            self.partner_id = sale_order.partner_id
+            sale_order = (
+                rec.env["sale.order"].search([("name", "=", production.origin)], limit=1)
+                if production.origin
+                else False
+            )
+            if sale_order and sale_order.partner_id:
+                rec.partner_id = sale_order.partner_id
+
+            rec._reload_quality_attribute_templates_hardening(clear_existing=True)
 
     @api.onchange("process_type_id", "product_id")
     def _onchange_load_attribute_templates(self):
-        # FOLIO-QM-ODOO18-070 / FOLIO-QM-ODOO18-071:
-        # Acabado y Empaque e Impresión solo cargan atributos booleanos Cumple/No Cumple
-        # y nunca inicializan líneas con N/A.
-        if not self.process_type_id and not self.product_id:
-            return
-
-        process_code = self.process_type_id.code or self.process_code
-        strict_binary = process_code in STRICT_BINARY_RESULT_PROCESS_CODES
-
-        templates = self.env["quality.attribute.template"]
-        if self.process_type_id:
-            templates |= self.process_type_id.attribute_template_ids.filtered(
-                lambda template: not template.product_tmpl_id and template.active
-            )
-
-        if self.product_id and self.product_id.product_tmpl_id:
-            templates |= self.env["quality.attribute.template"].search(
-                [
-                    ("product_tmpl_id", "=", self.product_id.product_tmpl_id.id),
-                    ("active", "=", True),
-                ]
-            )
-
-        if strict_binary:
-            templates = templates.filtered(lambda template: template.attribute_type == "boolean")
-
-        if not templates:
-            return
-
-        lines = [(5, 0, 0)]
-        seen = set()
-        for template in templates.sorted(lambda item: (item.sequence, item.id)):
-            key = template.normalized_name or _slug(template.name)
-            if not key or key in seen:
-                continue
-
-            seen.add(key)
-
-            if strict_binary:
-                value_cumple = False
-                value_ok = False
-                result = False
-                attribute_type = "boolean"
-                result_mode = "cumple"
-                capture_zone = "additional"
-                min_value = 0.0
-                max_value = 0.0
-                unit = False
-                allow_zero = False
-            else:
-                value_cumple = "na"
-                value_ok = "na"
-                result = "na"
-                attribute_type = template.attribute_type
-                result_mode = template.result_mode
-                capture_zone = template.capture_zone
-                min_value = template.min_value
-                max_value = template.max_value
-                unit = template.unit
-                allow_zero = template.allow_zero
-
-            lines.append(
-                (
-                    0,
-                    0,
-                    {
-                        "attribute_template_id": template.id,
-                        "name": template.name,
-                        "attribute_type": attribute_type,
-                        "capture_zone": capture_zone,
-                        "result_mode": result_mode,
-                        "min_value": min_value,
-                        "max_value": max_value,
-                        "unit": unit,
-                        "allow_zero": allow_zero,
-                        "sequence": template.sequence,
-                        "value_cumple": value_cumple,
-                        "value_ok": value_ok,
-                        "result": result,
-                    },
-                )
-            )
-
-        self.line_ids = lines
+        for rec in self:
+            rec._reload_quality_attribute_templates_hardening(clear_existing=True)
 
     def _get_previous_process_code_hardening(self):
         self.ensure_one()
