@@ -56,7 +56,6 @@ RESERVED_MEASURE_ATTRS = set(RESERVED_MEASURE_FIELD_ALIASES)
 
 # FOLIO-QM-ODOO18-070 / FOLIO-QM-ODOO18-071:
 # Procesos que solo aceptan atributos adicionales binarios Cumple/No Cumple.
-# No permiten N/A, OK/NO OK/N/A, atributos de selección ni atributos numéricos.
 STRICT_BINARY_RESULT_PROCESS_CODES = {
     "acabado_empaque",
     "impresion",
@@ -117,10 +116,6 @@ def _reserved_measure_label_for_inspection(inspection, normalized_key):
     if not inspection or not normalized_key:
         return False
 
-    # FOLIO-QM-ODOO18-075:
-    # Octágono tiene una matriz fija de captura. Estos conceptos no deben
-    # aparecer como atributos adicionales, aunque la configuración legacy
-    # del proceso aún no haya sido actualizada en la base.
     if inspection.process_code == "octagono":
         oct_label = OCTAGONO_RESERVED_FIELD_ALIASES.get(normalized_key)
         if oct_label:
@@ -165,7 +160,6 @@ class QualityProcessTypeHardening(models.Model):
 class QualityAttributeTemplateHardening(models.Model):
     _inherit = "quality.attribute.template"
 
-    # FOLIO-QM-ODOO18-075: soporta rangos finos como 0.0010 en plantillas numéricas.
     min_value = fields.Float("Valor Mínimo", digits=(16, 4))
     max_value = fields.Float("Valor Máximo", digits=(16, 4))
 
@@ -234,7 +228,6 @@ class QualityAttributeTemplateHardening(models.Model):
     def _onchange_strict_binary_template(self):
         for rec in self:
             if rec.process_type_id and rec.process_type_id.code in STRICT_BINARY_RESULT_PROCESS_CODES:
-                # FOLIO-QM-ODOO18-071: Impresión y Acabado no permiten configurar OK/NO OK/N/A, selección ni numéricos.
                 rec.attribute_type = "boolean"
                 rec.capture_zone = "additional"
                 rec.result_mode = "cumple"
@@ -284,9 +277,6 @@ class QualityAttributeTemplateHardening(models.Model):
 class QualityInspectionLineHardening(models.Model):
     _inherit = "quality.inspection.line"
 
-    # FOLIO-QM-ODOO18-075:
-    # Permite capturas finas como 0.0010 en calibración sin que la lista
-    # editable ni los reportes redondeen visualmente a cero.
     value_float = fields.Float("Valor Numérico", digits=(16, 4))
     min_value = fields.Float("Mínimo", digits=(16, 4))
     max_value = fields.Float("Máximo", digits=(16, 4))
@@ -317,8 +307,6 @@ class QualityInspectionLineHardening(models.Model):
         required=True,
     )
 
-    # FOLIO-QM-ODOO18-018: se extiende el campo existente con N/A sin redefinirlo
-    # por completo, evitando conflictos de upgrade en Odoo 18.
     value_cumple = fields.Selection(
         selection_add=[("na", "N/A")],
         ondelete={"na": "set default"},
@@ -345,9 +333,6 @@ class QualityInspectionLineHardening(models.Model):
     )
     allow_zero = fields.Boolean("Permitir cero")
 
-    # FOLIO-QM-ODOO18-070 / FOLIO-QM-ODOO18-071:
-    # Permite que vistas, validaciones y reportes identifiquen líneas pertenecientes
-    # a procesos estrictamente Cumple/No Cumple.
     process_code = fields.Char(
         related="inspection_id.process_code",
         store=True,
@@ -359,12 +344,6 @@ class QualityInspectionLineHardening(models.Model):
     )
 
     def init(self):
-        """
-        FOLIO-QM-ODOO18-071:
-        Normaliza líneas existentes de Impresión y Acabado/Empaque durante upgrade.
-        Esto corrige capturas previas donde las líneas quedaron como OK/NO OK/N/A,
-        numéricas o con Resultado = N/A.
-        """
         super().init()
         cr = self.env.cr
 
@@ -619,7 +598,6 @@ class QualityInspectionLineHardening(models.Model):
             line.allow_zero = template.allow_zero
 
             if line._is_strict_binary_result_line():
-                # FOLIO-QM-ODOO18-071: Impresión y Acabado se fuerzan a Cumple/No Cumple.
                 line.attribute_type = "boolean"
                 line.capture_zone = "additional"
                 line.result_mode = "cumple"
@@ -772,11 +750,6 @@ class QualityInspectionLineHardening(models.Model):
 
     @api.constrains("name", "normalized_name", "capture_zone", "inspection_id")
     def _check_reserved_measure_attribute_line_hardening(self):
-        """
-        FOLIO-QM-ODOO18-072:
-        Evita capturar en Atributos Adicionales conceptos que ya existen
-        en Medidas y Propiedades del proceso actual.
-        """
         for line in self:
             if not line.inspection_id or line.capture_zone != "additional":
                 continue
@@ -889,30 +862,78 @@ class QualityInspectionTroqueladoHardening(models.Model):
 class QualityInspectionHardening(models.Model):
     _inherit = "quality.inspection"
 
-    # FOLIO-QM-ODOO18-075:
-    # Leyendas se trasladan a la vista para evitar los íconos de interrogación
-    # que no aportaban acción al usuario final.
-    folio = fields.Char("Folio de Producción", required=True, help="")
-    code = fields.Char("Código de Producto", required=True, help="")
-
     # FOLIO-QM-ODOO18-080:
-    # El lote no puede quedar como NOT NULL en borrador porque Odoo dispara web_save
-    # al interactuar con many2one/booleanos como Inspector, Supervisor o Sin Supervisor.
-    # Se valida obligatoriamente antes de iniciar/liberar, no durante la creación parcial.
+    # Odoo hace web_save/autoguardado al cambiar muchos2uno/radio en registros nuevos.
+    # Si estos campos siguen required=True a nivel ORM/SQL, el borrador falla antes
+    # de que el onchange termine de persistir producto/lote desde la OP.
+    # La obligatoriedad real se valida al iniciar/liberar la inspección.
+    process_type_id = fields.Many2one(
+        "quality.process.type",
+        "Tipo de Proceso",
+        required=False,
+        tracking=True,
+    )
+    production_order_id = fields.Many2one(
+        "mrp.production",
+        "Orden de Producción",
+        required=False,
+        tracking=True,
+    )
     lot_id = fields.Many2one(
         "stock.lot",
         "Lote de Fabricación",
+        required=False,
         tracking=True,
+    )
+    product_id = fields.Many2one(
+        "product.product",
+        "Producto",
+        required=False,
+        tracking=True,
+    )
+    operator_id = fields.Many2one(
+        "hr.employee",
+        "Operador",
+        required=False,
+    )
+    partner_id = fields.Many2one(
+        "res.partner",
+        "Cliente",
+        required=False,
+        tracking=True,
+    )
+    inspector_id = fields.Many2one(
+        "res.users",
+        "Inspector de Calidad",
+        required=False,
+        default=lambda s: s.env.user,
+        tracking=True,
+    )
+    shift = fields.Selection(
+        [
+            ("turno_1", "Turno 1"),
+            ("turno_2", "Turno 2"),
+            ("turno_3", "Turno 3"),
+        ],
+        required=False,
+    )
+    plant = fields.Selection(
+        [
+            ("planta_1", "Planta 1"),
+            ("planta_2", "Planta 2"),
+            ("planta_3", "Planta 3"),
+            ("planta_6", "Planta 6"),
+            ("planta_7", "Planta 7"),
+        ],
         required=False,
     )
 
-    # FOLIO-QM-ODOO18-072 / 075:
-    # Espesor no aplica en Octágono; se conserva para otros procesos.
+    folio = fields.Char("Folio de Producción", required=False, help="")
+    code = fields.Char("Código de Producto", required=False, help="")
+
     espesor = fields.Float("Espesor", digits=(16, 2))
     oct_espesor = fields.Float("Espesor Octágono (mm)", digits=(16, 2))
 
-    # FOLIO-QM-ODOO18-075:
-    # Octágono requiere precisión visual y de persistencia en calibración.
     ancho = fields.Float("Ancho (mm)", digits=(16, 2))
     oct_ancho = fields.Float("Ancho Octágono (mm)", digits=(16, 2))
     calibracion = fields.Float("Calibración", digits=(16, 4))
@@ -921,8 +942,6 @@ class QualityInspectionHardening(models.Model):
     oct_retiramiento = fields.Float("Retiramiento (cm) - Legacy", digits=(16, 2))
     reticula_extendida = fields.Float("Retiramiento / Retícula Extendida (cm)", digits=(16, 2))
 
-    # FOLIO-QM-ODOO18-019: se evita redeclarar campos base con otro tipo
-    # en hardening; solo se agregan campos nuevos o relacionados.
     capture_mode = fields.Selection(
         related="process_type_id.capture_mode",
         store=True,
@@ -931,7 +950,6 @@ class QualityInspectionHardening(models.Model):
     date_started = fields.Datetime("Fecha de Inicio", readonly=True)
     date_closed = fields.Datetime("Fecha de Cierre", readonly=True)
 
-    # FOLIO-QM-ODOO18-074: campos informativos para bloquear/habilitar captura por flujo.
     previous_process_type_id = fields.Many2one(
         "quality.process.type",
         string="Proceso Previo Requerido",
@@ -956,12 +974,6 @@ class QualityInspectionHardening(models.Model):
     )
 
     def init(self):
-        """
-        FOLIO-QM-ODOO18-080:
-        Corrige bases donde lot_id quedó con restricción NOT NULL por required=True
-        previo. La inspección debe poder guardarse como borrador mientras el usuario
-        termina de seleccionar personal, supervisor y lote.
-        """
         super().init()
         cr = self.env.cr
 
@@ -972,19 +984,107 @@ class QualityInspectionHardening(models.Model):
                  WHERE table_name = 'quality_inspection'
             )
         """)
-        table_exists = cr.fetchone()[0]
-        if not table_exists:
+        if not cr.fetchone()[0]:
             return
 
-        cr.execute("""
-            SELECT is_nullable
-              FROM information_schema.columns
-             WHERE table_name = 'quality_inspection'
-               AND column_name = 'lot_id'
-        """)
-        row = cr.fetchone()
-        if row and row[0] == "NO":
-            cr.execute("ALTER TABLE quality_inspection ALTER COLUMN lot_id DROP NOT NULL")
+        # FOLIO-QM-ODOO18-080:
+        # Defensive DB migration. Odoo a veces conserva NOT NULL aunque el campo
+        # se vuelva required=False en una herencia posterior.
+        for column_name in (
+            "process_type_id",
+            "production_order_id",
+            "product_id",
+            "lot_id",
+            "operator_id",
+            "partner_id",
+            "inspector_id",
+            "folio",
+            "code",
+            "shift",
+            "plant",
+        ):
+            cr.execute("""
+                SELECT EXISTS (
+                    SELECT 1
+                      FROM information_schema.columns
+                     WHERE table_name = 'quality_inspection'
+                       AND column_name = %s
+                )
+            """, (column_name,))
+            if cr.fetchone()[0]:
+                cr.execute(
+                    'ALTER TABLE "quality_inspection" '
+                    'ALTER COLUMN "%s" DROP NOT NULL' % column_name
+                )
+
+    def _normalize_inspection_vals_hardening(self, vals):
+        vals = dict(vals or {})
+        if "espesor" in vals and vals.get("espesor") not in (False, None, ""):
+            vals["espesor"] = round(float(vals["espesor"]), 2)
+        if "calibracion" in vals and vals.get("calibracion") not in (False, None, ""):
+            vals["calibracion"] = round(float(vals["calibracion"]), 4)
+        return vals
+
+    def _complete_vals_from_production_hardening(self, vals):
+        vals = dict(vals or {})
+        production_id = vals.get("production_order_id")
+
+        if not production_id:
+            return vals
+
+        production = self.env["mrp.production"].sudo().browse(production_id).exists()
+        if not production:
+            return vals
+
+        product = production.product_id
+
+        if product and not vals.get("product_id"):
+            vals["product_id"] = product.id
+
+        if product and not vals.get("code"):
+            vals["code"] = product.default_code or product.display_name or vals.get("code")
+
+        if production.name and not vals.get("folio"):
+            vals["folio"] = production.name
+
+        if not vals.get("lot_id"):
+            lot = getattr(production, "lot_producing_id", False)
+            if lot:
+                vals["lot_id"] = lot.id
+
+        if not vals.get("partner_id") and production.origin:
+            sale_order = self.env["sale.order"].sudo().search(
+                [("name", "=", production.origin)],
+                limit=1,
+            )
+            if sale_order and sale_order.partner_id:
+                vals["partner_id"] = sale_order.partner_id.id
+
+        return vals
+
+    def _sync_missing_values_from_production_record_hardening(self):
+        for rec in self:
+            if not rec.production_order_id:
+                continue
+
+            vals = rec._complete_vals_from_production_hardening({
+                "production_order_id": rec.production_order_id.id,
+            })
+
+            vals.pop("production_order_id", None)
+
+            clean_vals = {}
+            for field_name, value in vals.items():
+                if not value:
+                    continue
+                if field_name in rec._fields and not rec[field_name]:
+                    clean_vals[field_name] = value
+
+            if clean_vals:
+                super(QualityInspectionHardening, rec.with_context(
+                    skip_quality_template_autoload=True,
+                    skip_octagono_cleanup=True,
+                )).write(clean_vals)
 
     def _get_quality_attribute_templates_hardening(self):
         self.ensure_one()
@@ -992,12 +1092,52 @@ class QualityInspectionHardening(models.Model):
         process = self.process_type_id
         process_code = process.code or self.process_code
         strict_binary = process_code in STRICT_BINARY_RESULT_PROCESS_CODES
+        Template = self.env["quality.attribute.template"]
 
-        return self.env["quality.attribute.template"]._get_applicable_templates_for_capture(
-            product=self.product_id,
-            process=process,
-            include_general=False,
-            strict_binary=strict_binary,
+        if hasattr(Template, "_get_applicable_templates_for_capture"):
+            return Template._get_applicable_templates_for_capture(
+                product=self.product_id,
+                process=process,
+                include_general=False,
+                strict_binary=strict_binary,
+            )
+
+        templates = Template.browse()
+
+        if process:
+            templates |= process.attribute_template_ids.filtered(
+                lambda template: not template.product_tmpl_id and template.active
+            )
+
+        if self.product_id and self.product_id.product_tmpl_id:
+            product_tmpl = self.product_id.product_tmpl_id
+            product_templates = Template.search([
+                ("product_tmpl_id", "=", product_tmpl.id),
+                "|",
+                ("process_type_id", "=", False),
+                ("process_type_id", "=", process.id if process else False),
+                ("active", "=", True),
+            ])
+            templates |= product_templates
+
+        if strict_binary:
+            templates = templates.filtered(lambda template: template.attribute_type == "boolean")
+
+        selected = {}
+        for template in templates.sorted(lambda item: (
+            0 if self.product_id and item.product_tmpl_id == self.product_id.product_tmpl_id else 1,
+            item.sequence,
+            item.id,
+        )):
+            key = (
+                getattr(template, "normalized_name", False) or _slug(template.name),
+                getattr(template, "capture_zone", False) or "additional",
+            )
+            if key[0] and key not in selected:
+                selected[key] = template
+
+        return Template.browse([template.id for template in selected.values()]).sorted(
+            lambda item: (item.sequence, item.id)
         )
 
     def _prepare_quality_line_vals_from_template_hardening(self, template):
@@ -1076,26 +1216,31 @@ class QualityInspectionHardening(models.Model):
             elif commands:
                 rec.line_ids = commands
 
-    def _normalize_inspection_vals_hardening(self, vals):
-        vals = dict(vals or {})
-        if "espesor" in vals and vals.get("espesor") not in (False, None, ""):
-            vals["espesor"] = round(float(vals["espesor"]), 2)
-        if "calibracion" in vals and vals.get("calibracion") not in (False, None, ""):
-            vals["calibracion"] = round(float(vals["calibracion"]), 4)
-        return vals
-
     @api.model_create_multi
     def create(self, vals_list):
-        clean_vals_list = [
-            self._normalize_inspection_vals_hardening(vals)
-            for vals in vals_list
-        ]
+        clean_vals_list = []
+
+        for vals in vals_list:
+            vals = self._complete_vals_from_production_hardening(vals)
+            vals = self._normalize_inspection_vals_hardening(vals)
+
+            if vals.get("name", "Nuevo") == "Nuevo":
+                vals["name"] = (
+                    self.env["ir.sequence"].next_by_code("quality.inspection")
+                    or "Nuevo"
+                )
+
+            clean_vals_list.append(vals)
 
         records = super().create(clean_vals_list)
         records._cleanup_octagono_not_applicable_hardening()
 
         for rec, vals in zip(records, clean_vals_list):
-            if not vals.get("line_ids") and not rec.line_ids and (rec.product_id or rec.process_type_id):
+            if (
+                not vals.get("line_ids")
+                and not rec.line_ids
+                and (rec.product_id or rec.process_type_id)
+            ):
                 rec.with_context(skip_quality_template_autoload=True)._reload_quality_attribute_templates_hardening(
                     clear_existing=False,
                 )
@@ -1103,6 +1248,11 @@ class QualityInspectionHardening(models.Model):
         return records
 
     def write(self, vals):
+        vals = dict(vals or {})
+
+        if "production_order_id" in vals:
+            vals = self._complete_vals_from_production_hardening(vals)
+
         vals = self._normalize_inspection_vals_hardening(vals)
 
         reload_templates = (
@@ -1125,11 +1275,6 @@ class QualityInspectionHardening(models.Model):
         return res
 
     def _cleanup_octagono_not_applicable_hardening(self):
-        """
-        FOLIO-QM-ODOO18-075:
-        Octágono no debe conservar Espesor ni Retiramiento. Si quedaron valores
-        legacy por capturas previas o por una configuración antigua, se limpian.
-        """
         for rec in self.filtered(lambda item: item.process_code == "octagono"):
             vals = {}
             if rec.espesor:
@@ -1159,7 +1304,6 @@ class QualityInspectionHardening(models.Model):
     def _onchange_process_type_octagono_hardening(self):
         for rec in self:
             if rec.process_type_id and rec.process_type_id.code == "octagono":
-                # FOLIO-QM-ODOO18-075: Espesor y Retiramiento no aplican en Octágono.
                 rec.espesor = 0.0
                 rec.oct_espesor = 0.0
                 rec.oct_retiramiento = 0.0
@@ -1207,12 +1351,9 @@ class QualityInspectionHardening(models.Model):
             rec.process_gate_open = False
             rec.process_gate_message = rec._build_previous_process_block_message_hardening(previous_code)
 
-    @api.constrains("sin_supervisor", "supervisor_id", "state")
+    @api.constrains("sin_supervisor", "supervisor_id")
     def _check_supervisor_or_no_supervisor(self):
         for rec in self:
-            # FOLIO-QM-ODOO18-080:
-            # No bloquear guardados parciales en borrador. El bloqueo real se aplica
-            # antes de iniciar/liberar la inspección.
             if rec.state == "borrador":
                 continue
             if not rec.sin_supervisor and not rec.supervisor_id:
@@ -1227,15 +1368,13 @@ class QualityInspectionHardening(models.Model):
 
     @api.onchange("production_order_id")
     def _onchange_production_order(self):
-        # FOLIO-QM-ODOO18-020 / 075:
-        # Se consolida el enlace OP -> Producto/Lote/Cliente/Código para que
-        # Octágono no dependa de seleccionar productos al azar.
         for rec in self:
             if not rec.production_order_id:
                 rec._reload_quality_attribute_templates_hardening(clear_existing=True)
                 continue
 
             production = rec.production_order_id
+
             if production.product_id:
                 rec.product_id = production.product_id
                 rec.code = production.product_id.default_code or rec.code
@@ -1396,6 +1535,43 @@ class QualityInspectionHardening(models.Model):
 
         return True
 
+    def _check_required_header_hardening(self):
+        for rec in self:
+            rec._sync_missing_values_from_production_record_hardening()
+
+            missing = []
+
+            if not rec.process_type_id:
+                missing.append(_("Tipo de Proceso"))
+            if not rec.production_order_id:
+                missing.append(_("Orden de Producción"))
+            if not rec.product_id:
+                missing.append(_("Producto"))
+            if not rec.lot_id:
+                missing.append(_("Lote de Fabricación"))
+            if not rec.operator_id:
+                missing.append(_("Operador"))
+            if not rec.inspector_id:
+                missing.append(_("Inspector de Calidad"))
+            if not rec.partner_id:
+                missing.append(_("Cliente"))
+            if not rec.folio:
+                missing.append(_("Folio de Producción"))
+            if not rec.code:
+                missing.append(_("Código de Producto"))
+            if not rec.shift:
+                missing.append(_("Turno"))
+            if not rec.plant:
+                missing.append(_("Planta"))
+            if not rec.sin_supervisor and not rec.supervisor_id:
+                missing.append(_("Supervisor o marcar Sin Supervisor"))
+
+            if missing:
+                raise UserError(
+                    _("Complete los datos generales antes de iniciar la inspección: %s.")
+                    % ", ".join(missing)
+                )
+
     def _check_reserved_duplicate_attributes_hardening(self):
         for rec in self:
             duplicates = []
@@ -1490,16 +1666,12 @@ class QualityInspectionHardening(models.Model):
 
     def _check_measures_captured_hardening(self):
         for rec in self:
-            # FOLIO-QM-ODOO18-070 / FOLIO-QM-ODOO18-071:
-            # Procesos solo adicionales no deben validar medidas, aunque la base conserve banderas show_* antiguas.
             if rec.capture_mode == "additional_only" or rec.process_code in STRICT_BINARY_RESULT_PROCESS_CODES:
                 continue
 
             if not rec.process_type_id.require_measures:
                 continue
 
-            # FOLIO-QM-ODOO18-075:
-            # Octágono se valida por su matriz propia, sin Espesor ni Retiramiento.
             if rec.process_code == "octagono":
                 missing = []
 
@@ -1609,43 +1781,12 @@ class QualityInspectionHardening(models.Model):
                     % ", ".join(missing)
                 )
 
-    def _check_required_header_before_start_hardening(self):
-        for rec in self:
-            missing = []
-
-            if not rec.process_type_id:
-                missing.append("Tipo de Proceso")
-            if not rec.production_order_id:
-                missing.append("Orden de Producción")
-            if not rec.product_id:
-                missing.append("Producto")
-            if not rec.lot_id:
-                missing.append("Lote de Fabricación")
-            if not rec.partner_id:
-                missing.append("Cliente")
-            if not rec.operator_id:
-                missing.append("Operador")
-            if not rec.inspector_id:
-                missing.append("Inspector de Calidad")
-            if not rec.shift:
-                missing.append("Turno")
-            if not rec.plant:
-                missing.append("Planta")
-            if not rec.sin_supervisor and not rec.supervisor_id:
-                missing.append("Supervisor o marque Sin Supervisor")
-
-            if missing:
-                raise UserError(
-                    _("Complete los datos generales antes de iniciar la inspección: %s")
-                    % ", ".join(missing)
-                )
-
     def _full_quality_validation_hardening(self):
         for rec in self:
             if rec.state != "en_proceso":
                 raise UserError(_("Debe presionar 'INICIAR INSPECCIÓN' antes de liberar."))
 
-            rec._check_required_header_before_start_hardening()
+            rec._check_required_header_hardening()
             rec._check_reserved_duplicate_attributes_hardening()
             rec._check_measures_captured_hardening()
             rec._check_required_additional_attributes_hardening()
@@ -1694,9 +1835,8 @@ class QualityInspectionHardening(models.Model):
 
     def action_start(self):
         for rec in self:
-            # FOLIO-QM-ODOO18-080: permitir borrador incompleto, pero no iniciar sin encabezado completo.
-            rec._check_required_header_before_start_hardening()
-            # FOLIO-QM-ODOO18-074: no se permite iniciar captura si el proceso previo no está liberado.
+            rec._sync_missing_values_from_production_record_hardening()
+            rec._check_required_header_hardening()
             rec._check_previous_process_hardening()
             rec.date_started = fields.Datetime.now()
             rec.state = "en_proceso"
