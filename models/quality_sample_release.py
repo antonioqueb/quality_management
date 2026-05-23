@@ -2,7 +2,17 @@
 from datetime import timedelta
 
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
+from odoo.osv import expression
+
+
+SAMPLE_RELEASE_PROJECT_ID = 12
+SAMPLE_RELEASE_PROJECT_NAME = "Muestras & Prototipos"
+SAMPLE_RELEASE_PROJECT_TASK_DOMAIN = [
+    "|",
+    ("project_id", "=", SAMPLE_RELEASE_PROJECT_ID),
+    ("project_id.name", "=", SAMPLE_RELEASE_PROJECT_NAME),
+]
 
 
 class QualitySampleRelease(models.Model):
@@ -35,13 +45,20 @@ class QualitySampleRelease(models.Model):
         "Tarea de Proyecto",
         required=True,
         tracking=True,
+        domain=SAMPLE_RELEASE_PROJECT_TASK_DOMAIN,
+        help=(
+            "Solo se permiten tareas del proyecto ID 12 o del proyecto "
+            "'Muestras & Prototipos'."
+        ),
     )
+
     product_id = fields.Many2one(
         "product.product",
         "Producto/Muestra",
         required=True,
         tracking=True,
     )
+
     requested_by = fields.Many2one(
         "res.users",
         "Solicitante (Diseño)",
@@ -49,6 +66,7 @@ class QualitySampleRelease(models.Model):
         default=lambda s: s.env.user,
         tracking=True,
     )
+
     inspector_id = fields.Many2one(
         "res.users",
         "Inspector de Calidad",
@@ -62,6 +80,7 @@ class QualitySampleRelease(models.Model):
         copy=False,
         default=fields.Datetime.now,
     )
+
     date_limit = fields.Datetime(
         "Fecha Límite de Inspección",
         compute="_compute_date_limit",
@@ -70,6 +89,7 @@ class QualitySampleRelease(models.Model):
         copy=False,
         help="Solicitud + 48 horas",
     )
+
     date_inspected = fields.Datetime(
         "Fecha de Inspección",
         readonly=True,
@@ -112,11 +132,38 @@ class QualitySampleRelease(models.Model):
     cnc_observations = fields.Html("Observaciones CNC")
 
     notes = fields.Html("Observaciones")
+
     company_id = fields.Many2one(
         "res.company",
         "Compañía",
         default=lambda s: s.env.company,
     )
+
+    @api.model
+    def _get_sample_release_project_task_domain(self):
+        return list(SAMPLE_RELEASE_PROJECT_TASK_DOMAIN)
+
+    @api.constrains("project_task_id")
+    def _check_project_task_id_allowed(self):
+        Task = self.env["project.task"].sudo()
+
+        for rec in self:
+            if not rec.project_task_id:
+                continue
+
+            domain = expression.AND([
+                [("id", "=", rec.project_task_id.id)],
+                rec._get_sample_release_project_task_domain(),
+            ])
+
+            if not Task.search_count(domain):
+                raise ValidationError(_(
+                    "La Tarea de Proyecto debe pertenecer al proyecto ID %(project_id)s "
+                    "o al proyecto '%(project_name)s'."
+                ) % {
+                    "project_id": SAMPLE_RELEASE_PROJECT_ID,
+                    "project_name": SAMPLE_RELEASE_PROJECT_NAME,
+                })
 
     @api.depends("date_requested")
     def _compute_date_limit(self):
@@ -138,8 +185,16 @@ class QualitySampleRelease(models.Model):
             "result_mode": result_mode,
             "value_float": 0.0,
             "value_char": False,
-            "value_cumple": "na" if template.attribute_type == "boolean" and result_mode == "cumple" else False,
-            "value_ok": "na" if template.attribute_type == "boolean" and result_mode == "ok" else False,
+            "value_cumple": (
+                "na"
+                if template.attribute_type == "boolean" and result_mode == "cumple"
+                else False
+            ),
+            "value_ok": (
+                "na"
+                if template.attribute_type == "boolean" and result_mode == "ok"
+                else False
+            ),
             "min_value": template.min_value,
             "max_value": template.max_value,
             "unit": template.unit,
@@ -189,7 +244,11 @@ class QualitySampleRelease(models.Model):
         records = super().create(vals_list)
 
         for rec, vals in zip(records, vals_list):
-            if not vals.get("inspection_line_ids") and not rec.inspection_line_ids and rec.product_id:
+            if (
+                not vals.get("inspection_line_ids")
+                and not rec.inspection_line_ids
+                and rec.product_id
+            ):
                 rec.with_context(skip_quality_template_autoload=True)._reload_sample_attribute_templates(
                     clear_existing=False,
                 )
@@ -220,8 +279,6 @@ class QualitySampleRelease(models.Model):
                     _("Debe capturar al menos un atributo de inspección antes de avanzar.")
                 )
 
-            # FOLIO-QM-ODOO18-027: se respeta N/A y allow_zero; antes todo float en 0
-            # bloqueaba incluso cuando el atributo no aplicaba.
             zero_lines = rec.inspection_line_ids.filtered(
                 lambda line: (
                     line.attribute_type == "float"

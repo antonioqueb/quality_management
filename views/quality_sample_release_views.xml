@@ -31,27 +31,38 @@
                 <header>
                     <button name="action_register_cnc"
                             string="Registrar Transformación CNC"
-                            type="object" class="btn-secondary"
+                            type="object"
+                            class="btn-secondary"
                             invisible="sample_type != 'pt' or state != 'borrador' or cnc_date_realized"/>
                     <button name="action_submit_inspection"
-                            string="Enviar a Inspección" type="object"
+                            string="Enviar a Inspección"
+                            type="object"
                             class="btn-primary"
                             invisible="state != 'borrador'"/>
-                    <button name="action_accept" string="Liberar (Aceptado)"
-                            type="object" class="btn-primary"
+                    <button name="action_accept"
+                            string="Liberar (Aceptado)"
+                            type="object"
+                            class="btn-primary"
                             invisible="state != 'en_inspeccion'"
                             groups="quality_management.group_quality_inspector"/>
-                    <button name="action_reject" string="Rechazar"
-                            type="object" class="btn-danger"
+                    <button name="action_reject"
+                            string="Rechazar"
+                            type="object"
+                            class="btn-danger"
                             invisible="state != 'en_inspeccion'"
                             groups="quality_management.group_quality_inspector"/>
-                    <button name="action_print_sample_release" string="Imprimir"
-                            type="object" class="btn-secondary" icon="fa-print"/>
-                    <button name="action_reset_draft" string="Regresar a Borrador"
+                    <button name="action_print_sample_release"
+                            string="Imprimir"
+                            type="object"
+                            class="btn-secondary"
+                            icon="fa-print"/>
+                    <button name="action_reset_draft"
+                            string="Regresar a Borrador"
                             type="object"
                             invisible="state not in ('rechazado',)"
                             groups="quality_management.group_quality_manager"/>
-                    <field name="state" widget="statusbar"
+                    <field name="state"
+                           widget="statusbar"
                            statusbar_visible="borrador,en_inspeccion,aceptado"/>
                 </header>
 
@@ -63,7 +74,10 @@
                     <group>
                         <group string="Tipo y Datos">
                             <field name="sample_type" widget="radio"/>
-                            <field name="project_task_id"/>
+                            <field name="project_task_id"
+                                   domain="['|', ('project_id', '=', 12), ('project_id.name', '=', 'Muestras &amp; Prototipos')]"
+                                   context="{'default_project_id': 12}"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="product_id"/>
                             <field name="requested_by"/>
                             <field name="inspector_id"/>
@@ -97,7 +111,6 @@
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="attribute_type"/>
-                                    <!-- FOLIO-QM-ODOO18-046: se agregan result_mode y value_ok para soportar OK/NO OK/N/A en muestras. -->
                                     <field name="result_mode"/>
                                     <field name="value_float" invisible="attribute_type != 'float'"/>
                                     <field name="value_char" invisible="attribute_type not in ('char', 'selection')"/>
@@ -115,7 +128,8 @@
                                     <field name="max_value" invisible="attribute_type != 'float'"/>
                                     <field name="unit" placeholder="mm, cm, in, %..."/>
                                     <field name="allow_zero" invisible="attribute_type != 'float'"/>
-                                    <field name="result" widget="badge"
+                                    <field name="result"
+                                           widget="badge"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
                                 </list>
@@ -129,7 +143,8 @@
                         </page>
 
                         <page string="Transformación CNC"
-                              invisible="sample_type != 'pt'" name="cnc">
+                              invisible="sample_type != 'pt'"
+                              name="cnc">
                             <group>
                                 <group>
                                     <field name="cnc_design_user_id" readonly="1"/>
