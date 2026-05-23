@@ -352,6 +352,59 @@ class QualitySampleRelease(models.Model):
                     )
                 )
 
+
+    def _get_sample_release_notification_partners(self):
+        """
+        Devuelve únicamente los contactos que deben recibir avisos de Liberación de Muestras:
+        - Solicitante (Diseño)
+        - Inspector de Calidad
+
+        No se usa el grupo completo de inspectores ni fallback a todos los usuarios.
+        """
+        self.ensure_one()
+        partners = self.env["res.partner"].browse()
+
+        for user in (self.requested_by, self.inspector_id):
+            if user and user.partner_id:
+                partners |= user.partner_id
+
+        return partners
+
+    def _notify_sample_release_participants(self, body, subject=False, log_note=True):
+        """
+        Registra una nota interna en el chatter y manda notificación directa solo a:
+        Solicitante (Diseño) e Inspector de Calidad.
+
+        Se evita message_post con subtype 'mail.mt_comment' para no notificar a
+        seguidores/grupos completos de la liberación.
+        """
+        for rec in self:
+            partners = rec._get_sample_release_notification_partners()
+
+            if log_note:
+                rec.message_post(
+                    body=body,
+                    subtype_xmlid="mail.mt_note",
+                )
+
+            if not partners:
+                continue
+
+            notify_vals = {
+                "partner_ids": partners.ids,
+                "subject": subject or _("Liberación de muestra %s") % (rec.name or ""),
+                "body": body,
+                "record_name": rec.display_name,
+            }
+
+            try:
+                rec.message_notify(**notify_vals)
+            except TypeError:
+                # Compatibilidad con variantes de firma entre versiones.
+                notify_vals.pop("record_name", None)
+                rec.message_notify(**notify_vals)
+
+
     def action_register_cnc(self):
         for rec in self:
             if rec.sample_type != "pt":
@@ -367,26 +420,34 @@ class QualitySampleRelease(models.Model):
 
     def action_submit_inspection(self):
         for rec in self:
+            if not rec.inspector_id:
+                raise UserError(_(
+                    "Seleccione un Inspector de Calidad antes de enviar la muestra a inspección."
+                ))
+
             rec._check_spec_pdf()
             rec._check_pt_workflow()
             rec._check_attributes_valid()
             rec.state = "en_inspeccion"
 
-            users = rec.inspector_id
-            if not users:
-                group = self.env.ref(
-                    "quality_management.group_quality_inspector",
-                    raise_if_not_found=False,
-                )
-                users = group.users if group else self.env["res.users"]
+            rec.activity_schedule(
+                "mail.mail_activity_data_todo",
+                date_deadline=fields.Date.today() + timedelta(days=2),
+                summary=_("Inspección de muestra: %s") % rec.name,
+                user_id=rec.inspector_id.id,
+            )
 
-            for user in users:
-                rec.activity_schedule(
-                    "mail.mail_activity_data_todo",
-                    date_deadline=fields.Date.today() + timedelta(days=2),
-                    summary=_("Inspección de muestra: %s") % rec.name,
-                    user_id=user.id,
-                )
+            rec._notify_sample_release_participants(
+                body=_(
+                    "Muestra enviada a inspección.<br/>"
+                    "<b>Solicitante (Diseño):</b> %(requester)s<br/>"
+                    "<b>Inspector de Calidad:</b> %(inspector)s"
+                ) % {
+                    "requester": rec.requested_by.name or "—",
+                    "inspector": rec.inspector_id.name or "—",
+                },
+                subject=_("Muestra enviada a inspección: %s") % rec.name,
+            )
 
     def action_accept(self):
         for rec in self:
@@ -398,10 +459,12 @@ class QualitySampleRelease(models.Model):
                 ["mail.mail_activity_data_todo"],
                 feedback=_("Muestra aceptada"),
             )
-            rec.message_post(
+
+            rec._notify_sample_release_participants(
                 body=_("Muestra ACEPTADA y liberada por %s") % self.env.user.name,
-                subtype_xmlid="mail.mt_comment",
+                subject=_("Muestra aceptada: %s") % rec.name,
             )
+
 
     def action_reject(self):
         for rec in self:
@@ -412,17 +475,11 @@ class QualitySampleRelease(models.Model):
                 feedback=_("Muestra rechazada"),
             )
 
-            partner_ids = []
-            if rec.requested_by.partner_id:
-                partner_ids.append(rec.requested_by.partner_id.id)
-                rec.message_subscribe(partner_ids=partner_ids)
-
-            rec.message_post(
-                body=_("Muestra RECHAZADA por %s. Notificando a la solicitante: %s")
-                % (self.env.user.name, rec.requested_by.name),
-                partner_ids=partner_ids,
-                subtype_xmlid="mail.mt_comment",
+            rec._notify_sample_release_participants(
+                body=_("Muestra RECHAZADA por %s.") % self.env.user.name,
+                subject=_("Muestra rechazada: %s") % rec.name,
             )
+
 
     def action_reset_draft(self):
         for rec in self:

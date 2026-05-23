@@ -80,7 +80,9 @@
                                    options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="product_id"/>
                             <field name="requested_by"/>
-                            <field name="inspector_id"/>
+                            <field name="inspector_id"
+                                   required="1"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                         </group>
                         <group string="Fechas (automáticas)">
                             <field name="date_requested" readonly="1"/>
