@@ -11,7 +11,7 @@
     # FOLIO-QM-ODOO18-077: Sierras y Ranuradoras sustituye a Remanejo en la ruta obligatoria posterior a Laminadora.
     # FOLIO-QM-ODOO18-078: Retención suscribe al contacto real del supervisor, no al usuario equivocado ligado al empleado.
     # FOLIO-QM-ODOO18-079: Búsqueda de OP reforzada para referencias HMP1/HMPx desde inspecciones.
-    "version": "18.0.3.9.0",
+    "version": "18.0.3.10.0",
     "category": "Manufacturing/Quality",
     "summary": "Gestión integral de calidad - Hexágonos (req. Feb-26)",
     "author": "Alphaqueb Consulting SAS",
