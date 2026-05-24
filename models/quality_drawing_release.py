@@ -82,6 +82,7 @@ class QualityDrawingRelease(models.Model):
         "res.users",
         "Inspector de Calidad",
         tracking=True,
+        domain="[('groups_id', 'in', [ref('quality_management.group_quality_inspector')])]",
     )
 
     state = fields.Selection(
