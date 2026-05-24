@@ -30,6 +30,7 @@ class QualityDrawingRelease(models.Model):
         "sale.order",
         "Orden de Venta",
         tracking=True,
+        domain="[('partner_id', '=', partner_id)]",
     )
 
     request_type = fields.Selection(

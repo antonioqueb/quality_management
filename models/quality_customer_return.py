@@ -44,6 +44,7 @@ class QualityCustomerReturn(models.Model):
         "sale.order",
         "Orden de Venta Original",
         tracking=True,
+        domain="[('partner_id', '=', partner_id)]",
     )
     defect_type = fields.Selection(
         [
