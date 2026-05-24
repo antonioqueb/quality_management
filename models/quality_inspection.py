@@ -134,6 +134,7 @@ class QualityInspection(models.Model):
             ("turno_2", "Turno 2"),
             ("turno_3", "Turno 3"),
         ],
+        string="Turno",
         required=True,
     )
     plant = fields.Selection(
@@ -144,6 +145,7 @@ class QualityInspection(models.Model):
             ("planta_6", "Planta 6"),
             ("planta_7", "Planta 7"),
         ],
+        string="Planta",
         required=True,
     )
     inspector_id = fields.Many2one(
