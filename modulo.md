@@ -1236,8 +1236,8 @@ class QualityActionLine(models.Model):
         readonly=False,
     )
 
-    delay_days = fields.Integer(compute="_compute_delay_days", store=True)
-    notes = fields.Text()
+    delay_days = fields.Integer("Días de Retraso", compute="_compute_delay_days", store=True)
+    notes = fields.Text("Notas")
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -1703,17 +1703,17 @@ class QualityCertificate(models.Model):
         "quality_certificate_attribute_rel",
         "certificate_id", "line_id", string="Atributos Seleccionados")
 
-    certified_largo = fields.Float()
-    certified_ancho = fields.Float()
-    certified_espesor = fields.Float()
-    certified_hexagono = fields.Float()
-    certified_resistencia = fields.Float()
-    certified_apariencia = fields.Char()
-    certified_humedad = fields.Float()
-    certified_pegado = fields.Char()
-    certified_retiramiento = fields.Float()
-    certified_calibracion = fields.Float()
-    certified_engomado = fields.Char()
+    certified_largo = fields.Float("Largo")
+    certified_ancho = fields.Float("Ancho")
+    certified_espesor = fields.Float("Espesor")
+    certified_hexagono = fields.Float("Hexágono")
+    certified_resistencia = fields.Float("Resistencia")
+    certified_apariencia = fields.Char("Apariencia")
+    certified_humedad = fields.Float("Humedad")
+    certified_pegado = fields.Char("Pegado")
+    certified_retiramiento = fields.Float("Retiramiento")
+    certified_calibracion = fields.Float("Calibración")
+    certified_engomado = fields.Char("Engomado")
 
     date_generated = fields.Date("Fecha de Generación", required=True,
                                  default=fields.Date.context_today)
@@ -1724,7 +1724,7 @@ class QualityCertificate(models.Model):
     ], default="borrador", required=True, tracking=True, copy=False)
     report_pdf = fields.Binary("PDF del Certificado", attachment=True)
     report_pdf_name = fields.Char()
-    certified_by = fields.Many2one("res.users", required=True,
+    certified_by = fields.Many2one("res.users", "Certificado Por", required=True,
                                    default=lambda s: s.env.user, tracking=True)
     company_id = fields.Many2one("res.company", "Compañía",
                                  default=lambda s: s.env.company)
@@ -2118,8 +2118,8 @@ class QualityCorrectiveAction(models.Model):
     )
 
     origin_description = fields.Text("Descripción del Incumplimiento", required=True)
-    origin_inspection_id = fields.Many2one("quality.inspection")
-    origin_return_id = fields.Many2one("quality.customer.return")
+    origin_inspection_id = fields.Many2one("quality.inspection", "Inspección Origen")
+    origin_return_id = fields.Many2one("quality.customer.return", "Devolución Origen")
 
     responsible_id = fields.Many2one(
         "res.users",
@@ -2180,7 +2180,7 @@ class QualityCorrectiveAction(models.Model):
 
     no_procede_reason = fields.Text("Motivo No Procede")
     quality_evaluated_by = fields.Many2one("res.users", "Calidad Evaluó", readonly=True)
-    quality_evaluated_date = fields.Datetime(readonly=True)
+    quality_evaluated_date = fields.Datetime("Fecha Evaluación Calidad", readonly=True)
 
     date_opened = fields.Date(
         "Fecha de Apertura",
@@ -2195,10 +2195,10 @@ class QualityCorrectiveAction(models.Model):
         readonly=False,
     )
 
-    action_count = fields.Integer(compute="_compute_action_stats")
-    action_completed_count = fields.Integer(compute="_compute_action_stats")
-    action_overdue_count = fields.Integer(compute="_compute_action_stats")
-    progress = fields.Float(compute="_compute_action_stats")
+    action_count = fields.Integer("Acciones", compute="_compute_action_stats")
+    action_completed_count = fields.Integer("Completadas", compute="_compute_action_stats")
+    action_overdue_count = fields.Integer("Vencidas", compute="_compute_action_stats")
+    progress = fields.Float("Avance", compute="_compute_action_stats")
 
     company_id = fields.Many2one(
         "res.company",
@@ -3121,19 +3121,19 @@ class QualityDrawingRelease(models.Model):
         "Calidad Aceptó",
         readonly=True,
     )
-    accepted_by_quality_date = fields.Datetime(readonly=True)
+    accepted_by_quality_date = fields.Datetime("Fecha Aceptación Calidad", readonly=True)
     accepted_by_sales = fields.Many2one(
         "res.users",
         "Ventas Aceptó",
         readonly=True,
     )
-    accepted_by_sales_date = fields.Datetime(readonly=True)
+    accepted_by_sales_date = fields.Datetime("Fecha Aceptación Ventas", readonly=True)
     accepted_by_design = fields.Many2one(
         "res.users",
         "Diseño Aceptó",
         readonly=True,
     )
-    accepted_by_design_date = fields.Datetime(readonly=True)
+    accepted_by_design_date = fields.Datetime("Fecha Aceptación Diseño", readonly=True)
 
     modification_ids = fields.One2many(
         "quality.drawing.modification",
@@ -3456,6 +3456,7 @@ NA_RESULTS = {"na"}
 
 CUMPLE_VALUES = {"cumple", "no_cumple"}
 OK_VALUES = {"ok", "no_ok"}
+OK_TO_CUMPLE_RESULT = {"ok": "cumple", "no_ok": "no_cumple"}
 
 
 def _split_selection_options(value):
@@ -3471,6 +3472,53 @@ def _float_is_captured(value, allow_zero=False):
     if float(value or 0.0) == 0.0 and not allow_zero:
         return False
     return True
+
+
+def _quality_line_vals_has_user_content(vals):
+    """
+    Detecta si una línea manual tiene contenido real.
+
+    Una línea creada accidentalmente por la lista editable suele llegar solo
+    con defaults técnicos: attribute_type, result_mode, capture_zone, ceros, etc.
+    Esa línea se puede ignorar. Si trae valor, rango, nota, resultado o N/A,
+    entonces sí debe exigir Nombre del Atributo.
+    """
+    vals = vals or {}
+
+    if vals.get("attribute_template_id"):
+        return True
+
+    if (vals.get("name") or "").strip():
+        return True
+
+    text_fields = (
+        "value_char",
+        "value_selection",
+        "value_cumple",
+        "value_cumple_required",
+        "value_ok",
+        "value_ok_required",
+        "result",
+        "result_required",
+        "notes",
+        "unit",
+        "selection_options",
+    )
+    if any(vals.get(field_name) for field_name in text_fields):
+        return True
+
+    numeric_fields = ("value_float", "min_value", "max_value")
+    for field_name in numeric_fields:
+        try:
+            if float(vals.get(field_name) or 0.0) != 0.0:
+                return True
+        except (TypeError, ValueError):
+            return True
+
+    if vals.get("allow_zero") or vals.get("allow_not_applicable") or vals.get("is_not_applicable"):
+        return True
+
+    return False
 
 
 # FOLIO-QM-ODOO18-075:
@@ -4027,6 +4075,7 @@ class QualityInspectionLineHardening(models.Model):
             "is_not_applicable",
             "allow_not_applicable",
             "selection_options",
+            "value_selection",
         }
         if optional_columns.issubset(line_columns):
             cr.execute("""
@@ -4045,12 +4094,106 @@ class QualityInspectionLineHardening(models.Model):
                            WHEN result IN ('cumple','no_cumple','ok','no_ok') THEN result
                            ELSE NULL
                        END,
-                       is_not_applicable = CASE WHEN result = 'na' THEN TRUE ELSE FALSE END,
+                       is_not_applicable = CASE WHEN COALESCE(allow_not_applicable, FALSE) AND result = 'na' THEN TRUE ELSE FALSE END,
                        allow_not_applicable = COALESCE(allow_not_applicable, FALSE)
                  WHERE value_cumple_required IS NULL
                     OR value_ok_required IS NULL
                     OR result_required IS NULL
                     OR is_not_applicable IS NULL
+            """)
+
+
+            # Limpieza específica para Liberación de Muestras:
+            # - Booleanos siempre quedan en Cumple/No Cumple.
+            # - OK/NO OK histórico se mapea a Cumple/No Cumple.
+            # - N/A solo permanece si allow_not_applicable=True y fue marcado.
+            cr.execute("""
+                WITH sample_boolean AS (
+                    SELECT
+                        id,
+                        CASE
+                            WHEN value_cumple_required IN ('cumple','no_cumple') THEN value_cumple_required
+                            WHEN value_cumple IN ('cumple','no_cumple') THEN value_cumple
+                            WHEN result_required IN ('cumple','no_cumple') THEN result_required
+                            WHEN result IN ('cumple','no_cumple') THEN result
+                            WHEN value_ok_required = 'ok' THEN 'cumple'
+                            WHEN value_ok_required = 'no_ok' THEN 'no_cumple'
+                            WHEN value_ok = 'ok' THEN 'cumple'
+                            WHEN value_ok = 'no_ok' THEN 'no_cumple'
+                            WHEN result_required = 'ok' THEN 'cumple'
+                            WHEN result_required = 'no_ok' THEN 'no_cumple'
+                            WHEN result = 'ok' THEN 'cumple'
+                            WHEN result = 'no_ok' THEN 'no_cumple'
+                            ELSE NULL
+                        END AS normalized_result,
+                        (
+                            COALESCE(allow_not_applicable, FALSE)
+                            AND (
+                                COALESCE(is_not_applicable, FALSE)
+                                OR value_cumple = 'na'
+                                OR value_ok = 'na'
+                                OR result = 'na'
+                            )
+                        ) AS keep_na
+                    FROM quality_inspection_line
+                    WHERE sample_release_id IS NOT NULL
+                      AND attribute_type = 'boolean'
+                )
+                UPDATE quality_inspection_line AS line
+                   SET result_mode = 'cumple',
+                       capture_zone = 'additional',
+                       value_ok = NULL,
+                       value_ok_required = NULL,
+                       value_float = 0,
+                       value_char = NULL,
+                       value_selection = NULL,
+                       selection_options = NULL,
+                       min_value = 0,
+                       max_value = 0,
+                       unit = NULL,
+                       allow_zero = FALSE,
+                       value_cumple = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN sample_boolean.normalized_result
+                           ELSE NULL
+                       END,
+                       value_cumple_required = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN sample_boolean.normalized_result
+                           ELSE NULL
+                       END,
+                       result = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN sample_boolean.normalized_result
+                           WHEN sample_boolean.keep_na THEN 'na'
+                           ELSE NULL
+                       END,
+                       result_required = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN sample_boolean.normalized_result
+                           ELSE NULL
+                       END,
+                       is_not_applicable = CASE
+                           WHEN sample_boolean.normalized_result IS NOT NULL THEN FALSE
+                           WHEN sample_boolean.keep_na THEN TRUE
+                           ELSE FALSE
+                       END,
+                       allow_not_applicable = COALESCE(line.allow_not_applicable, FALSE)
+                  FROM sample_boolean
+                 WHERE line.id = sample_boolean.id
+            """)
+
+            cr.execute("""
+                UPDATE quality_inspection_line
+                   SET result = NULL,
+                       result_required = NULL,
+                       is_not_applicable = FALSE,
+                       value_cumple = CASE WHEN value_cumple = 'na' THEN NULL ELSE value_cumple END,
+                       value_ok = CASE WHEN value_ok = 'na' THEN NULL ELSE value_ok END
+                 WHERE sample_release_id IS NOT NULL
+                   AND NOT COALESCE(allow_not_applicable, FALSE)
+                   AND (
+                       result = 'na'
+                       OR COALESCE(is_not_applicable, FALSE)
+                       OR value_cumple = 'na'
+                       OR value_ok = 'na'
+                   )
             """)
 
     @api.depends("inspection_id.process_code")
@@ -4160,30 +4303,42 @@ class QualityInspectionLineHardening(models.Model):
             vals["value_selection"] = False
             return vals
 
+        if "is_not_applicable" in vals and not vals.get("is_not_applicable"):
+            if vals.get("result") == "na" or "result" not in vals:
+                vals["result"] = False
+            if vals.get("result_required") == "na" or "result_required" not in vals:
+                vals["result_required"] = False
+
         if vals.get("value_cumple_required") in CUMPLE_VALUES:
+            vals["is_not_applicable"] = False
             vals["value_cumple"] = vals["value_cumple_required"]
             vals["result"] = vals["value_cumple_required"]
             vals["result_required"] = vals["value_cumple_required"]
 
         if vals.get("value_cumple") in CUMPLE_VALUES:
+            vals["is_not_applicable"] = False
             vals["value_cumple_required"] = vals["value_cumple"]
             vals["result"] = vals["value_cumple"]
             vals["result_required"] = vals["value_cumple"]
 
         if vals.get("value_ok_required") in OK_VALUES:
+            vals["is_not_applicable"] = False
             vals["value_ok"] = vals["value_ok_required"]
             vals["result"] = vals["value_ok_required"]
             vals["result_required"] = vals["value_ok_required"]
 
         if vals.get("value_ok") in OK_VALUES:
+            vals["is_not_applicable"] = False
             vals["value_ok_required"] = vals["value_ok"]
             vals["result"] = vals["value_ok"]
             vals["result_required"] = vals["value_ok"]
 
         if vals.get("result_required") in VALID_FINAL_RESULTS:
+            vals["is_not_applicable"] = False
             vals["result"] = vals["result_required"]
 
         if vals.get("result") in VALID_FINAL_RESULTS:
+            vals["is_not_applicable"] = False
             vals["result_required"] = vals["result"]
 
         if "value_selection" in vals and vals.get("value_selection"):
@@ -4225,6 +4380,61 @@ class QualityInspectionLineHardening(models.Model):
             set_value("value_cumple_required", source or False)
             set_value("result", source or False)
             set_value("result_required", source or False)
+            return vals
+
+        if self.sample_release_id and self.attribute_type == "boolean":
+            source = (
+                self.value_cumple_required
+                or (self.value_cumple if self.value_cumple in CUMPLE_VALUES else False)
+                or (self.result_required if self.result_required in CUMPLE_VALUES else False)
+                or (self.result if self.result in CUMPLE_VALUES else False)
+            )
+            if not source:
+                ok_source = (
+                    self.value_ok_required
+                    or (self.value_ok if self.value_ok in OK_VALUES else False)
+                    or (self.result_required if self.result_required in OK_VALUES else False)
+                    or (self.result if self.result in OK_VALUES else False)
+                )
+                source = OK_TO_CUMPLE_RESULT.get(ok_source)
+
+            wants_na = bool(
+                self.allow_not_applicable
+                and not source
+                and (
+                    self.is_not_applicable
+                    or self.result == "na"
+                    or self.value_cumple == "na"
+                    or self.value_ok == "na"
+                )
+            )
+
+            set_value("capture_zone", "additional")
+            set_value("result_mode", "cumple")
+            set_value("value_ok", False)
+            set_value("value_ok_required", False)
+            set_value("value_float", 0.0)
+            set_value("value_char", False)
+            set_value("value_selection", False)
+            set_value("selection_options", False)
+            set_value("min_value", 0.0)
+            set_value("max_value", 0.0)
+            set_value("unit", False)
+            set_value("allow_zero", False)
+
+            if wants_na:
+                set_value("is_not_applicable", True)
+                set_value("value_cumple", False)
+                set_value("value_cumple_required", False)
+                set_value("result", "na")
+                set_value("result_required", False)
+            else:
+                set_value("is_not_applicable", False)
+                set_value("value_cumple", source or False)
+                set_value("value_cumple_required", source or False)
+                set_value("result", source or False)
+                set_value("result_required", source or False)
+
             return vals
 
         if self.result == "na" and self.allow_not_applicable and not self.is_not_applicable:
@@ -4362,6 +4572,21 @@ class QualityInspectionLineHardening(models.Model):
 
         for vals in vals_list:
             vals = self._apply_template_vals_to_line_create(vals)
+
+            if not (vals.get("name") or "").strip():
+                if vals.get("attribute_template_id"):
+                    template = self.env["quality.attribute.template"].browse(
+                        vals["attribute_template_id"]
+                    ).exists()
+                    if template and template.name:
+                        vals["name"] = template.name
+
+            if not (vals.get("name") or "").strip():
+                raise ValidationError(_(
+                    "Capture el Nombre del Atributo antes de guardar la línea de inspección. "
+                    "Si no desea agregar un atributo manual, elimine la línea vacía."
+                ))
+
             vals = self._normalize_input_vals_hardening(vals)
 
             inspection = (
@@ -4845,6 +5070,7 @@ class QualityInspectionHardening(models.Model):
             ("turno_2", "Turno 2"),
             ("turno_3", "Turno 3"),
         ],
+        string="Turno",
         required=False,
     )
     plant = fields.Selection(
@@ -4855,6 +5081,7 @@ class QualityInspectionHardening(models.Model):
             ("planta_6", "Planta 6"),
             ("planta_7", "Planta 7"),
         ],
+        string="Planta",
         required=False,
     )
 
@@ -4960,6 +5187,56 @@ class QualityInspectionHardening(models.Model):
                     'ALTER TABLE "quality_inspection" '
                     'ALTER COLUMN "%s" DROP NOT NULL' % column_name
                 )
+
+    def _sanitize_line_commands_hardening(self, vals):
+        """
+        Evita que la lista editable de Atributos Adicionales intente crear
+        líneas sin Nombre del Atributo.
+
+        Casos:
+        - Línea completamente vacía: se descarta.
+        - Línea con plantilla: se completa el nombre desde la plantilla.
+        - Línea manual con datos pero sin nombre: se bloquea con mensaje claro.
+        """
+        vals = dict(vals or {})
+        commands = vals.get("line_ids")
+
+        if not commands:
+            return vals
+
+        clean_commands = []
+
+        for command in commands:
+            if (
+                not isinstance(command, (list, tuple))
+                or len(command) < 3
+                or command[0] != 0
+            ):
+                clean_commands.append(command)
+                continue
+
+            line_vals = dict(command[2] or {})
+
+            if not (line_vals.get("name") or "").strip() and line_vals.get("attribute_template_id"):
+                template = self.env["quality.attribute.template"].browse(
+                    line_vals["attribute_template_id"]
+                ).exists()
+                if template and template.name:
+                    line_vals["name"] = template.name
+
+            if not (line_vals.get("name") or "").strip():
+                if _quality_line_vals_has_user_content(line_vals):
+                    raise UserError(_(
+                        "Capture el Nombre del Atributo en la línea manual de inspección "
+                        "antes de guardar. Si no desea agregarla, elimine la línea vacía."
+                    ))
+                # Línea vacía creada accidentalmente por la lista editable.
+                continue
+
+            clean_commands.append((command[0], command[1], line_vals))
+
+        vals["line_ids"] = clean_commands
+        return vals
 
     def _normalize_inspection_vals_hardening(self, vals):
         vals = dict(vals or {})
@@ -5171,6 +5448,7 @@ class QualityInspectionHardening(models.Model):
         clean_vals_list = []
 
         for vals in vals_list:
+            vals = self._sanitize_line_commands_hardening(vals)
             vals = self._complete_vals_from_production_hardening(vals)
             vals = self._normalize_inspection_vals_hardening(vals)
 
@@ -5198,7 +5476,7 @@ class QualityInspectionHardening(models.Model):
         return records
 
     def write(self, vals):
-        vals = dict(vals or {})
+        vals = self._sanitize_line_commands_hardening(vals)
 
         if "production_order_id" in vals:
             vals = self._complete_vals_from_production_hardening(vals)
@@ -6542,6 +6820,7 @@ class QualityInspection(models.Model):
             ("turno_2", "Turno 2"),
             ("turno_3", "Turno 3"),
         ],
+        string="Turno",
         required=True,
     )
     plant = fields.Selection(
@@ -6552,6 +6831,7 @@ class QualityInspection(models.Model):
             ("planta_6", "Planta 6"),
             ("planta_7", "Planta 7"),
         ],
+        string="Planta",
         required=True,
     )
     inspector_id = fields.Many2one(
@@ -8258,12 +8538,24 @@ class QualitySampleRelease(models.Model):
             )
 
     def _prepare_sample_attribute_line_vals(self, template):
-        result_mode = getattr(template, "result_mode", False) or "cumple"
+        """
+        En Liberación de Muestras los atributos booleanos se capturan siempre como
+        Cumple / No Cumple. OK / NO OK queda reservado para inspecciones donde el
+        proceso lo configure explícitamente, pero no para esta pantalla operativa.
+
+        N/A tampoco se usa como valor por defecto: solo queda disponible cuando la
+        plantilla permita No aplica y el usuario lo marque de forma explícita.
+        """
+        attribute_type = template.attribute_type
+        is_boolean = attribute_type == "boolean"
+        is_float = attribute_type == "float"
+        is_selection = attribute_type == "selection"
+        result_mode = "cumple" if is_boolean else (getattr(template, "result_mode", False) or "cumple")
 
         return {
             "attribute_template_id": template.id,
             "name": template.name,
-            "attribute_type": template.attribute_type,
+            "attribute_type": attribute_type,
             "capture_zone": getattr(template, "capture_zone", False) or "additional",
             "result_mode": result_mode,
             "value_float": 0.0,
@@ -8273,13 +8565,13 @@ class QualitySampleRelease(models.Model):
             "value_cumple_required": False,
             "value_ok": False,
             "value_ok_required": False,
-            "min_value": template.min_value,
-            "max_value": template.max_value,
-            "unit": template.unit if template.attribute_type == "float" else False,
-            "allow_zero": getattr(template, "allow_zero", False) if template.attribute_type == "float" else False,
+            "min_value": template.min_value if is_float else 0.0,
+            "max_value": template.max_value if is_float else 0.0,
+            "unit": template.unit if is_float else False,
+            "allow_zero": getattr(template, "allow_zero", False) if is_float else False,
             "allow_not_applicable": getattr(template, "allow_not_applicable", False),
             "is_not_applicable": False,
-            "selection_options": template.selection_options if template.attribute_type == "selection" else False,
+            "selection_options": template.selection_options if is_selection else False,
             "result": False,
             "result_required": False,
             "sequence": template.sequence,
@@ -8421,6 +8713,74 @@ class QualitySampleRelease(models.Model):
                     )
                 )
 
+
+    @api.constrains("state", "inspector_id")
+    def _check_inspector_required_when_not_draft(self):
+        for rec in self:
+            if rec.state != "borrador" and not rec.inspector_id:
+                raise ValidationError(_(
+                    "No se puede avanzar la liberación de muestra sin Inspector de Calidad."
+                ))
+
+    def _check_inspector_required_for_progress(self):
+        for rec in self:
+            if not rec.inspector_id:
+                raise UserError(_(
+                    "Seleccione un Inspector de Calidad antes de avanzar la liberación de muestra."
+                ))
+
+    def _get_sample_release_notification_partners(self):
+        """
+        Devuelve únicamente los contactos que deben recibir avisos de Liberación de Muestras:
+        - Solicitante (Diseño)
+        - Inspector de Calidad
+
+        No se usa el grupo completo de inspectores ni fallback a todos los usuarios.
+        """
+        self.ensure_one()
+        partners = self.env["res.partner"].browse()
+
+        for user in (self.requested_by, self.inspector_id):
+            if user and user.partner_id:
+                partners |= user.partner_id
+
+        return partners
+
+    def _notify_sample_release_participants(self, body, subject=False, log_note=True):
+        """
+        Registra una nota interna en el chatter y manda notificación directa solo a:
+        Solicitante (Diseño) e Inspector de Calidad.
+
+        Se evita message_post con subtype 'mail.mt_comment' para no notificar a
+        seguidores/grupos completos de la liberación.
+        """
+        for rec in self:
+            partners = rec._get_sample_release_notification_partners()
+
+            if log_note:
+                rec.message_post(
+                    body=body,
+                    subtype_xmlid="mail.mt_note",
+                )
+
+            if not partners:
+                continue
+
+            notify_vals = {
+                "partner_ids": partners.ids,
+                "subject": subject or _("Liberación de muestra %s") % (rec.name or ""),
+                "body": body,
+                "record_name": rec.display_name,
+            }
+
+            try:
+                rec.message_notify(**notify_vals)
+            except TypeError:
+                # Compatibilidad con variantes de firma entre versiones.
+                notify_vals.pop("record_name", None)
+                rec.message_notify(**notify_vals)
+
+
     def action_register_cnc(self):
         for rec in self:
             if rec.sample_type != "pt":
@@ -8436,29 +8796,35 @@ class QualitySampleRelease(models.Model):
 
     def action_submit_inspection(self):
         for rec in self:
+            rec._check_inspector_required_for_progress()
+
             rec._check_spec_pdf()
             rec._check_pt_workflow()
             rec._check_attributes_valid()
             rec.state = "en_inspeccion"
 
-            users = rec.inspector_id
-            if not users:
-                group = self.env.ref(
-                    "quality_management.group_quality_inspector",
-                    raise_if_not_found=False,
-                )
-                users = group.users if group else self.env["res.users"]
+            rec.activity_schedule(
+                "mail.mail_activity_data_todo",
+                date_deadline=fields.Date.today() + timedelta(days=2),
+                summary=_("Inspección de muestra: %s") % rec.name,
+                user_id=rec.inspector_id.id,
+            )
 
-            for user in users:
-                rec.activity_schedule(
-                    "mail.mail_activity_data_todo",
-                    date_deadline=fields.Date.today() + timedelta(days=2),
-                    summary=_("Inspección de muestra: %s") % rec.name,
-                    user_id=user.id,
-                )
+            rec._notify_sample_release_participants(
+                body=_(
+                    "Muestra enviada a inspección.<br/>"
+                    "<b>Solicitante (Diseño):</b> %(requester)s<br/>"
+                    "<b>Inspector de Calidad:</b> %(inspector)s"
+                ) % {
+                    "requester": rec.requested_by.name or "—",
+                    "inspector": rec.inspector_id.name or "—",
+                },
+                subject=_("Muestra enviada a inspección: %s") % rec.name,
+            )
 
     def action_accept(self):
         for rec in self:
+            rec._check_inspector_required_for_progress()
             rec._check_attributes_valid(block_failing=True)
 
             rec.state = "aceptado"
@@ -8467,13 +8833,16 @@ class QualitySampleRelease(models.Model):
                 ["mail.mail_activity_data_todo"],
                 feedback=_("Muestra aceptada"),
             )
-            rec.message_post(
+
+            rec._notify_sample_release_participants(
                 body=_("Muestra ACEPTADA y liberada por %s") % self.env.user.name,
-                subtype_xmlid="mail.mt_comment",
+                subject=_("Muestra aceptada: %s") % rec.name,
             )
+
 
     def action_reject(self):
         for rec in self:
+            rec._check_inspector_required_for_progress()
             rec.state = "rechazado"
             rec.date_inspected = fields.Datetime.now()
             rec.activity_feedback(
@@ -8481,17 +8850,11 @@ class QualitySampleRelease(models.Model):
                 feedback=_("Muestra rechazada"),
             )
 
-            partner_ids = []
-            if rec.requested_by.partner_id:
-                partner_ids.append(rec.requested_by.partner_id.id)
-                rec.message_subscribe(partner_ids=partner_ids)
-
-            rec.message_post(
-                body=_("Muestra RECHAZADA por %s. Notificando a la solicitante: %s")
-                % (self.env.user.name, rec.requested_by.name),
-                partner_ids=partner_ids,
-                subtype_xmlid="mail.mt_comment",
+            rec._notify_sample_release_participants(
+                body=_("Muestra RECHAZADA por %s.") % self.env.user.name,
+                subject=_("Muestra rechazada: %s") % rec.name,
             )
+
 
     def action_reset_draft(self):
         for rec in self:
@@ -10154,35 +10517,29 @@ class ResCompany(models.Model):
                                     <tr t-foreach="doc.line_ids" t-as="attr">
                                         <td><span t-field="attr.name"/></td>
                                         <td class="text-center">
-                                            <t t-if="doc.process_code == 'acabado_empaque'">
-                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
-                                                <t t-elif="attr.value_cumple_required == 'cumple' or attr.value_cumple == 'cumple' or (not attr.value_cumple and attr.result == 'cumple')">Cumple</t>
-                                                <t t-elif="attr.value_cumple_required == 'no_cumple' or attr.value_cumple == 'no_cumple' or (not attr.value_cumple and attr.result == 'no_cumple')">No Cumple</t>
+                                            <t t-if="attr.is_not_applicable or attr.result == 'na'">—</t>
+                                            <t t-elif="attr.attribute_type == 'float' and (attr.value_float or attr.allow_zero)">
+                                                <span t-field="attr.value_float"/>
                                             </t>
-                                            <t t-else="">
-                                                <span t-if="attr.attribute_type == 'float'" t-field="attr.value_float"/>
-                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
-                                                <span t-elif="attr.attribute_type == 'selection'" t-field="attr.value_selection"/>
-                                                <span t-elif="attr.attribute_type == 'char'" t-field="attr.value_char"/>
-                                                <!-- FOLIO-QM-ODOO18-045/081: el resumen impreso soporta Cumple/NC y OK/NO OK sin N/A automático. -->
-                                                <span t-elif="attr.attribute_type == 'boolean' and attr.result_mode == 'cumple'" t-field="attr.value_cumple_required"/>
-                                                <span t-elif="attr.attribute_type == 'boolean' and attr.result_mode == 'ok'" t-field="attr.value_ok_required"/>
-                                            </t>
+                                            <span t-elif="attr.attribute_type == 'selection'" t-field="attr.value_selection"/>
+                                            <span t-elif="attr.attribute_type == 'char'" t-field="attr.value_char"/>
+                                            <t t-elif="attr.attribute_type == 'boolean'">—</t>
+                                            <t t-else="">—</t>
                                         </td>
                                         <td class="text-center">
-                                            <t t-if="doc.process_code != 'acabado_empaque' and (attr.min_value or attr.max_value)">
+                                            <t t-if="not (attr.is_not_applicable or attr.result == 'na') and attr.attribute_type == 'float' and (attr.min_value or attr.max_value)">
                                                 <span t-field="attr.min_value"/> - <span t-field="attr.max_value"/> <span t-field="attr.unit"/>
                                             </t>
                                         </td>
                                         <td class="text-center">
-                                            <t t-if="doc.process_code == 'acabado_empaque'">
-                                                <t t-if="attr.is_not_applicable or attr.result == 'na'">N/A</t>
-                                                <t t-elif="attr.result == 'cumple' or attr.value_cumple_required == 'cumple' or attr.value_cumple == 'cumple'">Cumple</t>
-                                                <t t-elif="attr.result == 'no_cumple' or attr.value_cumple_required == 'no_cumple' or attr.value_cumple == 'no_cumple'">No Cumple</t>
-                                            </t>
-                                            <t t-else="">
+                                            <span t-if="attr.is_not_applicable or attr.result == 'na'">No aplica</span>
+                                            <span t-elif="attr.result in ('cumple','ok')" style="color: green; font-weight: bold;">
                                                 <span t-field="attr.result"/>
-                                            </t>
+                                            </span>
+                                            <span t-elif="attr.result in ('no_cumple','no_ok')" style="color: red; font-weight: bold;">
+                                                <span t-field="attr.result"/>
+                                            </span>
+                                            <span t-else="" style="color: #6b7280;">Pendiente</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -10498,28 +10855,36 @@ class ResCompany(models.Model):
                                         <td><t t-esc="line_index + 1"/></td>
                                         <td><span t-field="line.name"/></td>
                                         <td class="text-center">
-                                            <span t-if="line.attribute_type == 'float'" t-field="line.value_float"/>
-                                            <t t-if="line.is_not_applicable or line.result == 'na'">N/A</t>
+                                            <t t-if="line.is_not_applicable or line.result == 'na'">—</t>
+                                            <t t-elif="line.attribute_type == 'float' and (line.value_float or line.allow_zero)">
+                                                <span t-field="line.value_float"/>
+                                            </t>
                                             <span t-elif="line.attribute_type == 'selection'" t-field="line.value_selection"/>
                                             <span t-elif="line.attribute_type == 'char'" t-field="line.value_char"/>
-                                            <!-- FOLIO-QM-ODOO18-044/081: se muestran los modos reales sin N/A automático. -->
-                                            <span t-elif="line.attribute_type == 'boolean' and line.result_mode == 'cumple'" t-field="line.value_cumple_required"/>
-                                            <span t-elif="line.attribute_type == 'boolean' and line.result_mode == 'ok'" t-field="line.value_ok_required"/>
+                                            <t t-elif="line.attribute_type == 'boolean'">—</t>
+                                            <t t-else="">—</t>
                                         </td>
                                         <td class="text-center">
-                                            <t t-if="line.min_value or line.max_value">
+                                            <t t-if="not (line.is_not_applicable or line.result == 'na') and line.attribute_type == 'float' and (line.min_value or line.max_value)">
                                                 <span t-field="line.min_value"/> - <span t-field="line.max_value"/>
                                             </t>
                                         </td>
-                                        <td class="text-center"><span t-field="line.unit"/></td>
                                         <td class="text-center">
-                                            <span t-if="line.result in ('cumple','ok')" style="color: green; font-weight: bold;">
+                                            <t t-if="not (line.is_not_applicable or line.result == 'na')">
+                                                <span t-field="line.unit"/>
+                                            </t>
+                                        </td>
+                                        <td class="text-center">
+                                            <span t-if="line.is_not_applicable or line.result == 'na'">
+                                                No aplica
+                                            </span>
+                                            <span t-elif="line.result in ('cumple','ok')" style="color: green; font-weight: bold;">
                                                 <span t-field="line.result"/>
                                             </span>
-                                            <span t-if="line.result in ('no_cumple','no_ok')" style="color: red; font-weight: bold;">
+                                            <span t-elif="line.result in ('no_cumple','no_ok')" style="color: red; font-weight: bold;">
                                                 <span t-field="line.result"/>
                                             </span>
-                                            <span t-if="line.result == 'na' or line.is_not_applicable">N/A</span>
+                                            <span t-else="" style="color: #6b7280;">Pendiente</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -12764,74 +13129,109 @@ registry.category("fields").add("evidence_viewer", {
 
                             <p class="text-muted" invisible="process_code in ('acabado_empaque', 'impresion')">
                                 <i class="fa fa-info-circle"/>
-                                CUMPLE / NO CUMPLE / N/A u OK / NO OK / N/A — sin duplicados con Medidas y Propiedades.
+                                Capture el valor real del atributo. Use <b>No aplica</b> solo cuando la plantilla lo permita explícitamente.
                             </p>
 
-                            <field name="line_ids">
+                            <field name="line_ids"
+                                   context="{
+                                       'default_capture_zone': 'additional',
+                                       'default_result_mode': 'cumple',
+                                       'default_attribute_type': 'boolean'
+                                   }">
                                 <list editable="bottom">
                                     <field name="process_code" column_invisible="1"/>
                                     <field name="strict_binary_result" column_invisible="1"/>
-                                    <field name="allow_not_applicable" column_invisible="1"/>
+                                    <field name="capture_zone" column_invisible="1"/>
+                                    <field name="result_mode" column_invisible="1"/>
+
                                     <field name="sequence" widget="handle"/>
-                                    <field name="name"/>
-                                    <field name="attribute_type"/>
-                                    <field name="result_mode"
-                                           invisible="attribute_type != 'boolean'"/>
+
+                                    <field name="attribute_template_id"
+                                           string="Plantilla"
+                                           optional="show"
+                                           options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+
+                                    <field name="name"
+                                           string="Nombre del atributo"
+                                           readonly="attribute_template_id"
+                                           required="not attribute_template_id"
+                                           placeholder="Ej. Aplicación de adhesivo, Medidas correctas..."/>
+
+                                    <field name="attribute_type"
+                                           string="Tipo de dato"
+                                           readonly="attribute_template_id"/>
+
+                                    <field name="selection_options"
+                                           string="Opciones"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'selection'"
+                                           placeholder="Ej. Buena, Regular, Mala"/>
 
                                     <field name="value_float"
                                            string="Valor medido"
-                                           invisible="attribute_type != 'float' or strict_binary_result"/>
+                                           invisible="attribute_type != 'float' or strict_binary_result or is_not_applicable"/>
 
                                     <field name="value_selection"
                                            string="Valor selección"
-                                           invisible="attribute_type != 'selection' or strict_binary_result"/>
+                                           invisible="attribute_type != 'selection' or strict_binary_result or is_not_applicable"
+                                           placeholder="Capture una opción configurada"/>
 
                                     <field name="value_char"
                                            string="Valor texto"
-                                           invisible="attribute_type != 'char' or strict_binary_result"/>
+                                           invisible="attribute_type != 'char' or strict_binary_result or is_not_applicable"/>
 
                                     <field name="value_ok_required"
-                                           string="OK/NO OK"
-                                           invisible="attribute_type != 'boolean' or result_mode != 'ok' or strict_binary_result"
-                                           widget="badge"
-                                           decoration-success="value_ok_required == 'ok'"
-                                           decoration-danger="value_ok_required == 'no_ok'"/>
+                                           string="Resultado"
+                                           invisible="attribute_type != 'boolean' or result_mode != 'ok' or strict_binary_result or is_not_applicable"/>
 
                                     <field name="value_cumple_required"
-                                           string="Cumple/NC"
-                                           invisible="attribute_type != 'boolean' or result_mode != 'cumple'"
-                                           widget="badge"
-                                           decoration-success="value_cumple_required == 'cumple'"
-                                           decoration-danger="value_cumple_required == 'no_cumple'"/>
+                                           string="Resultado"
+                                           invisible="attribute_type != 'boolean' or result_mode != 'cumple' or is_not_applicable"/>
+
+                                    <field name="allow_not_applicable"
+                                           string="Permitir No aplica"
+                                           readonly="attribute_template_id"
+                                           invisible="strict_binary_result"
+                                           optional="show"/>
 
                                     <field name="is_not_applicable"
-                                           string="N/A"
+                                           string="No aplica"
                                            invisible="not allow_not_applicable or strict_binary_result"/>
 
                                     <field name="min_value"
+                                           string="Mínimo"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
+
                                     <field name="max_value"
+                                           string="Máximo"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
+
                                     <field name="unit"
+                                           string="Unidad"
+                                           readonly="attribute_template_id"
                                            invisible="attribute_type != 'float' or strict_binary_result"/>
+
                                     <field name="allow_zero"
-                                           invisible="attribute_type != 'float' or strict_binary_result"/>
+                                           string="Permitir cero"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'float' or strict_binary_result"
+                                           optional="hide"/>
 
                                     <field name="result_required"
                                            string="Resultado"
-                                           invisible="attribute_type not in ('selection','char') or is_not_applicable"
-                                           widget="badge"
-                                           decoration-success="result_required in ('cumple','ok')"
-                                           decoration-danger="result_required in ('no_cumple','no_ok')"/>
+                                           invisible="attribute_type not in ('selection','char') or is_not_applicable"/>
 
                                     <field name="result"
-                                           string="Resultado automático"
+                                           string="Resultado calculado"
                                            widget="badge"
                                            readonly="1"
-                                           invisible="attribute_type != 'float' and not is_not_applicable"
+                                           invisible="attribute_type != 'float' or is_not_applicable"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
-                                    <field name="notes"/>
+
+                                    <field name="notes" optional="show"/>
                                 </list>
                             </field>
 
@@ -13470,7 +13870,9 @@ registry.category("fields").add("evidence_viewer", {
                                    options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                             <field name="product_id"/>
                             <field name="requested_by"/>
-                            <field name="inspector_id"/>
+                            <field name="inspector_id"
+                                   required="1"
+                                   options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
                         </group>
                         <group string="Fechas (automáticas)">
                             <field name="date_requested" readonly="1"/>
@@ -13496,67 +13898,106 @@ registry.category("fields").add("evidence_viewer", {
                         </page>
 
                         <page string="Atributos de Inspección" name="attrs">
-                            <field name="inspection_line_ids">
+                            <div class="alert alert-info" role="alert">
+                                <i class="fa fa-info-circle"/>
+                                Puede seleccionar una plantilla existente o dejar <b>Plantilla</b> vacío para capturar un atributo manual.
+                                Los atributos manuales permiten definir nombre, tipo de dato, opciones, rango y si admiten No aplica.
+                            </div>
+
+                            <field name="inspection_line_ids"
+                                   context="{
+                                       'default_capture_zone': 'additional',
+                                       'default_result_mode': 'cumple',
+                                       'default_attribute_type': 'boolean'
+                                   }">
                                 <list editable="bottom">
-                                    <field name="allow_not_applicable" column_invisible="1"/>
+                                    <field name="capture_zone" column_invisible="1"/>
+                                    <field name="result_mode" column_invisible="1"/>
+
                                     <field name="sequence" widget="handle"/>
-                                    <field name="name"/>
-                                    <field name="attribute_type"/>
-                                    <field name="result_mode"
-                                           invisible="attribute_type != 'boolean'"/>
+
+                                    <field name="attribute_template_id"
+                                           string="Plantilla"
+                                           optional="show"
+                                           options="{'no_create': True, 'no_create_edit': True, 'no_quick_create': True}"/>
+
+                                    <field name="name"
+                                           string="Nombre del atributo"
+                                           readonly="attribute_template_id"
+                                           placeholder="Ej. Color/Tono, Registro, Empaque..."/>
+
+                                    <field name="attribute_type"
+                                           string="Tipo de dato"
+                                           readonly="attribute_template_id"/>
+
+                                    <field name="selection_options"
+                                           string="Opciones"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'selection'"
+                                           placeholder="Ej. Bueno, Regular, Malo"/>
 
                                     <field name="value_float"
                                            string="Valor medido"
-                                           invisible="attribute_type != 'float'"/>
+                                           invisible="attribute_type != 'float' or is_not_applicable"/>
 
                                     <field name="value_selection"
                                            string="Valor selección"
-                                           invisible="attribute_type != 'selection'"/>
+                                           invisible="attribute_type != 'selection' or is_not_applicable"
+                                           placeholder="Capture una opción configurada"/>
 
                                     <field name="value_char"
                                            string="Valor texto"
-                                           invisible="attribute_type != 'char'"/>
+                                           invisible="attribute_type != 'char' or is_not_applicable"/>
 
                                     <field name="value_cumple_required"
-                                           string="Cumple/NC"
-                                           invisible="attribute_type != 'boolean' or result_mode != 'cumple'"
-                                           widget="badge"
-                                           decoration-success="value_cumple_required == 'cumple'"
-                                           decoration-danger="value_cumple_required == 'no_cumple'"/>
-
-                                    <field name="value_ok_required"
-                                           string="OK/NO OK"
-                                           invisible="attribute_type != 'boolean' or result_mode != 'ok'"
-                                           widget="badge"
-                                           decoration-success="value_ok_required == 'ok'"
-                                           decoration-danger="value_ok_required == 'no_ok'"/>
-
-                                    <field name="is_not_applicable"
-                                           string="N/A"
-                                           invisible="not allow_not_applicable"/>
-
-                                    <field name="min_value" invisible="attribute_type != 'float'"/>
-                                    <field name="max_value" invisible="attribute_type != 'float'"/>
-                                    <field name="unit" invisible="attribute_type != 'float'"/>
-                                    <field name="allow_zero" invisible="attribute_type != 'float'"/>
+                                           string="Cumple/No cumple"
+                                           invisible="attribute_type != 'boolean' or is_not_applicable"/>
 
                                     <field name="result_required"
                                            string="Resultado"
-                                           invisible="attribute_type not in ('selection','char') or is_not_applicable"
-                                           widget="badge"
-                                           decoration-success="result_required in ('cumple','ok')"
-                                           decoration-danger="result_required in ('no_cumple','no_ok')"/>
+                                           invisible="attribute_type not in ('selection','char') or is_not_applicable"/>
+
+                                    <field name="allow_not_applicable"
+                                           string="Permitir N/A"
+                                           readonly="attribute_template_id"
+                                           optional="show"/>
+
+                                    <field name="is_not_applicable"
+                                           string="No aplica"
+                                           invisible="not allow_not_applicable"/>
+
+                                    <field name="min_value"
+                                           string="Mínimo"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'float'"/>
+
+                                    <field name="max_value"
+                                           string="Máximo"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'float'"/>
+
+                                    <field name="unit"
+                                           string="Unidad"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'float'"/>
+
+                                    <field name="allow_zero"
+                                           string="Permitir cero"
+                                           readonly="attribute_template_id"
+                                           invisible="attribute_type != 'float'"
+                                           optional="hide"/>
 
                                     <field name="result"
-                                           string="Resultado automático"
+                                           string="Resultado calculado"
                                            readonly="1"
                                            widget="badge"
-                                           invisible="attribute_type != 'float' and not is_not_applicable"
+                                           invisible="attribute_type != 'float' or is_not_applicable"
                                            decoration-success="result in ('cumple','ok')"
                                            decoration-danger="result in ('no_cumple','no_ok')"/>
+
+                                    <field name="notes" optional="show"/>
                                 </list>
                             </field>
-
                         </page>
 
                         <page string="Evidencia (Imágenes)" name="evidence">

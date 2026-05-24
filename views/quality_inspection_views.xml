@@ -286,7 +286,7 @@
 
                             <group>
                                 <group string="Papel">
-                                    <field name="papel_ancho" string="Ancho"/>
+                                    <field name="papel_ancho" string="Ancho del Papel"/>
                                     <field name="papel_gramaje" string="Gramaje"/>
                                     <field name="papel_proveedor_id"
                                            string="Proveedor de Rollos"

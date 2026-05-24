@@ -474,6 +474,12 @@ class QualityInspection(models.Model):
         "calibracion",
     )
     def _onchange_alert_zero(self):
+        # FOLIO-QM-ODOO18-080: Octágono tiene su propia captura dedicada y
+        # no comparte la página genérica "Medidas y Propiedades". La alerta
+        # menciona campos como Espesor que no existen en el formulario de
+        # Octágono y confunde al usuario; se omite para ese proceso.
+        if self.process_code == "octagono":
+            return {}
         zeros = []
         if self.show_largo and self.largo == 0:
             zeros.append("Largo")
