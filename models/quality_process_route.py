@@ -22,8 +22,8 @@ class QualityProcessRoute(models.Model):
     _order = "sequence, id"
 
     name = fields.Char("Nombre de la Ruta", required=True)
-    sequence = fields.Integer(default=10)
-    active = fields.Boolean(default=True)
+    sequence = fields.Integer("Secuencia", default=10)
+    active = fields.Boolean("Activo", default=True)
     product_tmpl_ids = fields.Many2many(
         "product.template",
         string="Productos Aplicables",
@@ -40,6 +40,7 @@ class QualityProcessRoute(models.Model):
     notes = fields.Text("Notas")
     company_id = fields.Many2one(
         "res.company",
+        "Compañía",
         default=lambda s: s.env.company,
     )
 

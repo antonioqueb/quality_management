@@ -28,6 +28,7 @@ class QualityCorrectiveAction(models.Model):
             ("reclamacion", "Reclamación"),
             ("otro", "Otro"),
         ],
+        string="Tipo de Origen",
         required=True,
         tracking=True,
     )

@@ -12,6 +12,6 @@ class Quality5Why(models.Model):
     sequence = fields.Selection([
         ("1", "Por qué 1"), ("2", "Por qué 2"), ("3", "Por qué 3"),
         ("4", "Por qué 4"), ("5", "Por qué 5"),
-    ], required=True)
+    ], string="Secuencia", required=True)
     question = fields.Char("Pregunta", required=True)
     answer = fields.Text("Respuesta", required=True)

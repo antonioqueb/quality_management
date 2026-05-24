@@ -128,7 +128,7 @@ class QualityInspectionRetentionLog(models.Model):
 
     inspection_id = fields.Many2one(
         "quality.inspection", required=True, ondelete="cascade", index=True)
-    date = fields.Datetime(default=fields.Datetime.now, readonly=True)
+    date = fields.Datetime("Fecha", default=fields.Datetime.now, readonly=True)
     user_id = fields.Many2one("res.users", "Usuario")
     description = fields.Text("Descripción", required=True)
     retention_state_after = fields.Char("Sub-estado tras evento")

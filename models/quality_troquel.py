@@ -142,7 +142,7 @@ class QualityTroquelEvent(models.Model):
 
     troquel_id = fields.Many2one("quality.troquel", required=True,
                                  ondelete="cascade", index=True)
-    date = fields.Datetime(default=fields.Datetime.now, readonly=True)
+    date = fields.Datetime("Fecha", default=fields.Datetime.now, readonly=True)
     user_id = fields.Many2one("res.users", "Registrado por")
     description = fields.Text("Descripción", required=True)
     state_after = fields.Char("Estado Resultante")

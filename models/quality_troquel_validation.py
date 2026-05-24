@@ -17,7 +17,7 @@ class QualityTroquelValidation(models.Model):
         tracking=True,
         index=True,
     )
-    date = fields.Datetime(default=fields.Datetime.now, required=True)
+    date = fields.Datetime("Fecha", default=fields.Datetime.now, required=True)
     convoked_quality = fields.Boolean("Calidad Convocada")
     convoked_production = fields.Boolean("Producción Convocada")
 
@@ -32,12 +32,12 @@ class QualityTroquelValidation(models.Model):
     )
 
     dimensional_ok = fields.Boolean(
-        "Dimensional OK",
+        "Resultado Dimensional",
         compute="_compute_results",
         store=True,
     )
     functional_ok = fields.Boolean(
-        "Funcional OK",
+        "Resultado Funcional",
         compute="_compute_results",
         store=True,
     )
@@ -124,12 +124,13 @@ class QualityTroquelValidationLine(models.Model):
         required=True,
         ondelete="cascade",
     )
-    sequence = fields.Integer(default=10)
+    sequence = fields.Integer("Secuencia", default=10)
     test_type = fields.Selection(
         [
             ("dimensional", "Dimensional"),
             ("funcional", "Funcional"),
         ],
+        string="Tipo de Prueba",
         required=True,
         default="dimensional",
     )
@@ -141,8 +142,9 @@ class QualityTroquelValidationLine(models.Model):
         [
             ("cumple", "Cumple"),
             ("no_cumple", "No Cumple"),
-            ("na", "N/A"),
+            ("na", "No aplica"),
         ],
+        string="Resultado",
         default="na",
         required=True,
     )
@@ -155,7 +157,7 @@ class QualityTroquelRepair(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "date_started desc, id desc"
 
-    name = fields.Char(default="Nueva", readonly=True, copy=False)
+    name = fields.Char("Referencia", default="Nueva", readonly=True, copy=False)
     troquel_id = fields.Many2one(
         "quality.troquel",
         required=True,
@@ -167,6 +169,7 @@ class QualityTroquelRepair(models.Model):
             ("interna", "Interna"),
             ("proveedor", "Proveedor Externo"),
         ],
+        string="Tipo de Reparación",
         required=True,
         default="interna",
     )

@@ -222,7 +222,7 @@ class QualityInspection(models.Model):
         [
             ("cumple", "Cumple"),
             ("no_cumple", "No Cumple"),
-            ("na", "N/A"),
+            ("na", "No aplica"),
         ]
     )
     humedad_pct = fields.Float("% Humedad")
@@ -247,7 +247,7 @@ class QualityInspection(models.Model):
         [
             ("cumple", "Cumple"),
             ("no_cumple", "No Cumple"),
-            ("na", "N/A"),
+            ("na", "No aplica"),
         ],
         string="Resultado de Pegado",
     )
@@ -260,7 +260,7 @@ class QualityInspection(models.Model):
     # No debe volver a cambiarse a Float dentro de este mismo upgrade.
     oct_hexagono = fields.Selection(
         OCT_HEXAGONO_SELECTION,
-        string="Hexágono Octágono Legacy",
+        string="Hexágono Octágono Legado",
         copy=False,
         help=(
             "Campo legacy conservado para compatibilidad de actualización. "
@@ -282,7 +282,7 @@ class QualityInspection(models.Model):
         [
             ("cumple", "Cumple"),
             ("no_cumple", "No Cumple"),
-            ("na", "N/A"),
+            ("na", "No aplica"),
         ],
         string="Alineación",
     )
@@ -290,7 +290,7 @@ class QualityInspection(models.Model):
         [
             ("cumple", "Cumple"),
             ("no_cumple", "No Cumple"),
-            ("na", "N/A"),
+            ("na", "No aplica"),
         ],
         string="Pegado Octágono",
     )
@@ -314,14 +314,14 @@ class QualityInspection(models.Model):
         [
             ("cumple", "Cumple"),
             ("no_cumple", "No Cumple"),
-            ("na", "N/A"),
+            ("na", "No aplica"),
         ]
     )
     corte_guillotina = fields.Selection(
         [
             ("si", "Sí"),
             ("no", "No"),
-            ("na", "N/A"),
+            ("na", "No aplica"),
         ],
         string="Corte en Guillotina",
     )

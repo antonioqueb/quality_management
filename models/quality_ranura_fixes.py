@@ -97,7 +97,7 @@ class QualityInspectionRanuradoQI024(models.Model):
         [
             ("cumple", "Cumple"),
             ("no_cumple", "No Cumple"),
-            ("na", "N/A"),
+            ("na", "No aplica"),
         ],
         string="Resultado",
         default=False,

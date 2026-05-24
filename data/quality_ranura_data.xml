@@ -10,7 +10,7 @@
             de la ruta estándar obligatoria.
         -->
         <record id="process_type_remanejo" model="quality.process.type">
-            <field name="name">Remanejo (Legacy)</field>
+            <field name="name">Remanejo (Legado)</field>
             <field name="sequence">51</field>
             <field name="active" eval="False"/>
             <field name="description">Proceso legado conservado para inspecciones históricas. Usar Sierras y Ranuradoras para nuevas capturas.</field>

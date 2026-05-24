@@ -117,7 +117,7 @@ class QualityCertificateEmailLog(models.Model):
 
     certificate_id = fields.Many2one(
         "quality.certificate", required=True, ondelete="cascade", index=True)
-    date = fields.Datetime(default=fields.Datetime.now, readonly=True)
+    date = fields.Datetime("Fecha", default=fields.Datetime.now, readonly=True)
     user_id = fields.Many2one("res.users", "Enviado por")
     recipient_email = fields.Char("Destinatario")
     message_id = fields.Many2one("mail.message", "Mensaje", ondelete="set null")

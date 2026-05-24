@@ -160,7 +160,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Triple Check" name="triple">
+                        <page string="Triple Validación" name="triple">
                             <group>
                                 <group string="Calidad">
                                     <field name="accepted_by_quality" readonly="1"/>

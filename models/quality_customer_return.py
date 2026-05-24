@@ -54,6 +54,7 @@ class QualityCustomerReturn(models.Model):
             ("empaque", "Empaque"),
             ("otro", "Otro"),
         ],
+        string="Tipo de Defecto",
         required=True,
         tracking=True,
     )

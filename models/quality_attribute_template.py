@@ -52,7 +52,7 @@ class QualityAttributeTemplate(models.Model):
             ("muestra", "Muestra"),
             ("general", "General"),
         ],
-        string="Tipo (Legacy)",
+        string="Tipo (Legado)",
     )
 
     attribute_type = fields.Selection(

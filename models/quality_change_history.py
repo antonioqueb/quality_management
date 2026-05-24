@@ -52,7 +52,7 @@ class QualityInspectionHistory(models.Model):
         "res.users", "Cambiado por",
         default=lambda s: s.env.user, readonly=True)
     change_date = fields.Datetime(
-        default=fields.Datetime.now, readonly=True)
+        "Fecha de Cambio", default=fields.Datetime.now, readonly=True)
     reason = fields.Char("Motivo (opcional)")
     inspection_state_at_change = fields.Char("Estado al momento del cambio")
 

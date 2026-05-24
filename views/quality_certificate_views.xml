@@ -97,7 +97,7 @@
                                 </group>
                             </group>
                         </page>
-                        <page string="Atributos Adicionales (solo CUMPLE/OK)" name="attrs">
+                        <page string="Atributos Adicionales (solo Cumple/Correcto)" name="attrs">
                             <p class="text-muted">
                                 <i class="fa fa-info-circle"/>
                                 <!-- FOLIO-QM-ODOO18-037: el certificado acepta resultados Cumple y OK, no solo Cumple. -->

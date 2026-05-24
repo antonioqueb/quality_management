@@ -231,7 +231,7 @@ class QualityProcessTypeHardening(models.Model):
         default=True,
     )
     allow_resistencia_na = fields.Boolean(
-        "Permitir N/A en Resistencia",
+        "Permitir No Aplica en Resistencia",
         default=False,
         help=(
             "Si está activo, el proceso permite marcar Resistencia como No aplica. "
@@ -239,7 +239,7 @@ class QualityProcessTypeHardening(models.Model):
         ),
     )
     allow_hexagono_na = fields.Boolean(
-        "Permitir N/A en Hexágono",
+        "Permitir No Aplica en Hexágono",
         default=False,
         help=(
             "Si está activo, el proceso permite marcar Hexágono como No aplica. "
@@ -268,18 +268,20 @@ class QualityAttributeTemplateHardening(models.Model):
             ("troquelado", "Troquelado"),
             ("production", "Datos de Producción"),
         ],
+        string="Zona de Captura",
         default="additional",
         required=True,
     )
     result_mode = fields.Selection(
         [
             ("cumple", "Cumple / No Cumple"),
-            ("ok", "OK / NO OK"),
+            ("ok", "Correcto / Incorrecto"),
         ],
+        string="Modo de Resultado",
         default="cumple",
         required=True,
         help=(
-            "Define el par de resultados del atributo. N/A ya no se usa como "
+            "Define el par de resultados del atributo. No aplica ya no se usa como "
             "opción automática; se habilita por separado con 'Permitir No aplica'."
         ),
     )
@@ -516,20 +518,22 @@ class QualityInspectionLineHardening(models.Model):
             ("troquelado", "Troquelado"),
             ("production", "Datos de Producción"),
         ],
+        string="Zona de Captura",
         default="additional",
         required=True,
     )
     result_mode = fields.Selection(
         [
             ("cumple", "Cumple / No Cumple"),
-            ("ok", "OK / NO OK"),
+            ("ok", "Correcto / Incorrecto"),
         ],
+        string="Modo de Resultado",
         default="cumple",
         required=True,
     )
 
     value_cumple = fields.Selection(
-        selection_add=[("na", "N/A")],
+        selection_add=[("na", "No aplica")],
         ondelete={"na": "set default"},
         default=False,
     )
@@ -543,19 +547,19 @@ class QualityInspectionLineHardening(models.Model):
     )
     value_ok = fields.Selection(
         [
-            ("ok", "OK"),
-            ("no_ok", "NO OK"),
-            ("na", "N/A"),
+            ("ok", "Correcto"),
+            ("no_ok", "Incorrecto"),
+            ("na", "No aplica"),
         ],
-        string="OK/NO OK/N/A",
+        string="Correcto / Incorrecto / No aplica",
         default=False,
     )
     value_ok_required = fields.Selection(
         [
-            ("ok", "OK"),
-            ("no_ok", "NO OK"),
+            ("ok", "Correcto"),
+            ("no_ok", "Incorrecto"),
         ],
-        string="OK/NO OK",
+        string="Correcto / Incorrecto",
         default=False,
     )
     value_selection = fields.Char("Valor Selección")
@@ -564,16 +568,16 @@ class QualityInspectionLineHardening(models.Model):
         [
             ("cumple", "Cumple"),
             ("no_cumple", "No Cumple"),
-            ("ok", "OK"),
-            ("no_ok", "NO OK"),
+            ("ok", "Correcto"),
+            ("no_ok", "Incorrecto"),
         ],
         string="Resultado",
         default=False,
     )
     result = fields.Selection(
         selection_add=[
-            ("ok", "OK"),
-            ("no_ok", "NO OK"),
+            ("ok", "Correcto"),
+            ("no_ok", "Incorrecto"),
         ],
         ondelete={
             "ok": "set default",
@@ -1588,7 +1592,7 @@ class QualityInspectionRanuradoHardening(models.Model):
         ondelete={"cm": "set default"},
     )
     resultado = fields.Selection(
-        selection_add=[("na", "N/A")],
+        selection_add=[("na", "No aplica")],
         ondelete={"na": "set default"},
         default=False,
     )
@@ -1615,7 +1619,7 @@ class QualityInspectionTroqueladoHardening(models.Model):
         required=True,
     )
     resultado = fields.Selection(
-        selection_add=[("na", "N/A")],
+        selection_add=[("na", "No aplica")],
         ondelete={"na": "set default"},
         default=False,
     )
@@ -1714,7 +1718,7 @@ class QualityInspectionHardening(models.Model):
     calibracion = fields.Float("Calibración", digits=(16, 4))
     papel_ancho = fields.Float("Ancho del Papel", digits=(16, 2))
     papel_gramaje = fields.Float("Gramaje del Papel", digits=(16, 2))
-    oct_retiramiento = fields.Float("Retiramiento (cm) - Legacy", digits=(16, 2))
+    oct_retiramiento = fields.Float("Retiramiento (cm) - Legado", digits=(16, 2))
     reticula_extendida = fields.Float("Retiramiento / Retícula Extendida (cm)", digits=(16, 2))
 
     capture_mode = fields.Selection(
