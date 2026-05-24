@@ -71,7 +71,9 @@ class QualitySampleRelease(models.Model):
         "res.users",
         "Inspector de Calidad",
         tracking=True,
-        domain="[('groups_id', 'in', [ref('quality_management.group_quality_inspector')])]",
+        domain=lambda self: [
+            ("groups_id", "in", self.env.ref("quality_management.group_quality_inspector").ids)
+        ],
     )
 
     date_requested = fields.Datetime(
