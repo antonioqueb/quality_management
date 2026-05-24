@@ -135,9 +135,9 @@
                             </div>
                         </page>
                         <page string="Cotización/Dibujo (PDF)" name="quotation">
-                            <div class="alert alert-warning" invisible="quotation_pdf">
-                                <i class="fa fa-exclamation-triangle"/>
-                                Sin cotización/dibujo cargado no se puede avanzar.
+                            <div class="alert alert-info" invisible="quotation_pdf">
+                                <i class="fa fa-info-circle"/>
+                                Documento opcional. Cárguelo si aplica para esta liberación.
                             </div>
                             <group>
                                 <field name="quotation_pdf" filename="quotation_pdf_name"/>

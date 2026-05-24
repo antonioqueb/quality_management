@@ -64,8 +64,7 @@ class QualityDrawingRelease(models.Model):
         "quality_drawing_attachment_rel",
         "drawing_id",
         "attachment_id",
-        string="Plano y Cotización/Dibujo",
-        required=True,
+        string="Adjuntos Adicionales",
     )
     drawing_pdf = fields.Binary("Plano Principal (PDF)", attachment=True)
     drawing_pdf_name = fields.Char("Nombre del Plano")
@@ -217,14 +216,9 @@ class QualityDrawingRelease(models.Model):
 
     def _check_documents(self):
         for rec in self:
-            # FOLIO-QM-ODOO18-016: se valida explícitamente que existan ambos documentos
-            # fuente, no solo adjuntos genéricos.
-            if not rec.drawing_pdf or not rec.quotation_pdf:
+            if not rec.drawing_pdf:
                 raise UserError(
-                    _(
-                        "Debe cargar AMBOS documentos antes de avanzar: "
-                        "Plano (PDF) y Cotización/Dibujo (PDF)."
-                    )
+                    _("Debe cargar el Plano Principal (PDF) antes de avanzar.")
                 )
 
     def action_submit_review(self):
