@@ -129,10 +129,12 @@ class QualityCustomerReturn(models.Model):
         default=fields.Date.context_today,
     )
     days_since_production = fields.Integer(
+        "Días Desde Producción",
         compute="_compute_days_since_production",
         store=True,
     )
     is_within_period = fields.Boolean(
+        "Dentro del Periodo",
         compute="_compute_days_since_production",
         store=True,
     )
