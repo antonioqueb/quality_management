@@ -154,6 +154,7 @@ class QualityInspection(models.Model):
         required=True,
         default=lambda s: s.env.user,
         tracking=True,
+        domain="[('groups_id', 'in', [ref('quality_management.group_quality_inspector')])]",
     )
 
     date_inspection = fields.Datetime(
