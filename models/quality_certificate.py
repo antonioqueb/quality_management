@@ -29,17 +29,17 @@ class QualityCertificate(models.Model):
         "quality_certificate_attribute_rel",
         "certificate_id", "line_id", string="Atributos Seleccionados")
 
-    certified_largo = fields.Float()
-    certified_ancho = fields.Float()
-    certified_espesor = fields.Float()
-    certified_hexagono = fields.Float()
-    certified_resistencia = fields.Float()
-    certified_apariencia = fields.Char()
-    certified_humedad = fields.Float()
-    certified_pegado = fields.Char()
-    certified_retiramiento = fields.Float()
-    certified_calibracion = fields.Float()
-    certified_engomado = fields.Char()
+    certified_largo = fields.Float("Largo")
+    certified_ancho = fields.Float("Ancho")
+    certified_espesor = fields.Float("Espesor")
+    certified_hexagono = fields.Float("Hexágono")
+    certified_resistencia = fields.Float("Resistencia")
+    certified_apariencia = fields.Char("Apariencia")
+    certified_humedad = fields.Float("Humedad")
+    certified_pegado = fields.Char("Pegado")
+    certified_retiramiento = fields.Float("Retiramiento")
+    certified_calibracion = fields.Float("Calibración")
+    certified_engomado = fields.Char("Engomado")
 
     date_generated = fields.Date("Fecha de Generación", required=True,
                                  default=fields.Date.context_today)
@@ -50,7 +50,7 @@ class QualityCertificate(models.Model):
     ], default="borrador", required=True, tracking=True, copy=False)
     report_pdf = fields.Binary("PDF del Certificado", attachment=True)
     report_pdf_name = fields.Char()
-    certified_by = fields.Many2one("res.users", required=True,
+    certified_by = fields.Many2one("res.users", "Certificado Por", required=True,
                                    default=lambda s: s.env.user, tracking=True)
     company_id = fields.Many2one("res.company", "Compañía",
                                  default=lambda s: s.env.company)

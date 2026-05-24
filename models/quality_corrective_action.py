@@ -49,8 +49,8 @@ class QualityCorrectiveAction(models.Model):
     )
 
     origin_description = fields.Text("Descripción del Incumplimiento", required=True)
-    origin_inspection_id = fields.Many2one("quality.inspection")
-    origin_return_id = fields.Many2one("quality.customer.return")
+    origin_inspection_id = fields.Many2one("quality.inspection", "Inspección Origen")
+    origin_return_id = fields.Many2one("quality.customer.return", "Devolución Origen")
 
     responsible_id = fields.Many2one(
         "res.users",
@@ -111,7 +111,7 @@ class QualityCorrectiveAction(models.Model):
 
     no_procede_reason = fields.Text("Motivo No Procede")
     quality_evaluated_by = fields.Many2one("res.users", "Calidad Evaluó", readonly=True)
-    quality_evaluated_date = fields.Datetime(readonly=True)
+    quality_evaluated_date = fields.Datetime("Fecha Evaluación Calidad", readonly=True)
 
     date_opened = fields.Date(
         "Fecha de Apertura",
@@ -126,10 +126,10 @@ class QualityCorrectiveAction(models.Model):
         readonly=False,
     )
 
-    action_count = fields.Integer(compute="_compute_action_stats")
-    action_completed_count = fields.Integer(compute="_compute_action_stats")
-    action_overdue_count = fields.Integer(compute="_compute_action_stats")
-    progress = fields.Float(compute="_compute_action_stats")
+    action_count = fields.Integer("Acciones", compute="_compute_action_stats")
+    action_completed_count = fields.Integer("Completadas", compute="_compute_action_stats")
+    action_overdue_count = fields.Integer("Vencidas", compute="_compute_action_stats")
+    progress = fields.Float("Avance", compute="_compute_action_stats")
 
     company_id = fields.Many2one(
         "res.company",

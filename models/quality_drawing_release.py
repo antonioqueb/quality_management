@@ -124,19 +124,19 @@ class QualityDrawingRelease(models.Model):
         "Calidad Aceptó",
         readonly=True,
     )
-    accepted_by_quality_date = fields.Datetime(readonly=True)
+    accepted_by_quality_date = fields.Datetime("Fecha Aceptación Calidad", readonly=True)
     accepted_by_sales = fields.Many2one(
         "res.users",
         "Ventas Aceptó",
         readonly=True,
     )
-    accepted_by_sales_date = fields.Datetime(readonly=True)
+    accepted_by_sales_date = fields.Datetime("Fecha Aceptación Ventas", readonly=True)
     accepted_by_design = fields.Many2one(
         "res.users",
         "Diseño Aceptó",
         readonly=True,
     )
-    accepted_by_design_date = fields.Datetime(readonly=True)
+    accepted_by_design_date = fields.Datetime("Fecha Aceptación Diseño", readonly=True)
 
     modification_ids = fields.One2many(
         "quality.drawing.modification",

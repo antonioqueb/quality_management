@@ -40,8 +40,8 @@ class QualityActionLine(models.Model):
         readonly=False,
     )
 
-    delay_days = fields.Integer(compute="_compute_delay_days", store=True)
-    notes = fields.Text()
+    delay_days = fields.Integer("Días de Retraso", compute="_compute_delay_days", store=True)
+    notes = fields.Text("Notas")
 
     @api.model_create_multi
     def create(self, vals_list):
