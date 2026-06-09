@@ -30,3 +30,4 @@ from . import quality_customer_document_extra
 from . import quality_troquel_validation
 from . import quality_security_enforcement
 from . import quality_ranura_fixes
+from . import ir_attachment
